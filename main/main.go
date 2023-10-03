@@ -24,6 +24,8 @@ func main() {
 
 	// Flag for profile scraping
 	scrapeProfiles := flag.Bool("profiles", false, "Alongside -scrape, signifies that professor profiles should be scraped.")
+	// Flag for soc scraping
+	scrapeOrganizations := flag.Bool("soc", false, "Alongside -scrape, signifies that SOC organizations should be scraped.")
 
 	// Flags for parsing
 	parse := flag.Bool("parse", false, "Puts the tool into parsing mode. Use the -i flag to specify the input directory for scraped data.")
@@ -46,6 +48,8 @@ func main() {
 				panic(errors.New("No term specified for coursebook scraping! Use -term to specify."))
 			}
 			scrapers.ScrapeCoursebook(*term, *startPrefix, *outDir)
+		case *scrapeOrganizations:
+			scrapers.ScrapeOrganizations(*outDir)
 		default:
 			panic(errors.New("One of the -coursebook or -profiles flags must be set for scraping!"))
 		}
