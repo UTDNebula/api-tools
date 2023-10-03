@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
-	"github.com/UTDNebula/api-tools/schema"
+	"github.com/UTDNebula/nebula-api/schema"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"os"
 	"regexp"

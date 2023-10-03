@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/UTDNebula/api-tools/schema"
+	"github.com/UTDNebula/nebula-api/schema"
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
