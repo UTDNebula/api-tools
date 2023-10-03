@@ -25,7 +25,7 @@ func main() {
 	// Flag for profile scraping
 	scrapeProfiles := flag.Bool("profiles", false, "Alongside -scrape, signifies that professor profiles should be scraped.")
 	// Flag for soc scraping
-	scrapeOrganizations := flag.Bool("soc", false, "Alongside -scrape, signifies that SOC organizations should be scraped.")
+	scrapeOrganizations := flag.Bool("organizations", false, "Alongside -scrape, signifies that SOC organizations should be scraped.")
 
 	// Flags for parsing
 	parse := flag.Bool("parse", false, "Puts the tool into parsing mode. Use the -i flag to specify the input directory for scraped data.")
