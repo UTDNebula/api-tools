@@ -17,7 +17,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/UTDNebula/api-tools/schema"
+	"github.com/UTDNebula/nebula-api/schema"
 	"github.com/chromedp/cdproto/browser"
 	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/chromedp"
