@@ -8,12 +8,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/UTDNebula/api-tools/schema"
-	"github.com/chromedp/cdproto/browser"
-	"github.com/chromedp/cdproto/network"
-	"github.com/chromedp/chromedp"
-	"github.com/joho/godotenv"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"io"
 	"log"
 	"net/url"
@@ -22,6 +16,13 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/UTDNebula/api-tools/schema"
+	"github.com/chromedp/cdproto/browser"
+	"github.com/chromedp/cdproto/network"
+	"github.com/chromedp/chromedp"
+	"github.com/joho/godotenv"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 const (
@@ -90,7 +91,7 @@ func loginToSoc(ctx context.Context) error {
 		// wait for sign in button to load (regular WaitVisible and WaitReady methods do not work)
 		chromedp.Sleep(1*time.Second),
 		chromedp.Click(`input[type="submit"]`),
-		chromedp.Sleep(1*time.Second),
+		chromedp.Sleep(2*time.Second),
 		chromedp.Click("button.auth-button"),
 		chromedp.WaitReady(`body`),
 	)
@@ -117,7 +118,11 @@ func scrapeData(ctx context.Context, outdir string) error {
 		}
 	})
 
-	tempDir := filepath.Join(outdir, "tmp")
+	tempDir, _ := filepath.Abs(filepath.Join(outdir, "tmp"))
+	log.Printf("Downloading CSV to %s ...\n", tempDir)
+	if err := os.MkdirAll(tempDir, 0755); err != nil {
+		return err
+	}
 	if err := chromedp.Run(ctx,
 		chromedp.Sleep(1*time.Second),
 		chromedp.Click(`button[name="Export"]`, chromedp.NodeReady),
@@ -129,7 +134,7 @@ func scrapeData(ctx context.Context, outdir string) error {
 	}
 
 	// get GUID of download and reconstruct path
-	guid, _ := <-done
+	guid := <-done
 	guidPath := filepath.Join(tempDir, guid)
 	defer func() {
 		// remove temp file and directory
