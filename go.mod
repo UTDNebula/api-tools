@@ -11,7 +11,7 @@ require (
 )
 
 require (
-	github.com/UTDNebula/nebula-api v0.0.0-20231003213838-159c393ef96b // indirect
+	github.com/UTDNebula/nebula-api v0.0.0-20231004213143-9606f88ce324 // indirect
 	github.com/andybalholm/cascadia v1.3.1 // indirect
 	github.com/chromedp/sysutil v1.0.0 // indirect
 	github.com/gobwas/httphead v0.1.0 // indirect
