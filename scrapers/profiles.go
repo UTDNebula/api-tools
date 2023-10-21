@@ -5,21 +5,22 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+	"regexp"
+	"strconv"
+	"strings"
+
 	"github.com/UTDNebula/nebula-api/schema"
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"os"
-	"regexp"
-	"strconv"
-	"strings"
 )
 
 const BASE_URL string = "https://profiles.utdallas.edu/browse?page="
 
-var primaryLocationRegex *regexp.Regexp = regexp.MustCompile("^(\\w+)\\s+(\\d+\\.\\d{3}[A-z]?)$")
-var fallbackLocationRegex *regexp.Regexp = regexp.MustCompile("^([A-z]+)(\\d+)\\.?(\\d{3}[A-z]?)$")
+var primaryLocationRegex *regexp.Regexp = regexp.MustCompile(`^(\\w+)\\s+(\\d+\\.\\d{3}[A-z]?)$`)
+var fallbackLocationRegex *regexp.Regexp = regexp.MustCompile(`^([A-z]+)(\\d+)\\.?(\\d{3}[A-z]?)$`)
 
 func parseLocation(text string) schema.Location {
 	var building string
@@ -118,7 +119,7 @@ func scrapeProfessorLinks() []string {
 					for _, node := range nodes {
 						href, hasHref := node.Attribute("href")
 						if !hasHref {
-							return errors.New("Professor card was missing an href!")
+							return errors.New("professor card was missing an href")
 						}
 						professorLinks = append(professorLinks, href)
 					}
@@ -183,7 +184,7 @@ func ScrapeProfiles(outDir string) {
 					var hasSrc bool
 					imageUri, hasSrc = attributes["src"]
 					if !hasSrc {
-						return errors.New("No src found for imageUri!")
+						return errors.New("no src found for imageUri")
 					}
 				}
 				return err
@@ -198,7 +199,7 @@ func ScrapeProfiles(outDir string) {
 						var hasStyle bool
 						imageUri, hasStyle = attributes["style"]
 						if !hasStyle {
-							return errors.New("No style found for imageUri!")
+							return errors.New("no style found for imageUri")
 						}
 						imageUri = imageUri[23 : len(imageUri)-3]
 					}
@@ -255,6 +256,7 @@ func ScrapeProfiles(outDir string) {
 					var tempText string
 					err := chromedp.Text("div.contact_info > div", &tempText).Do(ctx)
 					texts = strings.Split(tempText, "\n")
+					fmt.Println(tempText)
 					return err
 				},
 			),
@@ -266,6 +268,32 @@ func ScrapeProfiles(outDir string) {
 		fmt.Printf("Parsing list...\n")
 		phoneNumber, office := parseList(texts)
 		fmt.Printf("Parsed list! #: %s, Office: %v\n\n", phoneNumber, office)
+
+		//Get the Tags
+		var tags map[string]string = map[string]string{}
+		fmt.Printf("Scraping tags...\n")
+		_, err = chromedp.RunResponse(chromedpCtx,
+			chromedp.Navigate(link),
+			chromedp.QueryAfter(".tags-badge",
+				func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
+					for _, node := range nodes {
+						tempText := getNodeText(node)
+						href, hasHref := node.Attribute("href")
+						if !hasHref {
+							return errors.New("professor card was missing an href")
+						}
+						tags[tempText] = href
+					}
+					return nil
+				}, chromedp.AtLeast(0),
+			),
+		)
+
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Printf("Parsed tags! #: %s\n", tags)
 
 		professors = append(professors, schema.Professor{
 			Id:           schema.IdWrapper{Id: primitive.NewObjectID()},
@@ -279,6 +307,7 @@ func ScrapeProfiles(outDir string) {
 			Image_uri:    imageUri,
 			Office_hours: []schema.Meeting{},
 			Sections:     []schema.IdWrapper{},
+			Tags:         tags,
 		})
 
 		fmt.Printf("Scraped profile for %s %s!\n\n", firstName, lastName)
