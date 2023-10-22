@@ -12,6 +12,7 @@ import (
 
 	"github.com/UTDNebula/nebula-api/schema"
 	"github.com/chromedp/cdproto/cdp"
+	"github.com/chromedp/cdproto/dom"
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -271,7 +272,8 @@ func ScrapeProfiles(outDir string) {
 
 		//Get the Tags
 		var tags map[string]string = map[string]string{}
-		fmt.Printf("Scraping tags...\n")
+		var educations [][]string = [][]string{}
+		fmt.Printf("Scraping tags and Educations...\n")
 		_, err = chromedp.RunResponse(chromedpCtx,
 			chromedp.Navigate(link),
 			chromedp.QueryAfter(".tags-badge",
@@ -287,13 +289,39 @@ func ScrapeProfiles(outDir string) {
 					return nil
 				}, chromedp.AtLeast(0),
 			),
+			chromedp.QueryAfter("#preparation>div",
+				func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
+					for _, node := range nodes {
+						//This successfully gets to the correct divs,
+						//however major workarounds are required because there is text not within any node
+						element, err := dom.GetOuterHTML().WithNodeID(node.NodeID).Do(ctx)
+
+						if err != nil {
+							return err
+						}
+
+						regexSplitter := regexp.MustCompile(`\s?<[\w+" "|=]*>\s?|\s?<\/[\w]*>\s?|[\s]{2,}|\t|\s?-\s?`)
+						out := []string{}
+
+						for _, val := range regexSplitter.Split(element, -1) {
+							if val != "" {
+								out = append(out, val)
+							}
+						}
+
+						educations = append(educations, out)
+					}
+					return nil
+				}, chromedp.AtLeast(0),
+			),
 		)
 
 		if err != nil {
 			panic(err)
 		}
 
-		fmt.Printf("Parsed tags! #: %s\n", tags)
+		fmt.Printf("Scraped tags! #: %s\n", tags)
+		fmt.Printf("Scraped educations! #: %s\n", educations)
 
 		professors = append(professors, schema.Professor{
 			Id:           schema.IdWrapper{Id: primitive.NewObjectID()},
@@ -308,6 +336,7 @@ func ScrapeProfiles(outDir string) {
 			Office_hours: []schema.Meeting{},
 			Sections:     []schema.IdWrapper{},
 			Tags:         tags,
+			Education:    educations,
 		})
 
 		fmt.Printf("Scraped profile for %s %s!\n\n", firstName, lastName)
