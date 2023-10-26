@@ -378,6 +378,7 @@ func ORMatcher(group string, subgroups []string) interface{} {
 func CourseMinGradeMatcher(group string, subgroups []string) interface{} {
 	icn, err := findICN(subgroups[1], subgroups[2])
 	if err != nil {
+		log.Printf("WARN: %s\n", err)
 		return OtherMatcher(group, subgroups)
 	}
 	return schema.NewCourseRequirement(icn, subgroups[3])
@@ -386,6 +387,7 @@ func CourseMinGradeMatcher(group string, subgroups []string) interface{} {
 func CourseMatcher(group string, subgroups []string) interface{} {
 	icn, err := findICN(subgroups[1], subgroups[2])
 	if err != nil {
+		log.Printf("WARN: %s\n", err)
 		return OtherMatcher(group, subgroups)
 	}
 	return schema.NewCourseRequirement(icn, "F")
@@ -430,7 +432,8 @@ func CoreCompletionMatcher(group string, subgroups []string) interface{} {
 func ChoiceMatcher(group string, subgroups []string) interface{} {
 	collectionReq, ok := parseGroup(subgroups[1]).(*schema.CollectionRequirement)
 	if !ok {
-		log.Panicf("ChoiceMatcher wasn't able to parse subgroup '%s' into a CollectionRequirement!", subgroups[1])
+		log.Printf("WARN: ChoiceMatcher wasn't able to parse subgroup '%s' into a CollectionRequirement!", subgroups[1])
+		return OtherMatcher(group, subgroups)
 	}
 	return schema.NewChoiceRequirement(collectionReq)
 }
@@ -489,9 +492,15 @@ func initMatchers() {
 
 		*/
 
-		// "Others", things we need to handle but can't/won't parse
+		// * <YEAR> only
 		Matcher{
 			regexp.MustCompile("(?i).+(?:freshman|sophomores|juniors|seniors)\\s+only$"),
+			OtherMatcher,
+		},
+		
+		// * in any combination of *
+		Matcher {
+			regexp.MustCompile("(?i).+\\s+in\\s+any\\s+combination\\s+of\\s+.+"),
 			OtherMatcher,
 		},
 
@@ -518,6 +527,14 @@ func initMatchers() {
 				return ChoiceMatcher(subgroups[1], subgroups[1:3])
 			}),
 		},
+		
+		// Credit cannot be received for more than one of *: <EXPRESSION>
+		Matcher{
+			regexp.MustCompile("(?i)(Credit\\s+cannot\\s+be\\s+received\\s+for\\s+more\\s+than\\s+one\\s+of.+:(.+))"),
+			SubstitutionMatcher(func(group string, subgroups []string) interface{} {
+				return ChoiceMatcher(subgroups[1], subgroups[1:3])
+			}),
+		},
 
 		// Logical &
 		Matcher{
@@ -527,7 +544,7 @@ func initMatchers() {
 
 		// "<COURSE> with <GRADE> or better"
 		Matcher{
-			regexp.MustCompile("((?i)([A-Z]{2,4})\\s+([0-9V]{4})\\s+with\\s+a(?:\\s+grade\\s+of)?\\s+([ABCDF][+-]?)\\s+or\\s+better)"), // [name, number, min grade]
+			regexp.MustCompile("^\\s+((?i)([A-Z]{2,4})\\s+([0-9V]{4})\\s+with\\s+a(?:\\s+grade)?(\\s+of)?\\s+([ABCDF][+-]?)\\s+or\\s+better)"), // [name, number, min grade]
 			SubstitutionMatcher(func(group string, subgroups []string) interface{} {
 				return CourseMinGradeMatcher(subgroups[1], subgroups[1:5])
 			}),
@@ -541,14 +558,15 @@ func initMatchers() {
 
 		// <COURSE> with a minimum grade of <GRADE>
 		Matcher{
-			regexp.MustCompile("^(?i)([A-Z]{2,4})\\s+([0-9V]{4})\\s+with\\s+a\\s+(?:minimum\\s+)?grade\\s+of\\s+(?:at least\\s+)?([ABCDF][+-]?)$"), // [name, number, min grade]
+			regexp.MustCompile("^(?i)\\s+([A-Z]{2,4})\\s+([0-9V]{4})\\s+with\\s+a\\s+(?:minimum\\s+)?grade\\s+of\\s+(?:at least\\s+)?([ABCDF][+-]?)$"), // [name, number, min grade]
 			CourseMinGradeMatcher,
 		},
+		
 		// A grade of at least <GRADE> in <COURSE>
 		Matcher{
-			regexp.MustCompile("^(?i)A grade of at least(?: a)? ([ABCDF][+-]?) in ([A-Z]{2,4})\\s+([0-9V]{4})$"), // [min grade, name, number]
+			regexp.MustCompile("^(?i)A\\s+grade\\s+of\\s+at\\s+least(?:\\s+a)?\\s+([ABCDF][+-]?)\\s+in\\s+([A-Z]{2,4})\\s+([0-9V]{4})$"), // [min grade, name, number]
 			func(group string, subgroups []string) interface{} {
-				return CourseMinGradeMatcher(group, []string{subgroups[2], subgroups[3], subgroups[1]})
+				return CourseMinGradeMatcher(group, []string{subgroups[0], subgroups[2], subgroups[3], subgroups[1]})
 			},
 		},
 
@@ -617,7 +635,7 @@ func initMatchers() {
 	}
 }
 
-var preOrCoreqRegexp *regexp.Regexp = regexp.MustCompile("(?i)((?:Prerequisites? or corequisites?|Corequisites? or prerequisites?):(.*))")
+var preOrCoreqRegexp *regexp.Regexp = regexp.MustCompile("(?i)((?:Prerequisites?\\s+or\\s+corequisites?|Corequisites?\\s+or\\s+prerequisites?):(.*))")
 var prereqRegexp *regexp.Regexp = regexp.MustCompile("(?i)(Prerequisites?:(.*))")
 var coreqRegexp *regexp.Regexp = regexp.MustCompile("(?i)(Corequisites?:(.*))")
 
@@ -629,16 +647,18 @@ func getReqParser(course *schema.Course, hasEnrollmentReqs bool, enrollmentReqs 
 	return func() {
 		// Pointer array to course requisite properties must be in same order as reqRegexes above
 		courseReqs := [3]**schema.CollectionRequirement{&course.Co_or_pre_requisites, &course.Prerequisites, &course.Corequisites}
+		// The actual text to check for requisites
+		var checkText string
+		// Extract req text from the enrollment req info if it exists, otherwise try using the description
+		if hasEnrollmentReqs {
+			course.Enrollment_reqs = enrollmentReqs
+			checkText = enrollmentReqs
+		} else {
+			checkText = course.Description
+		}
 		// Iterate over and parse each type of requisite, populating the course's relevant requisite property
 		for index, reqPtr := range courseReqs {
-			// Extract req text from the enrollment req info if it exists, otherwise try using the description
-			var reqMatches []string
-			if hasEnrollmentReqs {
-				course.Enrollment_reqs = enrollmentReqs
-				reqMatches = reqRegexes[index].FindStringSubmatch(enrollmentReqs)
-			} else {
-				reqMatches = reqRegexes[index].FindStringSubmatch(course.Description)
-			}
+			reqMatches := reqRegexes[index].FindStringSubmatch(checkText)
 			if reqMatches != nil {
 				// Actual useful text is the inner match, index 2
 				reqText := reqMatches[2]
@@ -649,6 +669,8 @@ func getReqParser(course *schema.Course, hasEnrollmentReqs bool, enrollmentReqs 
 						reqText = strings.Replace(reqText, matches[1], "", -1)
 					}
 				}
+				// Erase current match from checkText to prevent erroneous duplicated Reqs
+				checkText = strings.Replace(checkText, reqMatches[1], "", -1)
 				// Split reqText into chunks based on period-space delimiters
 				textChunks := strings.Split(trimWhitespace(reqText), ". ")
 				parsedChunks := make([]interface{}, 0, len(textChunks))
