@@ -2,7 +2,6 @@ package parser
 
 import (
 	"encoding/csv"
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -16,7 +15,7 @@ func loadGrades(csvDir string) map[string]map[string][]int {
 	gradeMap := make(map[string]map[string][]int)
 
 	if csvDir == "" {
-		fmt.Printf("No grade data CSV directory specified. Grade data will not be included.\n")
+		log.Print("No grade data CSV directory specified. Grade data will not be included.\n")
 		return gradeMap
 	}
 
@@ -46,17 +45,17 @@ func loadGrades(csvDir string) map[string]map[string][]int {
 		defer csvFile.Close()
 
 		// Create logs directory
-		if _, err := os.Stat("logs"); err != nil {
-			os.Mkdir("logs", os.ModePerm)
+		if _, err := os.Stat("../grade-data-logs"); err != nil {
+			os.Mkdir("../grade-data-logs", os.ModePerm)
 		}
 
 		// Create log file [name of csv].log in logs directory
 		basePath := filepath.Base(csvPath)
 		csvName := strings.TrimSuffix(basePath, filepath.Ext(basePath))
-		logFile, err := os.Create("logs/" + csvName + ".log")
+		logFile, err := os.Create("../grade-data-logs/" + csvName + ".log")
 
 		if err != nil {
-			panic(errors.New("Could not create CSV log file."))
+			log.Panic("Could not create CSV log file.")
 		}
 		defer logFile.Close()
 

@@ -42,7 +42,7 @@ var (
 func ScrapeOrganizations(outdir string) {
 	log.Println("Scraping SOC ...")
 	if err := godotenv.Load(); err != nil {
-		panic(errors.New("error loading .env file"))
+		log.Panic("error loading .env file")
 	}
 
 	opts := append(chromedp.DefaultExecAllocatorOptions[:], chromedp.Flag("headless", false))

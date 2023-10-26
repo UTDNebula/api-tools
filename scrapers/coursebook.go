@@ -5,24 +5,26 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/chromedp/cdproto/network"
-	"github.com/chromedp/chromedp"
-	"github.com/joho/godotenv"
+	"log"
 	"net/http"
 	"os"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/chromedp/cdproto/network"
+	"github.com/chromedp/chromedp"
+	"github.com/joho/godotenv"
 )
 
 var chromedpCtx context.Context
 
 func initChromeDp() context.CancelFunc {
-	fmt.Printf("Initializing chromedp...\n")
+	log.Printf("Initializing chromedp...\n")
 	var cancelFnc context.CancelFunc
 	//allocCtx, _ := chromedp.NewExecAllocator(context.Background(), []chromedp.ExecAllocatorOption{}...)
 	chromedpCtx, cancelFnc = chromedp.NewContext(context.Background())
-	fmt.Printf("Initialized chromedp!\n")
+	log.Printf("Initialized chromedp!\n")
 	return cancelFnc
 }
 
@@ -30,14 +32,14 @@ func initChromeDp() context.CancelFunc {
 func refreshToken() map[string][]string {
 	netID := os.Getenv("LOGIN_NETID")
 	if netID == "" {
-		panic(errors.New("LOGIN_NETID is missing from .env!"))
+		log.Panic("LOGIN_NETID is missing from .env!")
 	}
 	password := os.Getenv("LOGIN_PASSWORD")
 	if password == "" {
-		panic(errors.New("LOGIN_PASSWORD is missing from .env!"))
+		log.Panic("LOGIN_PASSWORD is missing from .env!")
 	}
 
-	fmt.Printf("Getting new token...\n")
+	log.Printf("Getting new token...\n")
 	_, err := chromedp.RunResponse(chromedpCtx,
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			err := network.ClearBrowserCookies().Do(ctx)
@@ -67,7 +69,7 @@ func refreshToken() map[string][]string {
 					cookie = []string{fmt.Sprintf("%s=%s", cookies[i].Name, cookies[i].Value)}
 				}
 			}
-			fmt.Printf("Got new token: %s\n", cookie)
+			log.Printf("Got new token: %s\n", cookie)
 			return err
 		}),
 	)
@@ -90,7 +92,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 
 	// Load env vars
 	if err := godotenv.Load(); err != nil {
-		panic(errors.New("Error loading .env file"))
+		log.Panic("Error loading .env file")
 	}
 
 	// Start chromedp
@@ -107,7 +109,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 			}
 		}
 		if startPrefixIndex == 0 {
-			panic(errors.New("Failed to find provided course prefix! Remember, the format is cp_<PREFIX>!"))
+			log.Panic("Failed to find provided course prefix! Remember, the format is cp_<PREFIX>!")
 		}
 	}
 
@@ -148,7 +150,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 		// String builder to store accumulated course HTML data for both class levels
 		courseBuilder := strings.Builder{}
 
-		fmt.Printf("Finding sections for course prefix %s...\n", coursePrefix)
+		log.Printf("Finding sections for course prefix %s...\n", coursePrefix)
 
 		// Get courses for term and prefix, split by grad and undergrad to avoid 300 section cap
 		for _, clevel := range []string{"clevel_u", "clevel_g"} {
@@ -163,7 +165,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 				panic(err)
 			}
 			if res.StatusCode != 200 {
-				panic(errors.New(fmt.Sprintf("ERROR: Section find failed! Status was: %s\nIf the status is 404, you've likely been IP ratelimited!", res.Status)))
+				log.Panicf("ERROR: Section find failed! Status was: %s\nIf the status is 404, you've likely been IP ratelimited!", res.Status)
 			}
 			buf := bytes.Buffer{}
 			buf.ReadFrom(res.Body)
@@ -176,7 +178,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 		for _, matchSet := range smatches {
 			sectionIDs = append(sectionIDs, matchSet[1])
 		}
-		fmt.Printf("Found %d sections for course prefix %s\n", len(sectionIDs), coursePrefix)
+		log.Printf("Found %d sections for course prefix %s\n", len(sectionIDs), coursePrefix)
 
 		// Get HTML data for all section IDs
 		sectionsInCoursePrefix := 0
@@ -189,7 +191,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 				panic(err)
 			}
 			if res.StatusCode != 200 {
-				panic(errors.New(fmt.Sprintf("ERROR: Section id lookup for id %s failed! Status was: %s\nIf the status is 404, you've likely been IP ratelimited!", id, res.Status)))
+				log.Panicf("ERROR: Section id lookup for id %s failed! Status was: %s\nIf the status is 404, you've likely been IP ratelimited!", id, res.Status)
 			}
 			fptr, err := os.Create(fmt.Sprintf("%s/%s.html", courseDir, id))
 			if err != nil {
@@ -201,7 +203,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 				panic(err)
 			}
 			fptr.Close()
-			fmt.Printf("Got section: %s\n", id)
+			log.Printf("Got section: %s\n", id)
 			if sectionIndex%60 == 0 && sectionIndex != 0 {
 				// Ratelimit? What ratelimit?
 				coursebookHeaders = refreshToken()
@@ -210,10 +212,10 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 			}
 			sectionsInCoursePrefix++
 		}
-		fmt.Printf("\nFinished scraping course prefix %s. Got %d sections.\n", coursePrefix, sectionsInCoursePrefix)
+		log.Printf("\nFinished scraping course prefix %s. Got %d sections.\n", coursePrefix, sectionsInCoursePrefix)
 		totalSections += sectionsInCoursePrefix
 	}
-	fmt.Printf("\nDone scraping term! Scraped a total of %d sections.", totalSections)
+	log.Printf("\nDone scraping term! Scraped a total of %d sections.", totalSections)
 }
 
 var coursePrefixes = []string{

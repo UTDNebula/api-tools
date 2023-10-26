@@ -1,14 +1,34 @@
 package main
 
 import (
-	"errors"
 	"flag"
+	"fmt"
+	"log"
+	"os"
+	"time"
+
 	"github.com/UTDNebula/api-tools/parser"
 	"github.com/UTDNebula/api-tools/scrapers"
 	"github.com/UTDNebula/api-tools/uploader"
 )
 
 func main() {
+
+	if _, err := os.Stat("../logs"); err != nil {
+		os.Mkdir("../logs", os.ModePerm)
+	}
+
+	dateTime := time.Now()
+	year, month, day := dateTime.Date()
+	hour, min, sec := dateTime.Clock()
+	logFile, err := os.Create(fmt.Sprintf("../logs/%d-%d-%dT%d-%d-%d.log", month, day, year, hour, min, sec))
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer logFile.Close()
+	log.SetOutput(logFile)
 
 	// I/O Flags
 	inDir := flag.String("i", "./data", "The directory to read data from.")
@@ -29,7 +49,7 @@ func main() {
 
 	// Flags for parsing
 	parse := flag.Bool("parse", false, "Puts the tool into parsing mode. Use the -i flag to specify the input directory for scraped data.")
-	csvDir := flag.String("csv", "./grade-data", "The path to the directory of CSV files containing grade data for the parser to use. No grade distributions will be included if this flag is exluded.")
+	csvDir := flag.String("csv", "../grade-data", "The path to the directory of CSV files containing grade data for the parser to use. No grade distributions will be included if this flag is exluded.")
 	skipValidation := flag.Bool("skipv", false, "Signifies that the post-parsing validation should be skipped. Be careful with this!")
 
 	// Flags for uploading data
@@ -45,13 +65,13 @@ func main() {
 			scrapers.ScrapeProfiles(*outDir)
 		case *scrapeCoursebook:
 			if *term == "" {
-				panic(errors.New("No term specified for coursebook scraping! Use -term to specify."))
+				log.Panic("No term specified for coursebook scraping! Use -term to specify.")
 			}
 			scrapers.ScrapeCoursebook(*term, *startPrefix, *outDir)
 		case *scrapeOrganizations:
 			scrapers.ScrapeOrganizations(*outDir)
 		default:
-			panic(errors.New("One of the -coursebook or -profiles flags must be set for scraping!"))
+			log.Panic("One of the -coursebook or -profiles flags must be set for scraping!")
 		}
 	case *parse:
 		parser.Parse(*inDir, *outDir, *csvDir, *skipValidation)
