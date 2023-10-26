@@ -14,14 +14,14 @@ import (
 
 func main() {
 
-	if _, err := os.Stat("../logs"); err != nil {
-		os.Mkdir("../logs", os.ModePerm)
+	if _, err := os.Stat("./logs"); err != nil {
+		os.Mkdir("./logs", os.ModePerm)
 	}
 
 	dateTime := time.Now()
 	year, month, day := dateTime.Date()
 	hour, min, sec := dateTime.Clock()
-	logFile, err := os.Create(fmt.Sprintf("../logs/%d-%d-%dT%d-%d-%d.log", month, day, year, hour, min, sec))
+	logFile, err := os.Create(fmt.Sprintf("./logs/%d-%d-%dT%d-%d-%d.log", month, day, year, hour, min, sec))
 
 	if err != nil {
 		log.Fatal(err)
@@ -49,7 +49,7 @@ func main() {
 
 	// Flags for parsing
 	parse := flag.Bool("parse", false, "Puts the tool into parsing mode. Use the -i flag to specify the input directory for scraped data.")
-	csvDir := flag.String("csv", "../grade-data", "The path to the directory of CSV files containing grade data for the parser to use. No grade distributions will be included if this flag is exluded.")
+	csvDir := flag.String("csv", "./grade-data", "The path to the directory of CSV files containing grade data for the parser to use. No grade distributions will be included if this flag is exluded.")
 	skipValidation := flag.Bool("skipv", false, "Signifies that the post-parsing validation should be skipped. Be careful with this!")
 
 	// Flags for uploading data
