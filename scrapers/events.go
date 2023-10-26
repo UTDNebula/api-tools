@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"time"
 
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/runtime"
@@ -75,17 +76,22 @@ func ScrapeEvents(outDir string) {
 		fmt.Printf("Navigated to page %s\n", summary)
 
 		// Grab date/time of the event
-		var dateTimeStart string = ""
-		var dateTimeEnd string = ""
+		var dateTimeStart time.Time
+		var dateTimeEnd time.Time
 		err = chromedp.Run(chromedpCtx,
 			chromedp.QueryAfter(".dtstart",
 				func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
 					if !(len(nodes) == 0) {
-						time, hasTime := nodes[0].Attribute("title")
+						timeStamp, hasTime := nodes[0].Attribute("title")
 						if !hasTime {
 							return errors.New("event does not have start time")
 						}
-						dateTimeStart = time
+						formattedTime, err := time.Parse(time.RFC3339, timeStamp)
+						if err != nil {
+							return err
+						}
+
+						dateTimeStart = formattedTime
 					}
 					return nil
 				}, chromedp.AtLeast(0),
@@ -93,11 +99,16 @@ func ScrapeEvents(outDir string) {
 			chromedp.QueryAfter(".dtend",
 				func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
 					if !(len(nodes) == 0) {
-						time, hasTime := nodes[0].Attribute("title")
+						timeStamp, hasTime := nodes[0].Attribute("title")
 						if !hasTime {
-							return errors.New("event does not have end time")
+							return errors.New("event does not have start time")
 						}
-						dateTimeEnd = time
+						formattedTime, err := time.Parse(time.RFC3339, timeStamp)
+						if err != nil {
+							return err
+						}
+
+						dateTimeStart = formattedTime
 					}
 					return nil
 				}, chromedp.AtLeast(0),
@@ -305,6 +316,16 @@ func ScrapeEvents(outDir string) {
 			ContactEmail:       contactInformationEmail,
 			ContactPhoneNumber: contactInformationPhone,
 		})
+
+		// Write event data to output file
+		fptr, err := os.Create(fmt.Sprintf("%s/Events.json", outDir))
+		if err != nil {
+			panic(err)
+		}
+		encoder := json.NewEncoder(fptr)
+		encoder.SetIndent("", "\t")
+		encoder.Encode(events)
+		fptr.Close()
 	}
 
 	// Write event data to output file
@@ -323,8 +344,8 @@ type Event struct {
 	Id                 primitive.ObjectID `bson:"_id" json:"_id"`
 	Summary            string             `bson:"summary" json:"summary"`
 	Location           string             `bson:"location" json:"location"`
-	StartTime          string             `bson:"start_time" json:"start_time"`
-	EndTime            string             `bson:"end_time" json:"end_time"`
+	StartTime          time.Time          `bson:"start_time" json:"start_time"`
+	EndTime            time.Time          `bson:"end_time" json:"end_time"`
 	Description        string             `bson:"description" json:"description"`
 	EventType          []string           `bson:"event_type" json:"event_type"`
 	TargetAudience     []string           `bson:"target_audience" json:"target_audience"`
