@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"regexp"
 
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/runtime"
@@ -15,7 +16,10 @@ import (
 
 const CALENDAR_LINK string = "https://calendar.utdallas.edu/calendar"
 
+var trailingSpaceRegex *regexp.Regexp = regexp.MustCompile(`(\s{2,}?\s{2,})|(\n)`)
+
 func ScrapeEvents(outDir string) {
+
 	cancel := initChromeDp()
 	defer cancel()
 
@@ -58,7 +62,7 @@ func ScrapeEvents(outDir string) {
 			chromedp.QueryAfter(".summary",
 				func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
 					if !(len(nodes) == 0) {
-						summary = getNodeText(nodes[0])
+						summary = trailingSpaceRegex.ReplaceAllString(getNodeText(nodes[0]), "")
 					}
 					return nil
 				}, chromedp.AtLeast(0),
@@ -285,7 +289,7 @@ func ScrapeEvents(outDir string) {
 		fmt.Printf("Scraped contact phone info: %s\n", contactInformationPhone)
 
 		events = append(events, Event{
-			//Id:                 schema.IdWrapper{Id: primitive.NewObjectID()},
+			Id:                 primitive.NewObjectID(),
 			Summary:            summary,
 			Location:           location,
 			StartTime:          dateTimeStart,
@@ -301,17 +305,17 @@ func ScrapeEvents(outDir string) {
 			ContactEmail:       contactInformationEmail,
 			ContactPhoneNumber: contactInformationPhone,
 		})
-
-		// Write event data to output file
-		fptr, err := os.Create(fmt.Sprintf("%s/Events.json", outDir))
-		if err != nil {
-			panic(err)
-		}
-		encoder := json.NewEncoder(fptr)
-		encoder.SetIndent("", "\t")
-		encoder.Encode(events)
-		fptr.Close()
 	}
+
+	// Write event data to output file
+	fptr, err := os.Create(fmt.Sprintf("%s/Events.json", outDir))
+	if err != nil {
+		panic(err)
+	}
+	encoder := json.NewEncoder(fptr)
+	encoder.SetIndent("", "\t")
+	encoder.Encode(events)
+	fptr.Close()
 }
 
 //Temporary until chanes to nebula-api schema get merged
