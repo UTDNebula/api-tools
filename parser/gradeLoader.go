@@ -45,14 +45,14 @@ func loadGrades(csvDir string) map[string]map[string][]int {
 		defer csvFile.Close()
 
 		// Create logs directory
-		if _, err := os.Stat("./grade-data-logs"); err != nil {
-			os.Mkdir("./grade-data-logs", os.ModePerm)
+		if _, err := os.Stat("./logs/grades"); err != nil {
+			os.Mkdir("./logs/grades", os.ModePerm)
 		}
 
 		// Create log file [name of csv].log in logs directory
 		basePath := filepath.Base(csvPath)
 		csvName := strings.TrimSuffix(basePath, filepath.Ext(basePath))
-		logFile, err := os.Create("./grade-data-logs/" + csvName + ".log")
+		logFile, err := os.Create("./logs/grades/" + csvName + ".log")
 
 		if err != nil {
 			log.Panic("Could not create CSV log file.")
