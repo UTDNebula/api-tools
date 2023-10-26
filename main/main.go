@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"flag"
+
 	"github.com/UTDNebula/api-tools/parser"
 	"github.com/UTDNebula/api-tools/scrapers"
 	"github.com/UTDNebula/api-tools/uploader"
@@ -26,6 +27,8 @@ func main() {
 	scrapeProfiles := flag.Bool("profiles", false, "Alongside -scrape, signifies that professor profiles should be scraped.")
 	// Flag for soc scraping
 	scrapeOrganizations := flag.Bool("organizations", false, "Alongside -scrape, signifies that SOC organizations should be scraped.")
+	// Flag for event scraping
+	scrapeEvents := flag.Bool("events", false, "Alongside -scrape, signifies that events should be scraped.")
 
 	// Flags for parsing
 	parse := flag.Bool("parse", false, "Puts the tool into parsing mode. Use the -i flag to specify the input directory for scraped data.")
@@ -45,13 +48,15 @@ func main() {
 			scrapers.ScrapeProfiles(*outDir)
 		case *scrapeCoursebook:
 			if *term == "" {
-				panic(errors.New("No term specified for coursebook scraping! Use -term to specify."))
+				panic(errors.New("no term specified for coursebook scraping! Use -term to specify"))
 			}
 			scrapers.ScrapeCoursebook(*term, *startPrefix, *outDir)
 		case *scrapeOrganizations:
 			scrapers.ScrapeOrganizations(*outDir)
+		case *scrapeEvents:
+			scrapers.ScrapeEvents(*outDir)
 		default:
-			panic(errors.New("One of the -coursebook or -profiles flags must be set for scraping!"))
+			panic(errors.New("one of the -coursebook or -profiles flags must be set for scraping"))
 		}
 	case *parse:
 		parser.Parse(*inDir, *outDir, *csvDir, *skipValidation)
