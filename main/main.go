@@ -14,10 +14,44 @@ import (
 
 func main() {
 
-	if _, err := os.Stat("./logs"); err != nil {
-		os.Mkdir("./logs", os.ModePerm)
+	// Setup flags
+	
+	// I/O Flags
+	inDir := flag.String("i", "./data", "The directory to read data from. Defaults to ./data.")
+	outDir := flag.String("o", "./data", "The directory to write resulting data to. Defaults to ./data.")
+	logDir := flag.String("l", "./logs", "The directory to write logs to. Defaults to ./logs.")
+
+	// Flags for all scraping
+	scrape := flag.Bool("scrape", false, "Puts the tool into scraping mode.")
+
+	// Flags for coursebook scraping
+	scrapeCoursebook := flag.Bool("coursebook", false, "Alongside -scrape, signifies that coursebook should be scraped.")
+	term := flag.String("term", "", "Alongside -coursebook, specifies the term to scrape, i.e. 23S")
+	startPrefix := flag.String("startprefix", "", "Alongside -coursebook, specifies the course prefix to start scraping from, i.e. cp_span")
+
+	// Flag for profile scraping
+	scrapeProfiles := flag.Bool("profiles", false, "Alongside -scrape, signifies that professor profiles should be scraped.")
+	// Flag for soc scraping
+	scrapeOrganizations := flag.Bool("organizations", false, "Alongside -scrape, signifies that SOC organizations should be scraped.")
+
+	// Flags for parsing
+	parse := flag.Bool("parse", false, "Puts the tool into parsing mode.")
+	csvDir := flag.String("csv", "./grade-data", "Alongside -parse, specifies the path to the directory of CSV files containing grade data.")
+	skipValidation := flag.Bool("skipv", false, "Alongside -parse, signifies that the post-parsing validation should be skipped. Be careful with this!")
+
+	// Flags for uploading data
+	upload := flag.Bool("upload", false, "Puts the tool into upload mode.")
+	replace := flag.Bool("replace", false, "Alongside -upload, specifies that uploaded data should replace existing data rather than being merged.")
+
+	// Parse flags
+	flag.Parse()
+
+	// Make log dir if it doesn't already exist
+	if _, err := os.Stat(*logDir); err != nil {
+		os.Mkdir(*logDir, os.ModePerm)
 	}
 
+	// Make new log file for this session using timestamp
 	dateTime := time.Now()
 	year, month, day := dateTime.Date()
 	hour, min, sec := dateTime.Clock()
@@ -30,34 +64,7 @@ func main() {
 	defer logFile.Close()
 	log.SetOutput(logFile)
 
-	// I/O Flags
-	inDir := flag.String("i", "./data", "The directory to read data from.")
-	outDir := flag.String("o", "./data", "The directory to write resulting data to.")
-
-	// Flags for all scraping
-	scrape := flag.Bool("scrape", false, "Puts the tool into scraping mode. Use flags -coursebook and -profiles for specifying what to scrape.")
-
-	// Flags for coursebook scraping
-	scrapeCoursebook := flag.Bool("coursebook", false, "Alongside -scrape, signifies that coursebook should be scraped. Use with -term and -startprefix.")
-	term := flag.String("term", "", "For coursebook scraping, the term to scrape, i.e. 23S")
-	startPrefix := flag.String("startprefix", "", "For coursebook scraping, the course prefix to start scraping from, i.e. cp_span")
-
-	// Flag for profile scraping
-	scrapeProfiles := flag.Bool("profiles", false, "Alongside -scrape, signifies that professor profiles should be scraped.")
-	// Flag for soc scraping
-	scrapeOrganizations := flag.Bool("organizations", false, "Alongside -scrape, signifies that SOC organizations should be scraped.")
-
-	// Flags for parsing
-	parse := flag.Bool("parse", false, "Puts the tool into parsing mode. Use the -i flag to specify the input directory for scraped data.")
-	csvDir := flag.String("csv", "./grade-data", "The path to the directory of CSV files containing grade data for the parser to use. No grade distributions will be included if this flag is exluded.")
-	skipValidation := flag.Bool("skipv", false, "Signifies that the post-parsing validation should be skipped. Be careful with this!")
-
-	// Flags for uploading data
-	upload := flag.Bool("upload", false, "Puts the tool into upload mode. Used alongside the -i and -replace flags.")
-	replace := flag.Bool("replace", false, "Specifies that data should be uploaded to the database by replacing any existing data, used alongside -upload.")
-
-	flag.Parse()
-
+	// Perform actions based on flags
 	switch {
 	case *scrape:
 		switch {
