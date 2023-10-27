@@ -274,9 +274,8 @@ func ScrapeProfiles(outDir string) {
 		//Get the Tags
 		var tags map[string]string = map[string]string{}
 		var educations [][]string = [][]string{}
-		fmt.Printf("Scraping tags and Educations...\n")
-		_, err = chromedp.RunResponse(chromedpCtx,
-			chromedp.Navigate(link),
+		log.Printf("Scraping tags and Educations...\n")
+		err = chromedp.Run(chromedpCtx,
 			chromedp.QueryAfter(".tags-badge",
 				func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
 					for _, node := range nodes {
@@ -290,6 +289,13 @@ func ScrapeProfiles(outDir string) {
 					return nil
 				}, chromedp.AtLeast(0),
 			),
+		)
+
+		if err != nil {
+			panic(err)
+		}
+
+		err = chromedp.Run(chromedpCtx,
 			chromedp.QueryAfter("#preparation>div",
 				func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
 					for _, node := range nodes {
@@ -321,8 +327,8 @@ func ScrapeProfiles(outDir string) {
 			panic(err)
 		}
 
-		fmt.Printf("Scraped tags! #: %s\n", tags)
-		fmt.Printf("Scraped educations! #: %s\n", educations)
+		log.Printf("Scraped tags! #: %s\n", tags)
+		log.Printf("Scraped educations! #: %s\n", educations)
 
 		professors = append(professors, schema.Professor{
 			Id:           schema.IdWrapper{Id: primitive.NewObjectID()},
