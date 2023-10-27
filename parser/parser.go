@@ -4,14 +4,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/PuerkitoBio/goquery"
-	"github.com/UTDNebula/nebula-api/schema"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"log"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/PuerkitoBio/goquery"
+	"github.com/UTDNebula/nebula-api/schema"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // Main dictionaries for mapping unique keys to the actual data
@@ -43,7 +45,7 @@ func Parse(inDir string, outDir string, csvPath string, skipValidation bool) {
 	// Load grade data from csv in advance
 	GradeMap = loadGrades(csvPath)
 	if len(GradeMap) != 0 {
-		fmt.Printf("Loaded grade distributions for %d semesters.\n\n", len(GradeMap))
+		log.Printf("Loaded grade distributions for %d semesters.\n\n", len(GradeMap))
 	}
 
 	// Try to load any existing profile data
@@ -51,27 +53,27 @@ func Parse(inDir string, outDir string, csvPath string, skipValidation bool) {
 
 	// Find paths of all scraped data
 	paths := getAllSectionFilepaths(inDir)
-	fmt.Printf("Parsing and validating %d files...\n", len(paths))
+	log.Printf("Parsing and validating %d files...\n", len(paths))
 
 	// Parse all data
 	for _, path := range paths {
 		parse(path)
 	}
 
-	fmt.Printf("\nParsing complete. Created %d courses, %d sections, and %d professors.\n", len(Courses), len(Sections), len(Professors))
+	log.Printf("\nParsing complete. Created %d courses, %d sections, and %d professors.\n", len(Courses), len(Sections), len(Professors))
 
-	fmt.Printf("\nParsing course requisites...\n")
+	log.Print("\nParsing course requisites...\n")
 	// Initialize matchers at runtime for requisite parsing; this is necessary to avoid circular reference errors with compile-time initialization
 	initMatchers()
 	for _, course := range Courses {
 		ReqParsers[course.Id]()
 	}
-	fmt.Printf("Finished parsing course requisites!\n")
+	log.Print("Finished parsing course requisites!\n")
 
 	if !skipValidation {
-		fmt.Printf("\nStarting validation stage...\n")
+		log.Print("\nStarting validation stage...\n")
 		validate()
-		fmt.Printf("\nValidation complete!\n")
+		log.Print("\nValidation complete!\n")
 	}
 
 	// Make outDir if it doesn't already exist
@@ -112,13 +114,13 @@ func Parse(inDir string, outDir string, csvPath string, skipValidation bool) {
 func loadProfiles(inDir string) {
 	fptr, err := os.Open(fmt.Sprintf("%s/Profiles.json", inDir))
 	if err != nil {
-		fmt.Printf("Couldn't find/open Profiles.json in the input directory. Skipping profile load.\n")
+		log.Print("Couldn't find/open Profiles.json in the input directory. Skipping profile load.\n")
 		return
 	}
 
 	decoder := json.NewDecoder(fptr)
 
-	fmt.Printf("Beginning profile load.\n")
+	log.Print("Beginning profile load.\n")
 
 	// Read open bracket
 	_, err = decoder.Token()
@@ -146,13 +148,13 @@ func loadProfiles(inDir string) {
 		panic(err)
 	}
 
-	fmt.Printf("Loaded %d profiles!\n\n", profileCount)
+	log.Printf("Loaded %d profiles!\n\n", profileCount)
 	fptr.Close()
 }
 
 // Internal parse function
 func parse(path string) {
-	fmt.Printf("Parsing %s...\n", path)
+	log.Printf("Parsing %s...\n", path)
 
 	// Open data file for reading
 	fptr, err := os.Open(path)
@@ -215,7 +217,7 @@ func parse(path string) {
 	// Try to create the course and section based on collected info
 	courseRef := addCourse(courseNum, session, rowInfo, classInfo)
 	addSection(courseRef, classNum, syllabusURI, session, rowInfo, classInfo)
-	fmt.Printf("Parsed!\n")
+	log.Print("Parsed!\n")
 }
 
 var coursePrefixRexp *regexp.Regexp = regexp.MustCompile("^([A-Z]{2,4})([0-9V]{4})")
@@ -376,6 +378,7 @@ func ORMatcher(group string, subgroups []string) interface{} {
 func CourseMinGradeMatcher(group string, subgroups []string) interface{} {
 	icn, err := findICN(subgroups[1], subgroups[2])
 	if err != nil {
+		log.Printf("WARN: %s\n", err)
 		return OtherMatcher(group, subgroups)
 	}
 	return schema.NewCourseRequirement(icn, subgroups[3])
@@ -384,6 +387,7 @@ func CourseMinGradeMatcher(group string, subgroups []string) interface{} {
 func CourseMatcher(group string, subgroups []string) interface{} {
 	icn, err := findICN(subgroups[1], subgroups[2])
 	if err != nil {
+		log.Printf("WARN: %s\n", err)
 		return OtherMatcher(group, subgroups)
 	}
 	return schema.NewCourseRequirement(icn, "F")
@@ -428,7 +432,8 @@ func CoreCompletionMatcher(group string, subgroups []string) interface{} {
 func ChoiceMatcher(group string, subgroups []string) interface{} {
 	collectionReq, ok := parseGroup(subgroups[1]).(*schema.CollectionRequirement)
 	if !ok {
-		panic(errors.New(fmt.Sprintf("ChoiceMatcher wasn't able to parse subgroup '%s' into a CollectionRequirement!", subgroups[1])))
+		log.Printf("WARN: ChoiceMatcher wasn't able to parse subgroup '%s' into a CollectionRequirement!", subgroups[1])
+		return OtherMatcher(group, subgroups)
 	}
 	return schema.NewChoiceRequirement(collectionReq)
 }
@@ -481,15 +486,23 @@ func initMatchers() {
 
 		/* TO IMPLEMENT:
 
-		CS or SE Major/Minor
+		X or Y or ... Z Major/Minor
 
 		SUBJECT NUMBER, SUBJECT NUMBER, ..., or SUBJECT NUMBER
+		
+		... probably many more
 
 		*/
 
-		// "Others", things we need to handle but can't/won't parse
+		// * <YEAR> only
 		Matcher{
 			regexp.MustCompile("(?i).+(?:freshman|sophomores|juniors|seniors)\\s+only$"),
+			OtherMatcher,
+		},
+		
+		// * in any combination of *
+		Matcher {
+			regexp.MustCompile("(?i).+\\s+in\\s+any\\s+combination\\s+of\\s+.+"),
 			OtherMatcher,
 		},
 
@@ -516,6 +529,14 @@ func initMatchers() {
 				return ChoiceMatcher(subgroups[1], subgroups[1:3])
 			}),
 		},
+		
+		// Credit cannot be received for more than one of *: <EXPRESSION>
+		Matcher{
+			regexp.MustCompile("(?i)(Credit\\s+cannot\\s+be\\s+received\\s+for\\s+more\\s+than\\s+one\\s+of.+:(.+))"),
+			SubstitutionMatcher(func(group string, subgroups []string) interface{} {
+				return ChoiceMatcher(subgroups[1], subgroups[1:3])
+			}),
+		},
 
 		// Logical &
 		Matcher{
@@ -523,9 +544,9 @@ func initMatchers() {
 			ANDMatcher,
 		},
 
-		// "<COURSE> with <GRADE> or better"
+		// "<COURSE> with a [grade] [of] <GRADE> or better"
 		Matcher{
-			regexp.MustCompile("((?i)([A-Z]{2,4})\\s+([0-9V]{4})\\s+with\\s+a(?:\\s+grade\\s+of)?\\s+([ABCDF][+-]?)\\s+or\\s+better)"), // [name, number, min grade]
+			regexp.MustCompile("^(?i)(([A-Z]{2,4})\\s+([0-9V]{4})\\s+with\\s+a(?:\\s+grade)?(?:\\s+of)?\\s+([ABCF][+-]?)\\s+or\\s+better)"), // [name, number, min grade]
 			SubstitutionMatcher(func(group string, subgroups []string) interface{} {
 				return CourseMinGradeMatcher(subgroups[1], subgroups[1:5])
 			}),
@@ -537,22 +558,23 @@ func initMatchers() {
 			ORMatcher,
 		},
 
-		// <COURSE> with a minimum grade of <GRADE>
+		// <COURSE> with a [minimum] grade of [at least] [a] <GRADE>
 		Matcher{
-			regexp.MustCompile("^(?i)([A-Z]{2,4})\\s+([0-9V]{4})\\s+with\\s+a\\s+(?:minimum\\s+)?grade\\s+of\\s+(?:at least\\s+)?([ABCDF][+-]?)$"), // [name, number, min grade]
+			regexp.MustCompile("^(?i)([A-Z]{2,4})\\s+([0-9V]{4})\\s+with\\s+a\\s+(?:minimum\\s+)?grade\\s+of\\s+(?:at least\\s+)?(?:a\\s+)?([ABCF][+-]?)$"), // [name, number, min grade]
 			CourseMinGradeMatcher,
 		},
-		// A grade of at least <GRADE> in <COURSE>
+		
+		// A grade of [at least] [a] <GRADE> in <COURSE>
 		Matcher{
-			regexp.MustCompile("^(?i)A grade of at least(?: a)? ([ABCDF][+-]?) in ([A-Z]{2,4})\\s+([0-9V]{4})$"), // [min grade, name, number]
+			regexp.MustCompile("^(?i)A\\s+grade\\s+of(?:\\s+at\\s+least)?(?:\\s+a)?\\s+([ABCF][+-]?)\\s+in\\s+([A-Z]{2,4})\\s+([0-9V]{4})$"), // [min grade, name, number]
 			func(group string, subgroups []string) interface{} {
-				return CourseMinGradeMatcher(group, []string{subgroups[2], subgroups[3], subgroups[1]})
+				return CourseMinGradeMatcher(group, []string{subgroups[0], subgroups[2], subgroups[3], subgroups[1]})
 			},
 		},
 
 		// <COURSE>
 		Matcher{
-			regexp.MustCompile("^([A-Z]{2,4})\\s+([0-9V]{4})"), // [name, number]
+			regexp.MustCompile("^\\s*([A-Z]{2,4})\\s+([0-9V]{4})\\s*$"), // [name, number]
 			CourseMatcher,
 		},
 
@@ -615,7 +637,7 @@ func initMatchers() {
 	}
 }
 
-var preOrCoreqRegexp *regexp.Regexp = regexp.MustCompile("(?i)((?:Prerequisites? or corequisites?|Corequisites? or prerequisites?):(.*))")
+var preOrCoreqRegexp *regexp.Regexp = regexp.MustCompile("(?i)((?:Prerequisites?\\s+or\\s+corequisites?|Corequisites?\\s+or\\s+prerequisites?):(.*))")
 var prereqRegexp *regexp.Regexp = regexp.MustCompile("(?i)(Prerequisites?:(.*))")
 var coreqRegexp *regexp.Regexp = regexp.MustCompile("(?i)(Corequisites?:(.*))")
 
@@ -627,16 +649,18 @@ func getReqParser(course *schema.Course, hasEnrollmentReqs bool, enrollmentReqs 
 	return func() {
 		// Pointer array to course requisite properties must be in same order as reqRegexes above
 		courseReqs := [3]**schema.CollectionRequirement{&course.Co_or_pre_requisites, &course.Prerequisites, &course.Corequisites}
+		// The actual text to check for requisites
+		var checkText string
+		// Extract req text from the enrollment req info if it exists, otherwise try using the description
+		if hasEnrollmentReqs {
+			course.Enrollment_reqs = enrollmentReqs
+			checkText = enrollmentReqs
+		} else {
+			checkText = course.Description
+		}
 		// Iterate over and parse each type of requisite, populating the course's relevant requisite property
 		for index, reqPtr := range courseReqs {
-			// Extract req text from the enrollment req info if it exists, otherwise try using the description
-			var reqMatches []string
-			if hasEnrollmentReqs {
-				course.Enrollment_reqs = enrollmentReqs
-				reqMatches = reqRegexes[index].FindStringSubmatch(enrollmentReqs)
-			} else {
-				reqMatches = reqRegexes[index].FindStringSubmatch(course.Description)
-			}
+			reqMatches := reqRegexes[index].FindStringSubmatch(checkText)
 			if reqMatches != nil {
 				// Actual useful text is the inner match, index 2
 				reqText := reqMatches[2]
@@ -647,6 +671,8 @@ func getReqParser(course *schema.Course, hasEnrollmentReqs bool, enrollmentReqs 
 						reqText = strings.Replace(reqText, matches[1], "", -1)
 					}
 				}
+				// Erase current match from checkText to prevent erroneous duplicated Reqs
+				checkText = strings.Replace(checkText, reqMatches[1], "", -1)
 				// Split reqText into chunks based on period-space delimiters
 				textChunks := strings.Split(trimWhitespace(reqText), ". ")
 				parsedChunks := make([]interface{}, 0, len(textChunks))
@@ -663,7 +689,7 @@ func getReqParser(course *schema.Course, hasEnrollmentReqs bool, enrollmentReqs 
 				if len(parsedChunks) > 0 {
 					*reqPtr = schema.NewCollectionRequirement("REQUISITES", len(parsedChunks), parsedChunks)
 				}
-				fmt.Printf("\n\n")
+				log.Printf("\n\n")
 			}
 		}
 	}
@@ -719,7 +745,7 @@ func joinAdjacentOthers(reqs []interface{}, joinString string) []interface{} {
 	if temp.Description != "" {
 		joinedReqs = append(joinedReqs, temp)
 	}
-	//fmt.Printf("JOINEDREQS ARE: %v\n", joinedReqs)
+	//log.Printf("JOINEDREQS ARE: %v\n", joinedReqs)
 	return joinedReqs
 }
 
@@ -749,14 +775,14 @@ func parseGroup(grp string) interface{} {
 		if matches != nil {
 			// If an applicable matcher has been found, return the result of calling its handler
 			result := matcher.Handler(grp, matches)
-			fmt.Printf("'%s' -> %T\n", grp, result)
+			log.Printf("'%s' -> %T\n", grp, result)
 			return result
 		}
 	}
 	// Panic if no matcher was able to be found for a given group -- this means we need to add handling for it!!!
-	//panic(fmt.Sprintf("NO MATCHER FOUND FOR GROUP '%s'\nSTACK IS: %#v\n", grp, requisiteList))
-	//fmt.Printf("NO MATCHER FOR: '%s'\n", grp)
-	fmt.Printf("'%s' -> parser.OtherRequirement\n", grp)
+	//log.Panicf("NO MATCHER FOUND FOR GROUP '%s'\nSTACK IS: %#v\n", grp, requisiteList)
+	//log.Printf("NO MATCHER FOR: '%s'\n", grp)
+	log.Printf("'%s' -> parser.OtherRequirement\n", grp)
 	//var temp string
 	//fmt.Scanf("%s", temp)
 	return *schema.NewOtherRequirement(ungroupText(grp), "")
@@ -764,7 +790,7 @@ func parseGroup(grp string) interface{} {
 
 // Outermost function for parsing a chunk of requisite text (potentially containing multiple nested text groups)
 func parseChunk(chunk string) interface{} {
-	fmt.Printf("\nPARSING CHUNK: '%s'\n", chunk)
+	log.Printf("\nPARSING CHUNK: '%s'\n", chunk)
 	// Extract parenthesized groups from chunk text
 	parseText, parseGroups := groupParens(chunk)
 	// Initialize the requisite list and group list
@@ -1015,11 +1041,11 @@ func validate() {
 	// Set up deferred handler for panics to display validation fails
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Printf("VALIDATION FAILED: %s", err)
+			log.Printf("VALIDATION FAILED: %s", err)
 		}
 	}()
 
-	fmt.Printf("\nValidating courses...\n")
+	log.Printf("\nValidating courses...\n")
 	for _, course1 := range Courses {
 		// Check for duplicate courses by comparing course_number and subject_prefix as a compound key
 		for _, course2 := range Courses {
@@ -1028,29 +1054,29 @@ func validate() {
 				continue
 			}
 			if course2.Course_number == course1.Course_number && course2.Subject_prefix == course1.Subject_prefix {
-				fmt.Printf("Duplicate course found for %s%s!\n", course1.Subject_prefix, course1.Course_number)
-				fmt.Printf("Course 1: %v\n\nCourse 2: %v", course1, course2)
-				panic(errors.New("Courses failed to validate!"))
+				log.Printf("Duplicate course found for %s%s!\n", course1.Subject_prefix, course1.Course_number)
+				log.Printf("Course 1: %v\n\nCourse 2: %v", course1, course2)
+				log.Panic("Courses failed to validate!")
 			}
 		}
 		// Make sure course isn't referencing any nonexistent sections, and that course-section references are consistent both ways
 		for _, sectionId := range course1.Sections {
 			section, exists := Sections[sectionId]
 			if !exists {
-				fmt.Printf("Nonexistent section reference found for %s%s!\n", course1.Subject_prefix, course1.Course_number)
-				fmt.Printf("Referenced section ID: %s\nCourse ID: %s\n", sectionId, course1.Id)
-				panic(errors.New("Courses failed to validate!"))
+				log.Printf("Nonexistent section reference found for %s%s!\n", course1.Subject_prefix, course1.Course_number)
+				log.Printf("Referenced section ID: %s\nCourse ID: %s\n", sectionId, course1.Id)
+				log.Panic("Courses failed to validate!")
 			}
 			if section.Course_reference != course1.Id {
-				fmt.Printf("Inconsistent section reference found for %s%s! The course references the section, but not vice-versa!\n", course1.Subject_prefix, course1.Course_number)
-				fmt.Printf("Referenced section ID: %s\nCourse ID: %s\nSection course reference: %s\n", sectionId, course1.Id, section.Course_reference)
-				panic(errors.New("Courses failed to validate!"))
+				log.Printf("Inconsistent section reference found for %s%s! The course references the section, but not vice-versa!\n", course1.Subject_prefix, course1.Course_number)
+				log.Printf("Referenced section ID: %s\nCourse ID: %s\nSection course reference: %s\n", sectionId, course1.Id, section.Course_reference)
+				log.Panic("Courses failed to validate!")
 			}
 		}
 	}
-	fmt.Printf("No invalid courses!\n\n")
+	log.Print("No invalid courses!\n\n")
 
-	fmt.Printf("Validating sections...\n")
+	log.Print("Validating sections...\n")
 	for _, section1 := range Sections {
 		// Check for duplicate sections by comparing section_number, course_reference, and academic_session as a compound key
 		for _, section2 := range Sections {
@@ -1061,18 +1087,18 @@ func validate() {
 			if section2.Section_number == section1.Section_number &&
 				section2.Course_reference == section1.Course_reference &&
 				section2.Academic_session == section1.Academic_session {
-				fmt.Printf("Duplicate section found!\n")
-				fmt.Printf("Section 1: %v\n\nSection 2: %v", section1, section2)
-				panic(errors.New("Sections failed to validate!"))
+				log.Print("Duplicate section found!\n")
+				log.Printf("Section 1: %v\n\nSection 2: %v", section1, section2)
+				log.Panic("Sections failed to validate!")
 			}
 		}
 		// Make sure section isn't referencing any nonexistent professors, and that section-professor references are consistent both ways
 		for _, profId := range section1.Professors {
 			professorKey, exists := ProfessorIDMap[profId]
 			if !exists {
-				fmt.Printf("Nonexistent professor reference found for section ID %s!\n", section1.Id)
-				fmt.Printf("Referenced professor ID: %s\n", profId)
-				panic(errors.New("Sections failed to validate!"))
+				log.Printf("Nonexistent professor reference found for section ID %s!\n", section1.Id)
+				log.Printf("Referenced professor ID: %s\n", profId)
+				log.Panic("Sections failed to validate!")
 			}
 			profRefsSection := false
 			for _, profSection := range Professors[professorKey].Sections {
@@ -1082,22 +1108,22 @@ func validate() {
 				}
 			}
 			if !profRefsSection {
-				fmt.Printf("Inconsistent professor reference found for section ID %s! The section references the professor, but not vice-versa!\n", section1.Id)
-				fmt.Printf("Referenced professor ID: %s\n", profId)
-				panic(errors.New("Sections failed to validate!"))
+				log.Printf("Inconsistent professor reference found for section ID %s! The section references the professor, but not vice-versa!\n", section1.Id)
+				log.Printf("Referenced professor ID: %s\n", profId)
+				log.Panic("Sections failed to validate!")
 			}
 		}
 		// Make sure section isn't referencing a nonexistant course
 		_, exists := CourseIDMap[section1.Course_reference]
 		if !exists {
-			fmt.Printf("Nonexistent course reference found for section ID %s!\n", section1.Id)
-			fmt.Printf("Referenced course ID: %s\n", section1.Course_reference)
-			panic(errors.New("Sections failed to validate!"))
+			log.Printf("Nonexistent course reference found for section ID %s!\n", section1.Id)
+			log.Printf("Referenced course ID: %s\n", section1.Course_reference)
+			log.Panic("Sections failed to validate!")
 		}
 	}
-	fmt.Printf("No invalid sections!\n\n")
+	log.Printf("No invalid sections!\n\n")
 
-	fmt.Printf("Validating professors...\n")
+	log.Printf("Validating professors...\n")
 	// Check for duplicate professors by comparing first_name, last_name, and sections as a compound key
 	for _, prof1 := range Professors {
 		for _, prof2 := range Professors {
@@ -1108,13 +1134,13 @@ func validate() {
 			if prof2.First_name == prof1.First_name &&
 				prof2.Last_name == prof1.Last_name &&
 				prof2.Profile_uri == prof1.Profile_uri {
-				fmt.Printf("Duplicate professor found!\n")
-				fmt.Printf("Professor 1: %v\n\nProfessor 2: %v", prof1, prof2)
-				panic(errors.New("Professors failed to validate!"))
+				log.Printf("Duplicate professor found!\n")
+				log.Printf("Professor 1: %v\n\nProfessor 2: %v", prof1, prof2)
+				log.Panic("Professors failed to validate!")
 			}
 		}
 	}
-	fmt.Printf("No invalid professors!\n\n")
+	log.Printf("No invalid professors!\n\n")
 }
 
 func getAllSectionFilepaths(inDir string) []string {
