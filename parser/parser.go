@@ -486,9 +486,11 @@ func initMatchers() {
 
 		/* TO IMPLEMENT:
 
-		CS or SE Major/Minor
+		X or Y or ... Z Major/Minor
 
 		SUBJECT NUMBER, SUBJECT NUMBER, ..., or SUBJECT NUMBER
+		
+		... probably many more
 
 		*/
 
@@ -542,9 +544,9 @@ func initMatchers() {
 			ANDMatcher,
 		},
 
-		// "<COURSE> with <GRADE> or better"
+		// "<COURSE> with a [grade] [of] <GRADE> or better"
 		Matcher{
-			regexp.MustCompile("^\\s+((?i)([A-Z]{2,4})\\s+([0-9V]{4})\\s+with\\s+a(?:\\s+grade)?(\\s+of)?\\s+([ABCDF][+-]?)\\s+or\\s+better)"), // [name, number, min grade]
+			regexp.MustCompile("^(?i)(([A-Z]{2,4})\\s+([0-9V]{4})\\s+with\\s+a(?:\\s+grade)?(?:\\s+of)?\\s+([ABCF][+-]?)\\s+or\\s+better)"), // [name, number, min grade]
 			SubstitutionMatcher(func(group string, subgroups []string) interface{} {
 				return CourseMinGradeMatcher(subgroups[1], subgroups[1:5])
 			}),
@@ -556,15 +558,15 @@ func initMatchers() {
 			ORMatcher,
 		},
 
-		// <COURSE> with a minimum grade of <GRADE>
+		// <COURSE> with a [minimum] grade of [at least] [a] <GRADE>
 		Matcher{
-			regexp.MustCompile("^(?i)\\s+([A-Z]{2,4})\\s+([0-9V]{4})\\s+with\\s+a\\s+(?:minimum\\s+)?grade\\s+of\\s+(?:at least\\s+)?([ABCDF][+-]?)$"), // [name, number, min grade]
+			regexp.MustCompile("^(?i)([A-Z]{2,4})\\s+([0-9V]{4})\\s+with\\s+a\\s+(?:minimum\\s+)?grade\\s+of\\s+(?:at least\\s+)?(?:a\\s+)?([ABCF][+-]?)$"), // [name, number, min grade]
 			CourseMinGradeMatcher,
 		},
 		
-		// A grade of at least <GRADE> in <COURSE>
+		// A grade of [at least] [a] <GRADE> in <COURSE>
 		Matcher{
-			regexp.MustCompile("^(?i)A\\s+grade\\s+of\\s+at\\s+least(?:\\s+a)?\\s+([ABCDF][+-]?)\\s+in\\s+([A-Z]{2,4})\\s+([0-9V]{4})$"), // [min grade, name, number]
+			regexp.MustCompile("^(?i)A\\s+grade\\s+of(?:\\s+at\\s+least)?(?:\\s+a)?\\s+([ABCF][+-]?)\\s+in\\s+([A-Z]{2,4})\\s+([0-9V]{4})$"), // [min grade, name, number]
 			func(group string, subgroups []string) interface{} {
 				return CourseMinGradeMatcher(group, []string{subgroups[0], subgroups[2], subgroups[3], subgroups[1]})
 			},
@@ -572,7 +574,7 @@ func initMatchers() {
 
 		// <COURSE>
 		Matcher{
-			regexp.MustCompile("^([A-Z]{2,4})\\s+([0-9V]{4})"), // [name, number]
+			regexp.MustCompile("^\\s*([A-Z]{2,4})\\s+([0-9V]{4})\\s*$"), // [name, number]
 			CourseMatcher,
 		},
 
