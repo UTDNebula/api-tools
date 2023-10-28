@@ -15,7 +15,7 @@ import (
 func main() {
 
 	// Setup flags
-	
+
 	// I/O Flags
 	inDir := flag.String("i", "./data", "The directory to read data from. Defaults to ./data.")
 	outDir := flag.String("o", "./data", "The directory to write resulting data to. Defaults to ./data.")

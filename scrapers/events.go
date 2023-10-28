@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"regexp"
 	"time"
@@ -31,7 +32,7 @@ func ScrapeEvents(outDir string) {
 
 	events := []Event{}
 
-	fmt.Printf("Scraping event page links\n")
+	log.Printf("Scraping event page links\n")
 	//Grab all links to event pages
 	var pageLinks []string = []string{}
 	_, err = chromedp.RunResponse(chromedpCtx,
@@ -53,7 +54,7 @@ func ScrapeEvents(outDir string) {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("Scraped event page links!\n")
+	log.Printf("Scraped event page links!\n")
 
 	for _, page := range pageLinks {
 		//Navigate to page and get page summary
@@ -62,7 +63,7 @@ func ScrapeEvents(outDir string) {
 			chromedp.Navigate(page),
 			chromedp.QueryAfter(".summary",
 				func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
-					if !(len(nodes) == 0) {
+					if len(nodes) != 0 {
 						summary = trailingSpaceRegex.ReplaceAllString(getNodeText(nodes[0]), "")
 					}
 					return nil
@@ -73,7 +74,7 @@ func ScrapeEvents(outDir string) {
 		if err != nil {
 			panic(err)
 		}
-		fmt.Printf("Navigated to page %s\n", summary)
+		log.Printf("Navigated to page %s\n", summary)
 
 		// Grab date/time of the event
 		var dateTimeStart time.Time
@@ -81,10 +82,10 @@ func ScrapeEvents(outDir string) {
 		err = chromedp.Run(chromedpCtx,
 			chromedp.QueryAfter(".dtstart",
 				func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
-					if !(len(nodes) == 0) {
+					if len(nodes) != 0 {
 						timeStamp, hasTime := nodes[0].Attribute("title")
 						if !hasTime {
-							return errors.New("event does not have start time")
+							return errors.New("event does not have a start time")
 						}
 						formattedTime, err := time.Parse(time.RFC3339, timeStamp)
 						if err != nil {
@@ -98,17 +99,17 @@ func ScrapeEvents(outDir string) {
 			),
 			chromedp.QueryAfter(".dtend",
 				func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
-					if !(len(nodes) == 0) {
+					if len(nodes) != 0 {
 						timeStamp, hasTime := nodes[0].Attribute("title")
 						if !hasTime {
-							return errors.New("event does not have start time")
+							return errors.New("event does not have an end time")
 						}
 						formattedTime, err := time.Parse(time.RFC3339, timeStamp)
 						if err != nil {
 							return err
 						}
 
-						dateTimeStart = formattedTime
+						dateTimeEnd = formattedTime
 					}
 					return nil
 				}, chromedp.AtLeast(0),
@@ -117,14 +118,14 @@ func ScrapeEvents(outDir string) {
 		if err != nil {
 			continue
 		}
-		fmt.Printf("Scraped time: %s to %s \n", dateTimeStart, dateTimeEnd)
+		log.Printf("Scraped time: %s to %s \n", dateTimeStart, dateTimeEnd)
 
 		//Grab Location of Event
 		var location string = ""
 		err = chromedp.Run(chromedpCtx,
 			chromedp.QueryAfter("p.location > span",
 				func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
-					if !(len(nodes) == 0) {
+					if len(nodes) != 0 {
 						location = getNodeText(nodes[0])
 					}
 					return nil
@@ -134,14 +135,14 @@ func ScrapeEvents(outDir string) {
 		if err != nil {
 			continue
 		}
-		fmt.Printf("Scraped location: %s, \n", location)
+		log.Printf("Scraped location: %s, \n", location)
 
 		//Get description of event
 		var description string = ""
 		err = chromedp.Run(chromedpCtx,
 			chromedp.QueryAfter(".description > p",
 				func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
-					if !(len(nodes) == 0) {
+					if len(nodes) != 0 {
 						description = getNodeText(nodes[0])
 					}
 					return nil
@@ -151,7 +152,7 @@ func ScrapeEvents(outDir string) {
 		if err != nil {
 			continue
 		}
-		fmt.Printf("Scraped description: %s, \n", description)
+		log.Printf("Scraped description: %s, \n", description)
 
 		//Grab Event Type
 		var eventType []string = []string{}
@@ -168,7 +169,7 @@ func ScrapeEvents(outDir string) {
 		if err != nil {
 			panic(err)
 		}
-		fmt.Printf("Scraped event type: %s\n", eventType)
+		log.Printf("Scraped event type: %s\n", eventType)
 
 		//Grab Target Audience
 		targetAudience := []string{}
@@ -185,7 +186,7 @@ func ScrapeEvents(outDir string) {
 		if err != nil {
 			panic(err)
 		}
-		fmt.Printf("Scraped target audience: %s, \n", targetAudience)
+		log.Printf("Scraped target audience: %s, \n", targetAudience)
 
 		//Grab Topic
 		topic := []string{}
@@ -202,7 +203,7 @@ func ScrapeEvents(outDir string) {
 		if err != nil {
 			panic(err)
 		}
-		fmt.Printf("Scraped topic: %s, \n", topic)
+		log.Printf("Scraped topic: %s, \n", topic)
 
 		//Grab Event Tags
 		tags := []string{}
@@ -219,14 +220,14 @@ func ScrapeEvents(outDir string) {
 		if err != nil {
 			panic(err)
 		}
-		fmt.Printf("Scraped tags: %s, \n", tags)
+		log.Printf("Scraped tags: %s, \n", tags)
 
 		//Grab Website
 		var eventWebsite string = ""
 		err = chromedp.Run(chromedpCtx,
 			chromedp.QueryAfter(".event-website > p > a",
 				func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
-					if !(len(nodes) == 0) {
+					if len(nodes) != 0 {
 						href, hasHref := nodes[0].Attribute("href")
 						if !hasHref {
 							return errors.New("event does not have website")
@@ -240,7 +241,7 @@ func ScrapeEvents(outDir string) {
 		if err != nil {
 			continue
 		}
-		fmt.Printf("Scraped website: %s, \n", eventWebsite)
+		log.Printf("Scraped website: %s, \n", eventWebsite)
 
 		//Grab Department
 		var eventDepartment []string = []string{}
@@ -257,7 +258,7 @@ func ScrapeEvents(outDir string) {
 		if err != nil {
 			panic(err)
 		}
-		fmt.Printf("Scraped department: %s, \n", eventDepartment)
+		log.Printf("Scraped department: %s, \n", eventDepartment)
 
 		//Grab Contact information
 		var contactInformationName string = ""
@@ -266,7 +267,7 @@ func ScrapeEvents(outDir string) {
 		err = chromedp.Run(chromedpCtx,
 			chromedp.QueryAfter(".custom-field-contact_information_name",
 				func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
-					if !(len(nodes) == 0) {
+					if len(nodes) != 0 {
 						contactInformationName = getNodeText(nodes[0])
 					}
 					return nil
@@ -274,7 +275,7 @@ func ScrapeEvents(outDir string) {
 			),
 			chromedp.QueryAfter(".custom-field-contact_information_email",
 				func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
-					if !(len(nodes) == 0) {
+					if len(nodes) != 0 {
 						contactInformationEmail = getNodeText(nodes[0])
 					}
 					return nil
@@ -282,7 +283,7 @@ func ScrapeEvents(outDir string) {
 			),
 			chromedp.QueryAfter(".custom-field-contact_information_phone",
 				func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
-					if !(len(nodes) == 0) {
+					if len(nodes) != 0 {
 						contactInformationPhone = getNodeText(nodes[0])
 						if err != nil {
 							return err
@@ -295,9 +296,9 @@ func ScrapeEvents(outDir string) {
 		if err != nil {
 			panic(err)
 		}
-		fmt.Printf("Scraped contact name info: %s\n", contactInformationName)
-		fmt.Printf("Scraped contact email info: %s\n", contactInformationEmail)
-		fmt.Printf("Scraped contact phone info: %s\n", contactInformationPhone)
+		log.Printf("Scraped contact name info: %s\n", contactInformationName)
+		log.Printf("Scraped contact email info: %s\n", contactInformationEmail)
+		log.Printf("Scraped contact phone info: %s\n", contactInformationPhone)
 
 		events = append(events, Event{
 			Id:                 primitive.NewObjectID(),
@@ -316,16 +317,6 @@ func ScrapeEvents(outDir string) {
 			ContactEmail:       contactInformationEmail,
 			ContactPhoneNumber: contactInformationPhone,
 		})
-
-		// Write event data to output file
-		fptr, err := os.Create(fmt.Sprintf("%s/Events.json", outDir))
-		if err != nil {
-			panic(err)
-		}
-		encoder := json.NewEncoder(fptr)
-		encoder.SetIndent("", "\t")
-		encoder.Encode(events)
-		fptr.Close()
 	}
 
 	// Write event data to output file
@@ -339,7 +330,7 @@ func ScrapeEvents(outDir string) {
 	fptr.Close()
 }
 
-//Temporary until chanes to nebula-api schema get merged
+// Temporary until chanes to nebula-api schema get merged
 type Event struct {
 	Id                 primitive.ObjectID `bson:"_id" json:"_id"`
 	Summary            string             `bson:"summary" json:"summary"`

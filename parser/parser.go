@@ -2,7 +2,6 @@ package parser
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -158,10 +157,10 @@ func parse(path string) {
 
 	// Open data file for reading
 	fptr, err := os.Open(path)
-	defer fptr.Close()
 	if err != nil {
 		panic(err)
 	}
+	defer fptr.Close()
 
 	// Create a goquery document for HTML parsing
 	doc, err := goquery.NewDocumentFromReader(fptr)
@@ -220,8 +219,8 @@ func parse(path string) {
 	log.Print("Parsed!\n")
 }
 
-var coursePrefixRexp *regexp.Regexp = regexp.MustCompile("^([A-Z]{2,4})([0-9V]{4})")
-var contactRegexp *regexp.Regexp = regexp.MustCompile("\\(([0-9]+)-([0-9]+)\\)\\s+([SUFY]+)")
+var coursePrefixRexp *regexp.Regexp = regexp.MustCompile(`^([A-Z]{2,4})([0-9V]{4})`)
+var contactRegexp *regexp.Regexp = regexp.MustCompile(`\(([0-9]+)-([0-9]+)\)\s+([SUFY]+)`)
 
 func getCatalogYear(session schema.AcademicSession) string {
 	sessionYear, err := strconv.Atoi(session.Name[0:2])
@@ -237,7 +236,7 @@ func getCatalogYear(session schema.AcademicSession) string {
 	case 'U':
 		return strconv.Itoa(sessionYear - 1)
 	default:
-		panic(errors.New(fmt.Sprintf("Encountered invalid session semester '%c!'", sessionSemester)))
+		panic(fmt.Errorf("encountered invalid session semester '%c!'", sessionSemester))
 	}
 }
 
@@ -307,11 +306,11 @@ type Matcher struct {
 }
 
 // Regex for group tags
-var groupTagRegex = regexp.MustCompile("@(\\d+)")
+var groupTagRegex = regexp.MustCompile(`@(\d+)`)
 
 ////////////////////// BEGIN MATCHER FUNCS //////////////////////
 
-var ANDRegex = regexp.MustCompile("(?i)\\s+and\\s+")
+var ANDRegex = regexp.MustCompile(`(?i)\s+and\s+`)
 
 func ANDMatcher(group string, subgroups []string) interface{} {
 	// Split text along " and " boundaries, then parse subexpressions as groups into an "AND" CollectionRequirement
@@ -352,7 +351,7 @@ func SubstitutionMatcher(parseFnc func(string, []string) interface{}) func(strin
 	}
 }
 
-var ORRegex = regexp.MustCompile("(?i)\\s+or\\s+")
+var ORRegex = regexp.MustCompile(`(?i)\s+or\s+`)
 
 func ORMatcher(group string, subgroups []string) interface{} {
 	// Split text along " or " boundaries, then parse subexpressions as groups into an "OR" CollectionRequirement
@@ -480,7 +479,7 @@ func initMatchers() {
 
 		// Throwaways
 		Matcher{
-			regexp.MustCompile("^(?i)(?:better|\\d-\\d|same as.+)$"),
+			regexp.MustCompile(`^(?i)(?:better|\d-\d|same as.+)$`),
 			ThrowawayMatcher,
 		},
 
@@ -489,26 +488,26 @@ func initMatchers() {
 		X or Y or ... Z Major/Minor
 
 		SUBJECT NUMBER, SUBJECT NUMBER, ..., or SUBJECT NUMBER
-		
+
 		... probably many more
 
 		*/
 
 		// * <YEAR> only
 		Matcher{
-			regexp.MustCompile("(?i).+(?:freshman|sophomores|juniors|seniors)\\s+only$"),
+			regexp.MustCompile(`(?i).+(?:freshman|sophomores|juniors|seniors)\s+only$`),
 			OtherMatcher,
 		},
-		
+
 		// * in any combination of *
-		Matcher {
-			regexp.MustCompile("(?i).+\\s+in\\s+any\\s+combination\\s+of\\s+.+"),
+		Matcher{
+			regexp.MustCompile(`(?i).+\s+in\s+any\s+combination\s+of\s+.+`),
 			OtherMatcher,
 		},
 
 		// <SUBJECT> majors and minors only
 		Matcher{
-			regexp.MustCompile("(?i)(([A-Z]+)\\s+majors\\s+and\\s+minors\\s+only)"),
+			regexp.MustCompile(`(?i)(([A-Z]+)\s+majors\s+and\s+minors\s+only)`),
 			SubstitutionMatcher(func(group string, subgroups []string) interface{} {
 				return MajorMinorMatcher(subgroups[1], subgroups[1:3])
 			}),
@@ -516,7 +515,7 @@ func initMatchers() {
 
 		// Core completion
 		Matcher{
-			regexp.MustCompile("(?i)(Completion\\s+of\\s+(?:an?\\s+)?(\\d{3}).+core(?:\\s+course)?)"),
+			regexp.MustCompile(`(?i)(Completion\s+of\s+(?:an?\s+)?(\d{3}).+core(?:\s+course)?)`),
 			SubstitutionMatcher(func(group string, subgroups []string) interface{} {
 				return CoreCompletionMatcher(subgroups[1], subgroups[1:3])
 			}),
@@ -524,15 +523,15 @@ func initMatchers() {
 
 		// Credit cannot be received for both courses, <EXPRESSION>
 		Matcher{
-			regexp.MustCompile("(?i)(Credit\\s+cannot\\s+be\\s+received\\s+for\\s+both\\s+(?:courses)?,?(.+))"),
+			regexp.MustCompile(`(?i)(Credit\s+cannot\s+be\s+received\s+for\s+both\s+(?:courses)?,?(.+))`),
 			SubstitutionMatcher(func(group string, subgroups []string) interface{} {
 				return ChoiceMatcher(subgroups[1], subgroups[1:3])
 			}),
 		},
-		
+
 		// Credit cannot be received for more than one of *: <EXPRESSION>
 		Matcher{
-			regexp.MustCompile("(?i)(Credit\\s+cannot\\s+be\\s+received\\s+for\\s+more\\s+than\\s+one\\s+of.+:(.+))"),
+			regexp.MustCompile(`(?i)(Credit\s+cannot\s+be\s+received\s+for\s+more\s+than\s+one\s+of.+:(.+))`),
 			SubstitutionMatcher(func(group string, subgroups []string) interface{} {
 				return ChoiceMatcher(subgroups[1], subgroups[1:3])
 			}),
@@ -546,7 +545,7 @@ func initMatchers() {
 
 		// "<COURSE> with a [grade] [of] <GRADE> or better"
 		Matcher{
-			regexp.MustCompile("^(?i)(([A-Z]{2,4})\\s+([0-9V]{4})\\s+with\\s+a(?:\\s+grade)?(?:\\s+of)?\\s+([ABCF][+-]?)\\s+or\\s+better)"), // [name, number, min grade]
+			regexp.MustCompile(`^(?i)(([A-Z]{2,4})\s+([0-9V]{4})\s+with\s+a(?:\s+grade)?(?:\s+of)?\s+([ABCF][+-]?)\s+or\s+better)`), // [name, number, min grade]
 			SubstitutionMatcher(func(group string, subgroups []string) interface{} {
 				return CourseMinGradeMatcher(subgroups[1], subgroups[1:5])
 			}),
@@ -560,13 +559,13 @@ func initMatchers() {
 
 		// <COURSE> with a [minimum] grade of [at least] [a] <GRADE>
 		Matcher{
-			regexp.MustCompile("^(?i)([A-Z]{2,4})\\s+([0-9V]{4})\\s+with\\s+a\\s+(?:minimum\\s+)?grade\\s+of\\s+(?:at least\\s+)?(?:a\\s+)?([ABCF][+-]?)$"), // [name, number, min grade]
+			regexp.MustCompile(`^(?i)([A-Z]{2,4})\s+([0-9V]{4})\s+with\s+a\s+(?:minimum\s+)?grade\s+of\s+(?:at least\s+)?(?:a\s+)?([ABCF][+-]?)$`), // [name, number, min grade]
 			CourseMinGradeMatcher,
 		},
-		
+
 		// A grade of [at least] [a] <GRADE> in <COURSE>
 		Matcher{
-			regexp.MustCompile("^(?i)A\\s+grade\\s+of(?:\\s+at\\s+least)?(?:\\s+a)?\\s+([ABCF][+-]?)\\s+in\\s+([A-Z]{2,4})\\s+([0-9V]{4})$"), // [min grade, name, number]
+			regexp.MustCompile(`^(?i)A\s+grade\s+of(?:\s+at\s+least)?(?:\s+a)?\s+([ABCF][+-]?)\s+in\s+([A-Z]{2,4})\s+([0-9V]{4})$`), // [min grade, name, number]
 			func(group string, subgroups []string) interface{} {
 				return CourseMinGradeMatcher(group, []string{subgroups[0], subgroups[2], subgroups[3], subgroups[1]})
 			},
@@ -574,58 +573,58 @@ func initMatchers() {
 
 		// <COURSE>
 		Matcher{
-			regexp.MustCompile("^\\s*([A-Z]{2,4})\\s+([0-9V]{4})\\s*$"), // [name, number]
+			regexp.MustCompile(`^\s*([A-Z]{2,4})\s+([0-9V]{4})\s*$`), // [name, number]
 			CourseMatcher,
 		},
 
 		// <GRANTER> consent required
 		Matcher{
-			regexp.MustCompile("^(?i)(.+)\\s+consent\\s+required"), // [granter]
+			regexp.MustCompile(`^(?i)(.+)\s+consent\s+required`), // [granter]
 			ConsentMatcher,
 		},
 
 		// <HOURS> semester credit hours maximum
 		Matcher{
-			regexp.MustCompile("^(?i)(\\d+)\\s+semester\\s+credit\\s+hours\\s+maximum$"),
+			regexp.MustCompile(`^(?i)(\d+)\s+semester\s+credit\s+hours\s+maximum$`),
 			LimitMatcher,
 		},
 		// This course may only be repeated for <HOURS> credit hours
 		Matcher{
-			regexp.MustCompile("^(?:[A-Z]{2,4}\\s+[0-9V]{4}\\s+)?Repeat\\s+Limit\\s+-\\s+(?:[A-Z]{2,4}\\s+[0-9V]{4}|This\\s+course)\\s+may\\s+only\\s+be\\s+repeated\\s+for(?:\\s+a\\s+maximum\\s+of)?\\s+(\\d+)\\s+semester\\s+cre?dit\\s+hours(?:\\s+maximum)?$"),
+			regexp.MustCompile(`^(?:[A-Z]{2,4}\s+[0-9V]{4}\s+)?Repeat\s+Limit\s+-\s+(?:[A-Z]{2,4}\s+[0-9V]{4}|This\s+course)\s+may\s+only\s+be\s+repeated\s+for(?:\s+a\s+maximum\s+of)?\s+(\d+)\s+semester\s+cre?dit\s+hours(?:\s+maximum)?$`),
 			LimitMatcher,
 		},
 
 		// <SUBJECT> majors only
 		Matcher{
-			regexp.MustCompile("^(?i)(.+)\\s+major(?:s\\s+only)?$"),
+			regexp.MustCompile(`^(?i)(.+)\s+major(?:s\s+only)?$`),
 			MajorMatcher,
 		},
 
 		// <SUBJECT> minors only
 		Matcher{
-			regexp.MustCompile("^(?i)(.+)\\s+minor(?:s\\s+only)?$"),
+			regexp.MustCompile(`^(?i)(.+)\s+minor(?:s\s+only)?$`),
 			MinorMatcher,
 		},
 
 		// Any <HOURS> semester credit hour <CORE> course
 		Matcher{
-			regexp.MustCompile("^(?i)any\\s+(\\d+)\\s+semester\\s+credit\\s+hour\\s+(\\d{3})(?:\\s+@\\d+)?\\s+core(?:\\s+course)?$"),
+			regexp.MustCompile(`^(?i)any\s+(\d+)\s+semester\s+credit\s+hour\s+(\d{3})(?:\s+@\d+)?\s+core(?:\s+course)?$`),
 			CoreMatcher,
 		},
 
 		// Minimum GPA of <GPA>
 		Matcher{
-			regexp.MustCompile("^(?i)(?:minimum\\s+)?GPA\\s+of\\s+([0-9\\.]+)$"), // [GPA]
+			regexp.MustCompile(`^(?i)(?:minimum\s+)?GPA\s+of\s+([0-9\.]+)$`), // [GPA]
 			GPAMatcher,
 		},
 		// <GPA> GPA
 		Matcher{
-			regexp.MustCompile("^(?i)([0-9\\.]+) GPA$"), // [GPA]
+			regexp.MustCompile(`^(?i)([0-9\.]+) GPA$`), // [GPA]
 			GPAMatcher,
 		},
 		// A university grade point average of at least <GPA>
 		Matcher{
-			regexp.MustCompile("^(?i)a(?:\\s+university)?\\s+grade\\s+point\\s+average\\s+of(?:\\s+at\\s+least)?\\s+([0-9\\.]+)$"), // [GPA]
+			regexp.MustCompile(`^(?i)a(?:\s+university)?\s+grade\s+point\s+average\s+of(?:\s+at\s+least)?\s+([0-9\.]+)$`), // [GPA]
 			GPAMatcher,
 		},
 
@@ -637,9 +636,9 @@ func initMatchers() {
 	}
 }
 
-var preOrCoreqRegexp *regexp.Regexp = regexp.MustCompile("(?i)((?:Prerequisites?\\s+or\\s+corequisites?|Corequisites?\\s+or\\s+prerequisites?):(.*))")
-var prereqRegexp *regexp.Regexp = regexp.MustCompile("(?i)(Prerequisites?:(.*))")
-var coreqRegexp *regexp.Regexp = regexp.MustCompile("(?i)(Corequisites?:(.*))")
+var preOrCoreqRegexp *regexp.Regexp = regexp.MustCompile(`(?i)((?:Prerequisites?\s+or\s+corequisites?|Corequisites?\s+or\s+prerequisites?):(.*))`)
+var prereqRegexp *regexp.Regexp = regexp.MustCompile(`(?i)(Prerequisites?:(.*))`)
+var coreqRegexp *regexp.Regexp = regexp.MustCompile(`(?i)(Corequisites?:(.*))`)
 
 // It is very important that these remain in the same order -- this keeps proper precedence in the below function!
 var reqRegexes [3]*regexp.Regexp = [3]*regexp.Regexp{preOrCoreqRegexp, prereqRegexp, coreqRegexp}
@@ -696,14 +695,16 @@ func getReqParser(course *schema.Course, hasEnrollmentReqs bool, enrollmentReqs 
 }
 
 // Function for pulling all requisite references (reqs referenced via group tags) from text
+/*
 func getReqRefs(text string) []interface{} {
 	matches := groupTagRegex.FindAllStringSubmatch(text, -1)
-	refs := make([]interface{}, len(matches), len(matches))
+	refs := make([]interface{}, len(matches))
 	for i, submatches := range matches {
 		refs[i] = GroupTagMatcher(submatches[0], submatches)
 	}
 	return refs
 }
+*/
 
 // Function for creating a new group by replacing subtext in an existing group, and pushing the new group's info to the req and group list
 func makeSubgroup(group string, subtext string, requisite interface{}) string {
@@ -756,7 +757,7 @@ func findICN(subject string, number string) (string, error) {
 			return coursePtr.Internal_course_number, nil
 		}
 	}
-	return "ERROR", errors.New(fmt.Sprintf("Couldn't find an ICN for %s %s!", subject, number))
+	return "ERROR", fmt.Errorf("couldn't find an ICN for %s %s", subject, number)
 }
 
 // This is the list of produced requisites. Indices coincide with group indices -- aka group @0 will also be the 0th index of the list since it will be processed first.
@@ -856,9 +857,9 @@ func ungroupText(text string) string {
 
 /////////////////////////////////////////////////// END REQUISITE PARSER CODE ///////////////////////////////////////////////////
 
-var sectionPrefixRegexp *regexp.Regexp = regexp.MustCompile("^(?i)[A-Z]{2,4}[0-9V]{4}\\.([0-9A-z]+)")
-var coreRegexp *regexp.Regexp = regexp.MustCompile("[0-9]{3}")
-var personRegexp *regexp.Regexp = regexp.MustCompile("\\s*([\\w ]+)\\s+・\\s+([A-z ]+)\\s+・\\s+([\\w@.]+)")
+var sectionPrefixRegexp *regexp.Regexp = regexp.MustCompile(`^(?i)[A-Z]{2,4}[0-9V]{4}\.([0-9A-z]+)`)
+var coreRegexp *regexp.Regexp = regexp.MustCompile(`[0-9]{3}`)
+var personRegexp *regexp.Regexp = regexp.MustCompile(`\s*([\w ]+)\s+・\s+([A-z ]+)\s+・\s+([\w@.]+)`)
 
 func addSection(courseRef *schema.Course, classNum string, syllabusURI string, session schema.AcademicSession, rowInfo map[string]string, classInfo map[string]string) {
 	// Get subject prefix and course number by doing a regexp match on the section id
@@ -920,8 +921,8 @@ func addSection(courseRef *schema.Course, classNum string, syllabusURI string, s
 	courseRef.Sections = append(courseRef.Sections, section.Id)
 }
 
-var termRegexp *regexp.Regexp = regexp.MustCompile("Term: ([0-9]+[SUF])")
-var datesRegexp *regexp.Regexp = regexp.MustCompile("(?:Start|End)s: ([A-z]+ [0-9]{1,2}, [0-9]{4})")
+var termRegexp *regexp.Regexp = regexp.MustCompile(`Term: ([0-9]+[SUF])`)
+var datesRegexp *regexp.Regexp = regexp.MustCompile(`(?:Start|End)s: ([A-z]+ [0-9]{1,2}, [0-9]{4})`)
 
 func getAcademicSession(rowInfo map[string]string, classInfo map[string]string) schema.AcademicSession {
 	session := schema.AcademicSession{}
@@ -988,7 +989,7 @@ func addProfessors(sectionId schema.IdWrapper, rowInfo map[string]string, classI
 	return profRefs
 }
 
-var meetingsRegexp *regexp.Regexp = regexp.MustCompile(`([A-z]+ [0-9]+, [0-9]{4})-([A-z]+ [0-9]+, [0-9]{4})\W+((?:(?:Mon|Tues|Wednes|Thurs|Fri|Satur|Sun)day(?:, )?)+)\W+([0-9]+:[0-9]+(?:am|pm))-([0-9]+:[0-9]+(?:am|pm))(?:\W+(?:(\S+) (\S+)))`)
+var meetingsRegexp *regexp.Regexp = regexp.MustCompile(`([A-z]+\s+[0-9]+,\s+[0-9]{4})-([A-z]+\s+[0-9]+,\s+[0-9]{4})\W+((?:(?:Mon|Tues|Wednes|Thurs|Fri|Satur|Sun)day(?:, )?)+)\W+([0-9]+:[0-9]+(?:am|pm))-([0-9]+:[0-9]+(?:am|pm))(?:\W+(?:(\S+)\s+(\S+)))`)
 
 func getMeetings(rowInfo map[string]string, classInfo map[string]string) []schema.Meeting {
 	scheduleText := rowInfo["Schedule:"]

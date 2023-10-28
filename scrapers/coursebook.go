@@ -62,7 +62,7 @@ func refreshToken() map[string][]string {
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			cookies, err := network.GetCookies().Do(ctx)
 			if len(cookies) == 0 {
-				return errors.New("Failed to get a new token!")
+				return errors.New("failed to get a new token")
 			}
 			for i := 0; i < len(cookies); i++ {
 				if strings.Contains(cookies[i].Name, "PTGSESSID") {
@@ -185,6 +185,9 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 		for sectionIndex, id := range sectionIDs {
 			queryStr := fmt.Sprintf("id=%s&req=0bd73666091d3d1da057c5eeb6ef20a7df3CTp0iTMYFuu9paDeUptMzLYUiW4BIk9i8LIFcBahX2E2b18WWXkUUJ1Y7Xq6j3WZAKPbREfGX7lZY96lI7btfpVS95YAprdJHX9dc5wM=&action=section&div=r-62childcontent", id)
 			req, err := http.NewRequest("POST", "https://coursebook.utdallas.edu/clips/clip-cb11-hat.zog", strings.NewReader(queryStr))
+			if err != nil {
+				panic(err)
+			}
 			req.Header = coursebookHeaders
 			res, err := cli.Do(req)
 			if err != nil {

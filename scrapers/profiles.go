@@ -20,8 +20,8 @@ import (
 
 const BASE_URL string = "https://profiles.utdallas.edu/browse?page="
 
-var primaryLocationRegex *regexp.Regexp = regexp.MustCompile("^(\\w+)\\s+(\\d+\\.\\d{3}[A-z]?)$")
-var fallbackLocationRegex *regexp.Regexp = regexp.MustCompile("^([A-z]+)(\\d+)\\.?(\\d{3}[A-z]?)$")
+var primaryLocationRegex *regexp.Regexp = regexp.MustCompile(`^(\w+)\s+(\d+\.\d{3}[A-z]?)$`)
+var fallbackLocationRegex *regexp.Regexp = regexp.MustCompile(`^([A-z]+)(\d+)\.?(\d{3}[A-z]?)$`)
 
 func parseLocation(text string) schema.Location {
 	var building string
@@ -120,7 +120,7 @@ func scrapeProfessorLinks() []string {
 					for _, node := range nodes {
 						href, hasHref := node.Attribute("href")
 						if !hasHref {
-							return errors.New("Professor card was missing an href!")
+							return errors.New("professor card was missing an href")
 						}
 						professorLinks = append(professorLinks, href)
 					}
@@ -185,7 +185,7 @@ func ScrapeProfiles(outDir string) {
 					var hasSrc bool
 					imageUri, hasSrc = attributes["src"]
 					if !hasSrc {
-						return errors.New("No src found for imageUri!")
+						return errors.New("no src found for imageUri")
 					}
 				}
 				return err
@@ -200,7 +200,7 @@ func ScrapeProfiles(outDir string) {
 						var hasStyle bool
 						imageUri, hasStyle = attributes["style"]
 						if !hasStyle {
-							return errors.New("No style found for imageUri!")
+							return errors.New("no style found for imageUri")
 						}
 						imageUri = imageUri[23 : len(imageUri)-3]
 					}
