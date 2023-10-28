@@ -47,3 +47,6 @@ deploy_log.sh
 # output data and logs
 data/
 logs/
+
+# windows binaries
+*.exe
