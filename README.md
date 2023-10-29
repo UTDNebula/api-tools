@@ -26,7 +26,7 @@ Clone the repository.
 
 #### API Tools (Under construction)
 
-The API Tools use Golang with Gin and the MongoDB Golang Driver.
+The API Tools use Golang with ChromeDP and the MongoDB Golang Driver.
 
 ### Deployment
 
