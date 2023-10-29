@@ -21,7 +21,7 @@ Clone the repository.
 - The `grade-data` directory contains .CSV files of, you guessed it, the UTD grade data!
 - The `main` directory contains the main file that runs the CLI.
 - The `parser` directory contains the files and methods that parse the scraped data.
-- The `scrapers` directory contains the scrapers that scrape the UTD coursebook, the UTD organizations page, and the UTD profiles page.
+- The `scrapers` directory contains the scrapers for various UTD data sources.
 - The `uploader` directory contains the uploader that sends the parsed data to the Nebula API database. (Under construction)
 
 #### API Tools (Under construction)
