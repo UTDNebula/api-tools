@@ -82,7 +82,7 @@ func Parse(inDir string, outDir string, csvPath string, skipValidation bool) {
 	}
 
 	// Write validated data to output files
-	fptr, err := os.Create(fmt.Sprintf("%s/Courses.json", outDir))
+	fptr, err := os.Create(fmt.Sprintf("%s/courses.json", outDir))
 	if err != nil {
 		panic(err)
 	}
@@ -91,7 +91,7 @@ func Parse(inDir string, outDir string, csvPath string, skipValidation bool) {
 	encoder.Encode(getMapValues(Courses))
 	fptr.Close()
 
-	fptr, err = os.Create(fmt.Sprintf("%s/Sections.json", outDir))
+	fptr, err = os.Create(fmt.Sprintf("%s/sections.json", outDir))
 	if err != nil {
 		panic(err)
 	}
@@ -100,7 +100,7 @@ func Parse(inDir string, outDir string, csvPath string, skipValidation bool) {
 	encoder.Encode(getMapValues(Sections))
 	fptr.Close()
 
-	fptr, err = os.Create(fmt.Sprintf("%s/Professors.json", outDir))
+	fptr, err = os.Create(fmt.Sprintf("%s/professors.json", outDir))
 	if err != nil {
 		panic(err)
 	}
@@ -111,9 +111,9 @@ func Parse(inDir string, outDir string, csvPath string, skipValidation bool) {
 }
 
 func loadProfiles(inDir string) {
-	fptr, err := os.Open(fmt.Sprintf("%s/Profiles.json", inDir))
+	fptr, err := os.Open(fmt.Sprintf("%s/profiles.json", inDir))
 	if err != nil {
-		log.Print("Couldn't find/open Profiles.json in the input directory. Skipping profile load.\n")
+		log.Print("Couldn't find/open profiles.json in the input directory. Skipping profile load.\n")
 		return
 	}
 

@@ -141,7 +141,7 @@ func scrapeData(ctx context.Context, outdir string) error {
 		os.Remove(guidPath)
 	}()
 
-	outPath := filepath.Join(outdir, "Organizations.json")
+	outPath := filepath.Join(outdir, "organizations.json")
 
 	if err := processCsv(ctx, guidPath, outPath); err != nil {
 		return err

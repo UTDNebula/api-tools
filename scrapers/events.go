@@ -321,7 +321,7 @@ func ScrapeEvents(outDir string) {
 	}
 
 	// Write event data to output file
-	fptr, err := os.Create(fmt.Sprintf("%s/Events.json", outDir))
+	fptr, err := os.Create(fmt.Sprintf("%s/events.json", outDir))
 	if err != nil {
 		panic(err)
 	}

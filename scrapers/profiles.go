@@ -287,7 +287,7 @@ func ScrapeProfiles(outDir string) {
 	}
 
 	// Write professor data to output file
-	fptr, err := os.Create(fmt.Sprintf("%s/Profiles.json", outDir))
+	fptr, err := os.Create(fmt.Sprintf("%s/profiles.json", outDir))
 	if err != nil {
 		panic(err)
 	}
