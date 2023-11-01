@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/UTDNebula/nebula-api/schema"
+	"github.com/UTDNebula/nebula-api/api/schema"
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
@@ -270,7 +270,7 @@ func ScrapeProfiles(outDir string) {
 		log.Printf("Parsed list! #: %s, Office: %v\n\n", phoneNumber, office)
 
 		professors = append(professors, schema.Professor{
-			Id:           schema.IdWrapper{Id: primitive.NewObjectID()},
+			Id:           primitive.NewObjectID(),
 			First_name:   firstName,
 			Last_name:    lastName,
 			Titles:       titles,
@@ -280,7 +280,7 @@ func ScrapeProfiles(outDir string) {
 			Profile_uri:  link,
 			Image_uri:    imageUri,
 			Office_hours: []schema.Meeting{},
-			Sections:     []schema.IdWrapper{},
+			Sections:     []primitive.ObjectID{},
 		})
 
 		log.Printf("Scraped profile for %s %s!\n\n", firstName, lastName)

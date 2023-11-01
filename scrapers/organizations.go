@@ -17,7 +17,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/UTDNebula/nebula-api/schema"
+	"github.com/UTDNebula/nebula-api/api/schema"
 	"github.com/chromedp/cdproto/browser"
 	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/chromedp"
@@ -80,10 +80,8 @@ func loginToSoc(ctx context.Context) error {
 		return err
 	}
 
-	return chromedp.Run(ctx,
-		chromedp.ActionFunc(func(ctx context.Context) error {
-			return network.ClearBrowserCookies().Do(ctx)
-		}),
+	_, err = chromedp.RunResponse(ctx,
+		network.ClearBrowserCookies(),
 		chromedp.Navigate(socLoginUrl),
 		chromedp.SendKeys(`input[type="email"]`, netID+"@utdallas.edu"),
 		chromedp.Click(`input[type="submit"]`),
@@ -92,9 +90,11 @@ func loginToSoc(ctx context.Context) error {
 		chromedp.Sleep(1*time.Second),
 		chromedp.Click(`input[type="submit"]`),
 		chromedp.Sleep(2*time.Second),
-		chromedp.Click("button.auth-button"),
+		chromedp.Click(`button.auth-button`),
 		chromedp.WaitReady(`body`),
 	)
+
+	return err
 }
 
 func scrapeData(ctx context.Context, outdir string) error {
@@ -141,7 +141,7 @@ func scrapeData(ctx context.Context, outdir string) error {
 		os.Remove(guidPath)
 	}()
 
-	outPath := filepath.Join(outdir, "organizations.jsonl")
+	outPath := filepath.Join(outdir, "Organizations.json")
 
 	if err := processCsv(ctx, guidPath, outPath); err != nil {
 		return err
@@ -171,6 +171,7 @@ func processCsv(ctx context.Context, inputPath string, storageFilePath string) e
 		return err
 	}
 	encoder := json.NewEncoder(bufio.NewWriter(storageFile))
+	encoder.SetIndent("", "\t")
 
 	var _ []*schema.Organization
 	// process each row of csv
@@ -217,7 +218,7 @@ func parseCsvRecord(ctx context.Context, entry []string) (*schema.Organization, 
 		log.Printf("Error retrieving image for %s: %v\n", entry[0], err)
 	}
 	return &schema.Organization{
-		Id:             schema.IdWrapper{Id: primitive.NewObjectID()},
+		Id:             primitive.NewObjectID(),
 		Title:          entry[0],
 		Categories:     parseCategories(entry[1]),
 		Description:    entry[2],

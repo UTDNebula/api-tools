@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/UTDNebula/nebula-api/api/schema"
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
@@ -30,7 +31,7 @@ func ScrapeEvents(outDir string) {
 		panic(err)
 	}
 
-	events := []Event{}
+	events := []schema.Event{}
 
 	log.Printf("Scraping event page links\n")
 	//Grab all links to event pages
@@ -300,7 +301,7 @@ func ScrapeEvents(outDir string) {
 		log.Printf("Scraped contact email info: %s\n", contactInformationEmail)
 		log.Printf("Scraped contact phone info: %s\n", contactInformationPhone)
 
-		events = append(events, Event{
+		events = append(events, schema.Event{
 			Id:                 primitive.NewObjectID(),
 			Summary:            summary,
 			Location:           location,
@@ -328,23 +329,4 @@ func ScrapeEvents(outDir string) {
 	encoder.SetIndent("", "\t")
 	encoder.Encode(events)
 	fptr.Close()
-}
-
-// Temporary until chanes to nebula-api schema get merged
-type Event struct {
-	Id                 primitive.ObjectID `bson:"_id" json:"_id"`
-	Summary            string             `bson:"summary" json:"summary"`
-	Location           string             `bson:"location" json:"location"`
-	StartTime          time.Time          `bson:"start_time" json:"start_time"`
-	EndTime            time.Time          `bson:"end_time" json:"end_time"`
-	Description        string             `bson:"description" json:"description"`
-	EventType          []string           `bson:"event_type" json:"event_type"`
-	TargetAudience     []string           `bson:"target_audience" json:"target_audience"`
-	Topic              []string           `bson:"topic" json:"topic"`
-	EventTags          []string           `bson:"event_tags" json:"event_tags"`
-	EventWebsite       string             `bson:"event_website" json:"event_website"`
-	Department         []string           `bson:"department" json:"department"`
-	ContactName        string             `bson:"contact_name" json:"contact_name"`
-	ContactEmail       string             `bson:"contact_email" json:"contact_email"`
-	ContactPhoneNumber string             `bson:"contact_phone_number" json:"contact_phone_number"`
 }

@@ -11,21 +11,21 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/UTDNebula/nebula-api/schema"
+	"github.com/UTDNebula/nebula-api/api/schema"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // Main dictionaries for mapping unique keys to the actual data
-var Sections = make(map[schema.IdWrapper]*schema.Section)
+var Sections = make(map[primitive.ObjectID]*schema.Section)
 var Courses = make(map[string]*schema.Course)
 var Professors = make(map[string]*schema.Professor)
 
 // Auxilliary dictionaries for mapping the generated ObjectIDs to the keys used in the above maps, used for validation purposes
-var CourseIDMap = make(map[schema.IdWrapper]string)
-var ProfessorIDMap = make(map[schema.IdWrapper]string)
+var CourseIDMap = make(map[primitive.ObjectID]string)
+var ProfessorIDMap = make(map[primitive.ObjectID]string)
 
 // Requisite parser closures associated with courses
-var ReqParsers = make(map[schema.IdWrapper]func())
+var ReqParsers = make(map[primitive.ObjectID]func())
 
 // Grade mappings for section grade distributions, mapping is MAP[SEMESTER] -> MAP[SUBJECT + NUMBER + SECTION] -> GRADE DISTRIBUTION
 var GradeMap map[string]map[string][]int
@@ -258,7 +258,7 @@ func addCourse(courseNum string, session schema.AcademicSession, rowInfo map[str
 
 	course = &schema.Course{}
 
-	course.Id = schema.IdWrapper{Id: primitive.NewObjectID()}
+	course.Id = primitive.NewObjectID()
 	course.Course_number = idMatches[2]
 	course.Subject_prefix = idMatches[1]
 	course.Title = rowInfo["Course Title:"]
@@ -868,7 +868,7 @@ func addSection(courseRef *schema.Course, classNum string, syllabusURI string, s
 
 	section := &schema.Section{}
 
-	section.Id = schema.IdWrapper{Id: primitive.NewObjectID()}
+	section.Id = primitive.NewObjectID()
 	section.Section_number = idMatches[1]
 	section.Course_reference = courseRef.Id
 
@@ -954,10 +954,10 @@ func getAcademicSession(rowInfo map[string]string, classInfo map[string]string) 
 	return session
 }
 
-func addProfessors(sectionId schema.IdWrapper, rowInfo map[string]string, classInfo map[string]string) []schema.IdWrapper {
+func addProfessors(sectionId primitive.ObjectID, rowInfo map[string]string, classInfo map[string]string) []primitive.ObjectID {
 	professorText := rowInfo["Instructor(s):"]
 	professorMatches := personRegexp.FindAllStringSubmatch(professorText, -1)
-	var profRefs []schema.IdWrapper = make([]schema.IdWrapper, 0, len(professorMatches))
+	var profRefs []primitive.ObjectID = make([]primitive.ObjectID, 0, len(professorMatches))
 	for _, match := range professorMatches {
 
 		nameStr := match[1]
@@ -976,12 +976,12 @@ func addProfessors(sectionId schema.IdWrapper, rowInfo map[string]string, classI
 		}
 
 		prof = &schema.Professor{}
-		prof.Id = schema.IdWrapper{Id: primitive.NewObjectID()}
+		prof.Id = primitive.NewObjectID()
 		prof.First_name = firstName
 		prof.Last_name = lastName
 		prof.Titles = []string{match[2]}
 		prof.Email = match[3]
-		prof.Sections = []schema.IdWrapper{sectionId}
+		prof.Sections = []primitive.ObjectID{sectionId}
 		profRefs = append(profRefs, prof.Id)
 		Professors[profKey] = prof
 		ProfessorIDMap[prof.Id] = profKey
