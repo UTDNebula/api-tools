@@ -15,7 +15,7 @@ func writeJSON(filepath string, data interface{}) error {
 	defer fptr.Close()
 	encoder := json.NewEncoder(fptr)
 	encoder.SetIndent("", "\t")
-	encoder.Encode(getMapValues(Courses))
+	encoder.Encode(data)
 	return nil
 }
 
