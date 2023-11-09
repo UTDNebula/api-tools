@@ -21,7 +21,7 @@ func parseSection(courseRef *schema.Course, classNum string, syllabusURI string,
 
 	section := &schema.Section{}
 
-	section.Id = primitive.NewObjectID()
+	section.Id = schema.IdWrapper{ObjectID: primitive.NewObjectID()}
 	section.Section_number = idMatches[1]
 	section.Course_reference = courseRef.Id
 

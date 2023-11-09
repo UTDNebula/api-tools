@@ -218,7 +218,7 @@ func parseCsvRecord(ctx context.Context, entry []string) (*schema.Organization, 
 		log.Printf("Error retrieving image for %s: %v\n", entry[0], err)
 	}
 	return &schema.Organization{
-		Id:             primitive.NewObjectID(),
+		Id:             schema.IdWrapper{ObjectID: primitive.NewObjectID()},
 		Title:          entry[0],
 		Categories:     parseCategories(entry[1]),
 		Description:    entry[2],

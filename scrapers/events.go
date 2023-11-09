@@ -302,7 +302,7 @@ func ScrapeEvents(outDir string) {
 		log.Printf("Scraped contact phone info: %s\n", contactInformationPhone)
 
 		events = append(events, schema.Event{
-			Id:                 primitive.NewObjectID(),
+			Id:                 schema.IdWrapper{ObjectID: primitive.NewObjectID()},
 			Summary:            summary,
 			Location:           location,
 			StartTime:          dateTimeStart,
