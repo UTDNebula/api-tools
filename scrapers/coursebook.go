@@ -172,7 +172,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 			courseBuilder.Write(buf.Bytes())
 		}
 		// Find all section IDs in returned data
-		sectionRegexp := regexp.MustCompile(fmt.Sprintf("View details for section (%s[0-9v]{4}\\.[0-9a-z]{3}\\.[0-9]{2}[suf])", coursePrefix[3:]))
+		sectionRegexp := regexp.MustCompile(fmt.Sprintf(`View details for section (%s[0-9v]{4}\.\w+\.[0-9]{2}[suf])`, coursePrefix[3:]))
 		smatches := sectionRegexp.FindAllStringSubmatch(courseBuilder.String(), -1)
 		sectionIDs := make([]string, 0, len(smatches))
 		for _, matchSet := range smatches {
