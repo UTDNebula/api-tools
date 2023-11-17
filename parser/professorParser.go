@@ -29,7 +29,7 @@ func parseProfessors(sectionId schema.IdWrapper, rowInfo map[string]string, clas
 		}
 
 		prof = &schema.Professor{}
-		prof.Id = schema.IdWrapper{ObjectID: primitive.NewObjectID()}
+		prof.Id = schema.IdWrapper(primitive.NewObjectID().Hex())
 		prof.First_name = firstName
 		prof.Last_name = lastName
 		prof.Titles = []string{match[2]}
