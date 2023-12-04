@@ -12,7 +12,7 @@ import (
 
 var sectionPrefixRegexp *regexp.Regexp = regexp.MustCompile(`^(?i)[A-Z]{2,4}[0-9V]{4}\.([0-9A-z]+)`)
 var coreRegexp *regexp.Regexp = regexp.MustCompile(`[0-9]{3}`)
-var personRegexp *regexp.Regexp = regexp.MustCompile(`\s*([\w ]+)\s+・\s+([A-z ]+)\s+・\s+([\w@.]+)`)
+var personRegexp *regexp.Regexp = regexp.MustCompile(`(.+)・(.+)・(.+)`)
 
 func parseSection(courseRef *schema.Course, classNum string, syllabusURI string, session schema.AcademicSession, rowInfo map[string]string, classInfo map[string]string) {
 	// Get subject prefix and course number by doing a regexp match on the section id
@@ -38,12 +38,12 @@ func parseSection(courseRef *schema.Course, classNum string, syllabusURI string,
 	section.Teaching_assistants = make([]schema.Assistant, 0, len(assistantMatches))
 	for _, match := range assistantMatches {
 		assistant := schema.Assistant{}
-		nameStr := match[1]
+		nameStr := trimWhitespace(match[1])
 		names := strings.Split(nameStr, " ")
-		assistant.First_name = names[0]
+		assistant.First_name = strings.Join(names[:len(names)-1], " ")
 		assistant.Last_name = names[len(names)-1]
-		assistant.Role = match[2]
-		assistant.Email = match[3]
+		assistant.Role = trimWhitespace(match[2])
+		assistant.Email = trimWhitespace(match[3])
 		section.Teaching_assistants = append(section.Teaching_assistants, assistant)
 	}
 
