@@ -130,17 +130,9 @@ func getMeetings(rowInfo map[string]string, classInfo map[string]string) []schem
 
 		meeting.Meeting_days = strings.Split(match[3], ", ")
 
-		startTime, err := time.ParseInLocation("3:04pm", match[4], timeLocation)
-		if err != nil {
-			panic(err)
-		}
-		meeting.Start_time = startTime
-
-		endTime, err := time.ParseInLocation("3:04pm", match[5], timeLocation)
-		if err != nil {
-			panic(err)
-		}
-		meeting.End_time = endTime
+		// Don't parse time into time object, adds unnecessary extra data
+		meeting.Start_time = match[4]
+		meeting.End_time = match[5]
 
 		// Only add location data if it's available
 		if len(match) > 6 {
