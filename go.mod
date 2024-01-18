@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/PuerkitoBio/goquery v1.8.1
 	github.com/UTDNebula/nebula-api/api v0.0.0-20231204040332-adccdc08b203
-	github.com/chromedp/cdproto v0.0.0-20231101223124-24f5925b5980
+	github.com/chromedp/cdproto v0.0.0-20240116100315-4a0ec5e4c400
 	github.com/chromedp/chromedp v0.9.3
 	github.com/joho/godotenv v1.5.1
 	go.mongodb.org/mongo-driver v1.13.0

@@ -13,7 +13,7 @@ func parseProfessors(sectionId schema.IdWrapper, rowInfo map[string]string, clas
 	var profRefs []schema.IdWrapper = make([]schema.IdWrapper, 0, len(professorMatches))
 	for _, match := range professorMatches {
 
-		nameStr := trimWhitespace(match[1])
+		nameStr := TrimWhitespace(match[1])
 		names := strings.Split(nameStr, " ")
 
 		firstName := strings.Join(names[:len(names)-1], " ")
@@ -37,8 +37,8 @@ func parseProfessors(sectionId schema.IdWrapper, rowInfo map[string]string, clas
 		prof.Id = schema.IdWrapper(primitive.NewObjectID().Hex())
 		prof.First_name = firstName
 		prof.Last_name = lastName
-		prof.Titles = []string{trimWhitespace(match[2])}
-		prof.Email = trimWhitespace(match[3])
+		prof.Titles = []string{TrimWhitespace(match[2])}
+		prof.Email = TrimWhitespace(match[3])
 		prof.Sections = []schema.IdWrapper{sectionId}
 		profRefs = append(profRefs, prof.Id)
 		Professors[profKey] = prof

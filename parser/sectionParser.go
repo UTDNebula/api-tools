@@ -38,12 +38,12 @@ func parseSection(courseRef *schema.Course, classNum string, syllabusURI string,
 	section.Teaching_assistants = make([]schema.Assistant, 0, len(assistantMatches))
 	for _, match := range assistantMatches {
 		assistant := schema.Assistant{}
-		nameStr := trimWhitespace(match[1])
+		nameStr := TrimWhitespace(match[1])
 		names := strings.Split(nameStr, " ")
 		assistant.First_name = strings.Join(names[:len(names)-1], " ")
 		assistant.Last_name = names[len(names)-1]
-		assistant.Role = trimWhitespace(match[2])
-		assistant.Email = trimWhitespace(match[3])
+		assistant.Role = TrimWhitespace(match[2])
+		assistant.Email = TrimWhitespace(match[3])
 		section.Teaching_assistants = append(section.Teaching_assistants, assistant)
 	}
 
