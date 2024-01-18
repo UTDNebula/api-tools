@@ -173,7 +173,7 @@ func processCsv(ctx context.Context, inputPath string, storageFilePath string) e
 	encoder := json.NewEncoder(bufio.NewWriter(storageFile))
 	encoder.SetIndent("", "\t")
 
-	var _ []*schema.Organization
+	var orgs []*schema.Organization
 	// process each row of csv
 	for i := 1; true; i++ {
 		entry, err := csvReader.Read()
@@ -189,9 +189,13 @@ func processCsv(ctx context.Context, inputPath string, storageFilePath string) e
 		if err != nil {
 			return err
 		}
-		if err := encoder.Encode(org); err != nil {
-			return err
-		}
+
+		orgs = append(orgs, org)
+	}
+
+	// Write JSON to file
+	if err = encoder.Encode(orgs); err != nil {
+		return err
 	}
 
 	if err := csvFile.Close(); err != nil {
@@ -218,7 +222,7 @@ func parseCsvRecord(ctx context.Context, entry []string) (*schema.Organization, 
 		log.Printf("Error retrieving image for %s: %v\n", entry[0], err)
 	}
 	return &schema.Organization{
-		Id:             primitive.NewObjectID(),
+		Id:             schema.IdWrapper(primitive.NewObjectID().Hex()),
 		Title:          entry[0],
 		Categories:     parseCategories(entry[1]),
 		Description:    entry[2],

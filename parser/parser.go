@@ -9,20 +9,19 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/UTDNebula/nebula-api/api/schema"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // Main dictionaries for mapping unique keys to the actual data
-var Sections = make(map[primitive.ObjectID]*schema.Section)
+var Sections = make(map[schema.IdWrapper]*schema.Section)
 var Courses = make(map[string]*schema.Course)
 var Professors = make(map[string]*schema.Professor)
 
 // Auxilliary dictionaries for mapping the generated ObjectIDs to the keys used in the above maps, used for validation purposes
-var CourseIDMap = make(map[primitive.ObjectID]string)
-var ProfessorIDMap = make(map[primitive.ObjectID]string)
+var CourseIDMap = make(map[schema.IdWrapper]string)
+var ProfessorIDMap = make(map[schema.IdWrapper]string)
 
 // Requisite parser closures associated with courses
-var ReqParsers = make(map[primitive.ObjectID]func())
+var ReqParsers = make(map[schema.IdWrapper]func())
 
 // Grade mappings for section grade distributions, mapping is MAP[SEMESTER] -> MAP[SUBJECT + NUMBER + SECTION] -> GRADE DISTRIBUTION
 var GradeMap map[string]map[string][]int
