@@ -91,7 +91,7 @@ func getNodeText(node *cdp.Node) string {
 	return node.Children[0].NodeValue
 }
 
-func scrapeProfessorLinks() []string {
+func scrapeProfessorLinks(chromedpCtx context.Context) []string {
 	var pageLinks []*cdp.Node
 	_, err := chromedp.RunResponse(chromedpCtx,
 		chromedp.Navigate(BASE_URL+"1"),
@@ -138,7 +138,7 @@ func scrapeProfessorLinks() []string {
 
 func ScrapeProfiles(outDir string) {
 
-	cancel := initChromeDp()
+	chromedpCtx, cancel := initChromeDp()
 	defer cancel()
 
 	err := os.MkdirAll(outDir, 0777)
@@ -149,7 +149,7 @@ func ScrapeProfiles(outDir string) {
 	var professors []schema.Professor
 
 	log.Print("Scraping professor links...\n")
-	professorLinks := scrapeProfessorLinks()
+	professorLinks := scrapeProfessorLinks(chromedpCtx)
 	log.Print("Scraped professor links!\n\n")
 
 	for _, link := range professorLinks {

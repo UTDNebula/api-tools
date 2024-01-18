@@ -17,19 +17,16 @@ import (
 	"github.com/joho/godotenv"
 )
 
-var chromedpCtx context.Context
-
-func initChromeDp() context.CancelFunc {
+func initChromeDp() (chromedpCtx context.Context, cancelFnc context.CancelFunc) {
 	log.Printf("Initializing chromedp...\n")
-	var cancelFnc context.CancelFunc
-	//allocCtx, _ := chromedp.NewExecAllocator(context.Background(), []chromedp.ExecAllocatorOption{}...)
-	chromedpCtx, cancelFnc = chromedp.NewContext(context.Background())
+	allocCtx, cancelFnc := chromedp.NewExecAllocator(context.Background())
+	chromedpCtx, _ = chromedp.NewContext(allocCtx)
 	log.Printf("Initialized chromedp!\n")
-	return cancelFnc
+	return
 }
 
 // This function generates a fresh auth token and returns the new headers
-func refreshToken() map[string][]string {
+func refreshToken(chromedpCtx context.Context) map[string][]string {
 	netID := os.Getenv("LOGIN_NETID")
 	if netID == "" {
 		log.Panic("LOGIN_NETID is missing from .env!")
@@ -56,20 +53,23 @@ func refreshToken() map[string][]string {
 		panic(err)
 	}
 
-	var cookie []string
+	var cookieStrs []string
 	_, err = chromedp.RunResponse(chromedpCtx,
 		chromedp.Navigate(`https://coursebook.utdallas.edu/`),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			cookies, err := network.GetCookies().Do(ctx)
-			if len(cookies) == 0 {
-				return errors.New("failed to get a new token")
-			}
-			for i := 0; i < len(cookies); i++ {
-				if strings.Contains(cookies[i].Name, "PTGSESSID") {
-					cookie = []string{fmt.Sprintf("%s=%s", cookies[i].Name, cookies[i].Value)}
+			cookieStrs = make([]string, len(cookies))
+			gotToken := false
+			for i, cookie := range cookies {
+				cookieStrs[i] = fmt.Sprintf("%s=%s", cookie.Name, cookie.Value)
+				if cookie.Name == "PTGSESSID" {
+					fmt.Printf("Got new token: PTGSESSID = %s\n", cookie.Value)
+					gotToken = true
 				}
 			}
-			log.Printf("Got new token: %s\n", cookie)
+			if !gotToken {
+				return errors.New("failed to get a new token")
+			}
 			return err
 		}),
 	)
@@ -83,7 +83,7 @@ func refreshToken() map[string][]string {
 		"Accept":          {"text/html"},
 		"Accept-Language": {"en-US"},
 		"Content-Type":    {"application/x-www-form-urlencoded"},
-		"Cookie":          cookie,
+		"Cookie":          cookieStrs,
 		"Connection":      {"keep-alive"},
 	}
 }
@@ -96,7 +96,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 	}
 
 	// Start chromedp
-	cancel := initChromeDp()
+	chromedpCtx, cancel := initChromeDp()
 	defer cancel()
 
 	// Find index of starting prefix, if one has been given
@@ -144,7 +144,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 			panic(err)
 		}
 		// Get a fresh token at the start of each new prefix because we can lol
-		coursebookHeaders := refreshToken()
+		coursebookHeaders := refreshToken(chromedpCtx)
 		// Give coursebook some time to recognize the new token
 		time.Sleep(500 * time.Millisecond)
 		// String builder to store accumulated course HTML data for both class levels
@@ -183,6 +183,9 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 		// Get HTML data for all section IDs
 		sectionsInCoursePrefix := 0
 		for sectionIndex, id := range sectionIDs {
+
+			// Get section info
+			// Worth noting that the "req" and "div" params in the request below don't actually seem to matter... consider them filler to make sure the request goes through
 			queryStr := fmt.Sprintf("id=%s&req=0bd73666091d3d1da057c5eeb6ef20a7df3CTp0iTMYFuu9paDeUptMzLYUiW4BIk9i8LIFcBahX2E2b18WWXkUUJ1Y7Xq6j3WZAKPbREfGX7lZY96lI7btfpVS95YAprdJHX9dc5wM=&action=section&div=r-62childcontent", id)
 			req, err := http.NewRequest("POST", "https://coursebook.utdallas.edu/clips/clip-cb11-hat.zog", strings.NewReader(queryStr))
 			if err != nil {
@@ -206,10 +209,12 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 				panic(err)
 			}
 			fptr.Close()
-			log.Printf("Got section: %s\n", id)
-			if sectionIndex%60 == 0 && sectionIndex != 0 {
+
+			// Report success, refresh token periodically
+			fmt.Printf("Got section: %s\n", id)
+			if sectionIndex%30 == 0 && sectionIndex != 0 {
 				// Ratelimit? What ratelimit?
-				coursebookHeaders = refreshToken()
+				coursebookHeaders = refreshToken(chromedpCtx)
 				// Give coursebook some time to recognize the new token
 				time.Sleep(500 * time.Millisecond)
 			}

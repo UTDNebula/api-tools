@@ -33,7 +33,7 @@ func ANDMatcher(group string, subgroups []string) interface{} {
 	subExpressions := ANDRegex.Split(group, -1)
 	parsedSubExps := make([]interface{}, 0, len(subExpressions))
 	for _, exp := range subExpressions {
-		parsedExp := parseGroup(trimWhitespace(exp))
+		parsedExp := parseGroup(TrimWhitespace(exp))
 		// Don't include throwaways
 		if !reqIsThrowaway(parsedExp) {
 			parsedSubExps = append(parsedSubExps, parsedExp)
@@ -74,7 +74,7 @@ func ORMatcher(group string, subgroups []string) interface{} {
 	subExpressions := ORRegex.Split(group, -1)
 	parsedSubExps := make([]interface{}, 0, len(subExpressions))
 	for _, exp := range subExpressions {
-		parsedExp := parseGroup(trimWhitespace(exp))
+		parsedExp := parseGroup(TrimWhitespace(exp))
 		// Don't include throwaways
 		if !reqIsThrowaway(parsedExp) {
 			parsedSubExps = append(parsedSubExps, parsedExp)
@@ -395,12 +395,12 @@ func getReqParser(course *schema.Course, hasEnrollmentReqs bool, enrollmentReqs 
 				// Erase current match from checkText to prevent erroneous duplicated Reqs
 				checkText = strings.Replace(checkText, reqMatches[1], "", -1)
 				// Split reqText into chunks based on period-space delimiters
-				textChunks := strings.Split(trimWhitespace(reqText), ". ")
+				textChunks := strings.Split(TrimWhitespace(reqText), ". ")
 				parsedChunks := make([]interface{}, 0, len(textChunks))
 				// Parse each chunk, then add non-throwaway chunks to parsedChunks
 				for _, chunk := range textChunks {
 					// Trim any remaining rightmost periods
-					chunk = trimWhitespace(strings.TrimRight(chunk, "."))
+					chunk = TrimWhitespace(strings.TrimRight(chunk, "."))
 					parsedChunk := parseChunk(chunk)
 					if !reqIsThrowaway(parsedChunk) {
 						parsedChunks = append(parsedChunks, parsedChunk)
@@ -568,7 +568,7 @@ func groupParens(text string) (string, []string) {
 
 // Function for replacing all group references (groups referenced via group tags) with their actual text
 func ungroupText(text string) string {
-	text = trimWhitespace(text)
+	text = TrimWhitespace(text)
 	for groupNum := len(groupList) - 1; groupNum >= 0; groupNum-- {
 		subText := fmt.Sprintf("@%d", groupNum)
 		replacementText := fmt.Sprintf("(%s)", groupList[groupNum])

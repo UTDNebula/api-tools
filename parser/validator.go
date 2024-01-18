@@ -11,7 +11,7 @@ func validate() {
 	}()
 
 	log.Printf("\nValidating courses...\n")
-	courseKeys := getMapKeys(Courses)
+	courseKeys := GetMapKeys(Courses)
 	for i := 0; i < len(courseKeys)-1; i++ {
 		course1 := Courses[courseKeys[i]]
 		// Check for duplicate courses by comparing course_number, subject_prefix, and catalog_year as a compound key
@@ -42,7 +42,7 @@ func validate() {
 	log.Print("No invalid courses!\n\n")
 
 	log.Print("Validating sections...\n")
-	sectionKeys := getMapKeys(Sections)
+	sectionKeys := GetMapKeys(Sections)
 	for i := 0; i < len(sectionKeys)-1; i++ {
 		section1 := Sections[sectionKeys[i]]
 		// Check for duplicate sections by comparing section_number, course_reference, and academic_session as a compound key
@@ -89,7 +89,7 @@ func validate() {
 	log.Printf("No invalid sections!\n\n")
 
 	log.Printf("Validating professors...\n")
-	profKeys := getMapKeys(Professors)
+	profKeys := GetMapKeys(Professors)
 	// Check for duplicate professors by comparing first_name, last_name, and sections as a compound key
 	for i := 0; i < len(profKeys)-1; i++ {
 		prof1 := Professors[profKeys[i]]

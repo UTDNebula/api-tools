@@ -35,6 +35,8 @@ func main() {
 	scrapeOrganizations := flag.Bool("organizations", false, "Alongside -scrape, signifies that SOC organizations should be scraped.")
 	// Flag for event scraping
 	scrapeEvents := flag.Bool("events", false, "Alongside -scrape, signifies that events should be scraped.")
+	// Flag for eval scraping
+	scrapeEvals := flag.Bool("evaluations", false, "Alongside -scrape, signifies that course evaluations should be scraped. Requires coursebook to be scraped beforehand!")
 
 	// Flags for parsing
 	parse := flag.Bool("parse", false, "Puts the tool into parsing mode.")
@@ -81,8 +83,10 @@ func main() {
 			scrapers.ScrapeOrganizations(*outDir)
 		case *scrapeEvents:
 			scrapers.ScrapeEvents(*outDir)
+		case *scrapeEvals:
+			scrapers.ScrapeEvals(*inDir)
 		default:
-			log.Panic("One of the -coursebook or -profiles flags must be set for scraping!")
+			log.Panic("You must specify which type of scraping you would like to perform with one of the scraping flags!")
 		}
 	case *parse:
 		parser.Parse(*inDir, *outDir, *csvDir, *skipValidation)

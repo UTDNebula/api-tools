@@ -48,7 +48,7 @@ func Parse(inDir string, outDir string, csvPath string, skipValidation bool) {
 	loadProfiles(inDir)
 
 	// Find paths of all scraped data
-	paths := getAllSectionFilepaths(inDir)
+	paths := GetAllSectionFilepaths(inDir)
 	if !skipValidation {
 		log.Printf("Parsing and validating %d files...\n", len(paths))
 	} else {
@@ -85,9 +85,9 @@ func Parse(inDir string, outDir string, csvPath string, skipValidation bool) {
 	}
 
 	// Write validated data to output files
-	writeJSON(fmt.Sprintf("%s/courses.json", outDir), getMapValues(Courses))
-	writeJSON(fmt.Sprintf("%s/sections.json", outDir), getMapValues(Sections))
-	writeJSON(fmt.Sprintf("%s/professors.json", outDir), getMapValues(Professors))
+	WriteJSON(fmt.Sprintf("%s/courses.json", outDir), GetMapValues(Courses))
+	WriteJSON(fmt.Sprintf("%s/sections.json", outDir), GetMapValues(Sections))
+	WriteJSON(fmt.Sprintf("%s/professors.json", outDir), GetMapValues(Professors))
 }
 
 // Internal parse function
@@ -118,9 +118,9 @@ func parse(path string) {
 
 	// Populate rowInfo
 	infoRows.Each(func(_ int, row *goquery.Selection) {
-		rowHeader := trimWhitespace(row.FindMatcher(goquery.Single("th")).Text())
+		rowHeader := TrimWhitespace(row.FindMatcher(goquery.Single("th")).Text())
 		rowData := row.FindMatcher(goquery.Single("td"))
-		rowInfo[rowHeader] = trimWhitespace(rowData.Text())
+		rowInfo[rowHeader] = TrimWhitespace(rowData.Text())
 		// Get syllabusURI from syllabus row link
 		if rowHeader == "Syllabus:" {
 			syllabusURI, _ = rowData.FindMatcher(goquery.Single("a")).Attr("href")
@@ -138,8 +138,8 @@ func parse(path string) {
 	infoRows.Each(func(_ int, row *goquery.Selection) {
 		rowHeaders := row.Find("td.courseinfo__classsubtable__th")
 		rowHeaders.Each(func(_ int, header *goquery.Selection) {
-			headerText := trimWhitespace(header.Text())
-			dataText := trimWhitespace(header.Next().Text())
+			headerText := TrimWhitespace(header.Text())
+			dataText := TrimWhitespace(header.Next().Text())
 			classInfo[headerText] = dataText
 		})
 	})
@@ -147,7 +147,7 @@ func parse(path string) {
 	// Get the class and course num by splitting classInfo value
 	classAndCourseNum := strings.Split(classInfo["Class/Course Number:"], " / ")
 	classNum := classAndCourseNum[0]
-	courseNum := trimWhitespace(classAndCourseNum[1])
+	courseNum := TrimWhitespace(classAndCourseNum[1])
 
 	// Figure out the academic session associated with this specific course/Section
 	session := getAcademicSession(rowInfo, classInfo)

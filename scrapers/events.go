@@ -23,7 +23,7 @@ var trailingSpaceRegex *regexp.Regexp = regexp.MustCompile(`(\s{2,}?\s{2,})|(\n)
 
 func ScrapeEvents(outDir string) {
 
-	cancel := initChromeDp()
+	chromedpCtx, cancel := initChromeDp()
 	defer cancel()
 
 	err := os.MkdirAll(outDir, 0777)
