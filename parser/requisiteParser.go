@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/UTDNebula/api-tools/utils"
 	"github.com/UTDNebula/nebula-api/api/schema"
 )
 
@@ -33,7 +34,7 @@ func ANDMatcher(group string, subgroups []string) interface{} {
 	subExpressions := ANDRegex.Split(group, -1)
 	parsedSubExps := make([]interface{}, 0, len(subExpressions))
 	for _, exp := range subExpressions {
-		parsedExp := parseGroup(TrimWhitespace(exp))
+		parsedExp := parseGroup(utils.TrimWhitespace(exp))
 		// Don't include throwaways
 		if !reqIsThrowaway(parsedExp) {
 			parsedSubExps = append(parsedSubExps, parsedExp)
@@ -74,7 +75,7 @@ func ORMatcher(group string, subgroups []string) interface{} {
 	subExpressions := ORRegex.Split(group, -1)
 	parsedSubExps := make([]interface{}, 0, len(subExpressions))
 	for _, exp := range subExpressions {
-		parsedExp := parseGroup(TrimWhitespace(exp))
+		parsedExp := parseGroup(utils.TrimWhitespace(exp))
 		// Don't include throwaways
 		if !reqIsThrowaway(parsedExp) {
 			parsedSubExps = append(parsedSubExps, parsedExp)
@@ -214,7 +215,7 @@ func initMatchers() {
 
 		// * <YEAR> only
 		{
-			regexp.MustCompile(`(?i).+(?:freshman|sophomores|juniors|seniors)\s+only$`),
+			utils.Regexpf(`(?i).+%s\s+only$`, utils.R_YEARS),
 			OtherMatcher,
 		},
 
@@ -226,13 +227,13 @@ func initMatchers() {
 
 		// <SUBJECT> majors and minors only
 		{
-			regexp.MustCompile(`(?i)(([A-Z]+)\s+majors\s+and\s+minors\s+only)`),
+			utils.Regexpf(`(?i)((%s)\s+majors\s+and\s+minors\s+only)`, utils.R_SUBJECT),
 			SubstitutionMatcher(func(group string, subgroups []string) interface{} {
 				return MajorMinorMatcher(subgroups[1], subgroups[1:3])
 			}),
 		},
 
-		// Core completion
+		// Completion of [a/an] <CORE CODE> core [course]
 		{
 			regexp.MustCompile(`(?i)(Completion\s+of\s+(?:an?\s+)?(\d{3}).+core(?:\s+course)?)`),
 			SubstitutionMatcher(func(group string, subgroups []string) interface{} {
@@ -240,7 +241,7 @@ func initMatchers() {
 			}),
 		},
 
-		// Credit cannot be received for both courses, <EXPRESSION>
+		// Credit cannot be received for both [courses][,] <EXPRESSION>
 		{
 			regexp.MustCompile(`(?i)(Credit\s+cannot\s+be\s+received\s+for\s+both\s+(?:courses)?,?(.+))`),
 			SubstitutionMatcher(func(group string, subgroups []string) interface{} {
@@ -264,7 +265,7 @@ func initMatchers() {
 
 		// "<COURSE> with a [grade] [of] <GRADE> or better"
 		{
-			regexp.MustCompile(`^(?i)(([A-Z]{2,4})\s+([0-9V]{4})\s+with\s+a(?:\s+grade)?(?:\s+of)?\s+([ABCF][+-]?)\s+or\s+better)`), // [name, number, min grade]
+			utils.Regexpf(`^(?i)(%s\s+with\s+a(?:\s+grade)?(?:\s+of)?\s+(%s)\s+or\s+better)`, utils.R_SUBJ_COURSE_CAP, utils.R_GRADE), // [name, number, min grade]
 			SubstitutionMatcher(func(group string, subgroups []string) interface{} {
 				return CourseMinGradeMatcher(subgroups[1], subgroups[1:5])
 			}),
@@ -278,13 +279,13 @@ func initMatchers() {
 
 		// <COURSE> with a [minimum] grade of [at least] [a] <GRADE>
 		{
-			regexp.MustCompile(`^(?i)([A-Z]{2,4})\s+([0-9V]{4})\s+with\s+a\s+(?:minimum\s+)?grade\s+of\s+(?:at least\s+)?(?:a\s+)?([ABCF][+-]?)$`), // [name, number, min grade]
+			utils.Regexpf(`^(?i)%s\s+with\s+a\s+(?:minimum\s+)?grade\s+of\s+(?:at least\s+)?(?:a\s+)?(%s)$`, utils.R_SUBJ_COURSE_CAP, utils.R_GRADE), // [name, number, min grade]
 			CourseMinGradeMatcher,
 		},
 
 		// A grade of [at least] [a] <GRADE> in <COURSE>
 		{
-			regexp.MustCompile(`^(?i)A\s+grade\s+of(?:\s+at\s+least)?(?:\s+a)?\s+([ABCF][+-]?)\s+in\s+([A-Z]{2,4})\s+([0-9V]{4})$`), // [min grade, name, number]
+			utils.Regexpf(`^(?i)A\s+grade\s+of(?:\s+at\s+least)?(?:\s+a)?\s+(%s)\s+in\s+%s$`, utils.R_GRADE, utils.R_SUBJ_COURSE_CAP), // [min grade, name, number]
 			func(group string, subgroups []string) interface{} {
 				return CourseMinGradeMatcher(group, []string{subgroups[0], subgroups[2], subgroups[3], subgroups[1]})
 			},
@@ -292,7 +293,7 @@ func initMatchers() {
 
 		// <COURSE>
 		{
-			regexp.MustCompile(`^\s*([A-Z]{2,4})\s+([0-9V]{4})\s*$`), // [name, number]
+			utils.Regexpf(`^\s*%s\s*$`, utils.R_SUBJ_COURSE_CAP), // [name, number]
 			CourseMatcher,
 		},
 
@@ -310,7 +311,7 @@ func initMatchers() {
 
 		// This course may only be repeated for <HOURS> credit hours
 		{
-			regexp.MustCompile(`^(?:[A-Z]{2,4}\s+[0-9V]{4}\s+)?Repeat\s+Limit\s+-\s+(?:[A-Z]{2,4}\s+[0-9V]{4}|This\s+course)\s+may\s+only\s+be\s+repeated\s+for(?:\s+a\s+maximum\s+of)?\s+(\d+)\s+semester\s+cre?dit\s+hours(?:\s+maximum)?$`),
+			utils.Regexpf(`^(?:%s\s+)?Repeat\s+Limit\s+-\s+(?:%s|This\s+course)\s+may\s+only\s+be\s+repeated\s+for(?:\s+a\s+maximum\s+of)?\s+(\d+)\s+semester\s+cre?dit\s+hours(?:\s+maximum)?$`, utils.R_SUBJ_COURSE, utils.R_SUBJ_COURSE),
 			LimitMatcher,
 		},
 
@@ -395,12 +396,12 @@ func getReqParser(course *schema.Course, hasEnrollmentReqs bool, enrollmentReqs 
 				// Erase current match from checkText to prevent erroneous duplicated Reqs
 				checkText = strings.Replace(checkText, reqMatches[1], "", -1)
 				// Split reqText into chunks based on period-space delimiters
-				textChunks := strings.Split(TrimWhitespace(reqText), ". ")
+				textChunks := strings.Split(utils.TrimWhitespace(reqText), ". ")
 				parsedChunks := make([]interface{}, 0, len(textChunks))
 				// Parse each chunk, then add non-throwaway chunks to parsedChunks
 				for _, chunk := range textChunks {
 					// Trim any remaining rightmost periods
-					chunk = TrimWhitespace(strings.TrimRight(chunk, "."))
+					chunk = utils.TrimWhitespace(strings.TrimRight(chunk, "."))
 					parsedChunk := parseChunk(chunk)
 					if !reqIsThrowaway(parsedChunk) {
 						parsedChunks = append(parsedChunks, parsedChunk)
@@ -568,7 +569,7 @@ func groupParens(text string) (string, []string) {
 
 // Function for replacing all group references (groups referenced via group tags) with their actual text
 func ungroupText(text string) string {
-	text = TrimWhitespace(text)
+	text = utils.TrimWhitespace(text)
 	for groupNum := len(groupList) - 1; groupNum >= 0; groupNum-- {
 		subText := fmt.Sprintf("@%d", groupNum)
 		replacementText := fmt.Sprintf("(%s)", groupList[groupNum])

@@ -8,10 +8,10 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"regexp"
 	"strings"
 	"time"
 
+	"github.com/UTDNebula/api-tools/utils"
 	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/chromedp"
 	"github.com/joho/godotenv"
@@ -172,7 +172,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 			courseBuilder.Write(buf.Bytes())
 		}
 		// Find all section IDs in returned data
-		sectionRegexp := regexp.MustCompile(fmt.Sprintf(`View details for section (%s[0-9v]{4}\.\w+\.[0-9]{2}[suf])`, coursePrefix[3:]))
+		sectionRegexp := utils.Regexpf(`View details for section (%s%s\.\w+\.%s)`, coursePrefix[3:], utils.R_COURSE_CODE, utils.R_TERM_CODE)
 		smatches := sectionRegexp.FindAllStringSubmatch(courseBuilder.String(), -1)
 		sectionIDs := make([]string, 0, len(smatches))
 		for _, matchSet := range smatches {

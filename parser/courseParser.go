@@ -5,11 +5,12 @@ import (
 	"regexp"
 	"strconv"
 
+	"github.com/UTDNebula/api-tools/utils"
 	"github.com/UTDNebula/nebula-api/api/schema"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-var coursePrefixRexp *regexp.Regexp = regexp.MustCompile(`^([A-Z]{2,4})([0-9V]{4})`)
+var coursePrefixRexp *regexp.Regexp = utils.Regexpf(`^%s`, utils.R_SUBJ_COURSE_CAP)
 var contactRegexp *regexp.Regexp = regexp.MustCompile(`\(([0-9]+)-([0-9]+)\)\s+([SUFY]+)`)
 
 func getCatalogYear(session schema.AcademicSession) string {

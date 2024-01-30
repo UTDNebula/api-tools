@@ -3,6 +3,7 @@ package parser
 import (
 	"strings"
 
+	"github.com/UTDNebula/api-tools/utils"
 	"github.com/UTDNebula/nebula-api/api/schema"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -13,7 +14,7 @@ func parseProfessors(sectionId schema.IdWrapper, rowInfo map[string]string, clas
 	var profRefs []schema.IdWrapper = make([]schema.IdWrapper, 0, len(professorMatches))
 	for _, match := range professorMatches {
 
-		nameStr := TrimWhitespace(match[1])
+		nameStr := utils.TrimWhitespace(match[1])
 		names := strings.Split(nameStr, " ")
 
 		firstName := strings.Join(names[:len(names)-1], " ")
@@ -37,8 +38,8 @@ func parseProfessors(sectionId schema.IdWrapper, rowInfo map[string]string, clas
 		prof.Id = schema.IdWrapper(primitive.NewObjectID().Hex())
 		prof.First_name = firstName
 		prof.Last_name = lastName
-		prof.Titles = []string{TrimWhitespace(match[2])}
-		prof.Email = TrimWhitespace(match[3])
+		prof.Titles = []string{utils.TrimWhitespace(match[2])}
+		prof.Email = utils.TrimWhitespace(match[3])
 		prof.Sections = []schema.IdWrapper{sectionId}
 		profRefs = append(profRefs, prof.Id)
 		Professors[profKey] = prof

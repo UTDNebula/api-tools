@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/UTDNebula/api-tools/parser"
+	"github.com/UTDNebula/api-tools/utils"
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
@@ -31,7 +31,7 @@ func ScrapeEvals(inDir string) {
 	refreshToken(chromedpCtx)
 
 	// Get all section filepaths for section ids
-	sectionPaths := parser.GetAllSectionFilepaths(inDir)
+	sectionPaths := utils.GetAllFilesWithExtension(inDir, ".html")
 	for i, path := range sectionPaths {
 
 		_, fileName := filepath.Split(path)

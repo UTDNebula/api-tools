@@ -6,11 +6,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/UTDNebula/api-tools/utils"
 	"github.com/UTDNebula/nebula-api/api/schema"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-var sectionPrefixRegexp *regexp.Regexp = regexp.MustCompile(`^(?i)[A-Z]{2,4}[0-9V]{4}\.([0-9A-z]+)`)
+var sectionPrefixRegexp *regexp.Regexp = utils.Regexpf(`^(?i)%s\.(%s)`, utils.R_SUBJ_COURSE, utils.R_SECTION_CODE)
 var coreRegexp *regexp.Regexp = regexp.MustCompile(`[0-9]{3}`)
 var personRegexp *regexp.Regexp = regexp.MustCompile(`(.+)・(.+)・(.+)`)
 
@@ -38,12 +39,12 @@ func parseSection(courseRef *schema.Course, classNum string, syllabusURI string,
 	section.Teaching_assistants = make([]schema.Assistant, 0, len(assistantMatches))
 	for _, match := range assistantMatches {
 		assistant := schema.Assistant{}
-		nameStr := TrimWhitespace(match[1])
+		nameStr := utils.TrimWhitespace(match[1])
 		names := strings.Split(nameStr, " ")
 		assistant.First_name = strings.Join(names[:len(names)-1], " ")
 		assistant.Last_name = names[len(names)-1]
-		assistant.Role = TrimWhitespace(match[2])
-		assistant.Email = TrimWhitespace(match[3])
+		assistant.Role = utils.TrimWhitespace(match[2])
+		assistant.Email = utils.TrimWhitespace(match[3])
 		section.Teaching_assistants = append(section.Teaching_assistants, assistant)
 	}
 
@@ -74,8 +75,8 @@ func parseSection(courseRef *schema.Course, classNum string, syllabusURI string,
 	courseRef.Sections = append(courseRef.Sections, section.Id)
 }
 
-var termRegexp *regexp.Regexp = regexp.MustCompile(`Term: ([0-9]+[SUF])`)
-var datesRegexp *regexp.Regexp = regexp.MustCompile(`(?:Start|End)s: ([A-z]+ [0-9]{1,2}, [0-9]{4})`)
+var termRegexp *regexp.Regexp = utils.Regexpf(`(?i)Term: (%s)`, utils.R_TERM_CODE)
+var datesRegexp *regexp.Regexp = utils.Regexpf(`(?:Start|End)s: (%s)`, utils.R_DATE_MDY)
 
 func getAcademicSession(rowInfo map[string]string, classInfo map[string]string) schema.AcademicSession {
 	session := schema.AcademicSession{}
@@ -107,7 +108,7 @@ func getAcademicSession(rowInfo map[string]string, classInfo map[string]string) 
 	return session
 }
 
-var meetingsRegexp *regexp.Regexp = regexp.MustCompile(`([A-z]+\s+[0-9]+,\s+[0-9]{4})-([A-z]+\s+[0-9]+,\s+[0-9]{4})\W+((?:(?:Mon|Tues|Wednes|Thurs|Fri|Satur|Sun)day(?:, )?)+)\W+([0-9]+:[0-9]+(?:am|pm))-([0-9]+:[0-9]+(?:am|pm))(?:\W+(?:(\S+)\s+(\S+)))`)
+var meetingsRegexp *regexp.Regexp = utils.Regexpf(`(%s)-(%s)\W+((?:%s(?:, )?)+)\W+(%s)-(%s)(?:\W+(?:(\S+)\s+(\S+)))`, utils.R_DATE_MDY, utils.R_DATE_MDY, utils.R_WEEKDAY, utils.R_TIME_AM_PM, utils.R_TIME_AM_PM)
 
 func getMeetings(rowInfo map[string]string, classInfo map[string]string) []schema.Meeting {
 	scheduleText := rowInfo["Schedule:"]
