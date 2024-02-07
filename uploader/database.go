@@ -1,3 +1,7 @@
+/*
+	This file is responsible for providing various useful database functions.
+*/
+
 package uploader
 
 /* import (

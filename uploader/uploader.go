@@ -1,3 +1,7 @@
+/*
+	This file is responsible for handling uploading of parsed data to MongoDB.
+*/
+
 package uploader
 
 /*

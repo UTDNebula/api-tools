@@ -1,3 +1,8 @@
+/*
+	This file contains the code for the professor evaluation scraper.
+	NOTE: This scraper is NOT production ready! See https://github.com/UTDNebula/api-tools/issues/6 for details.
+*/
+
 package scrapers
 
 import (
@@ -37,7 +42,7 @@ func ScrapeEvals(inDir string) {
 		_, fileName := filepath.Split(path)
 		sectionID := fileName[:len(fileName)-5]
 
-		log.Printf("Finding eval for %s\n", sectionID)
+		log.Printf("Finding eval for %s", sectionID)
 
 		// Get eval info
 		evalURL := fmt.Sprintf("https://coursebook.utdallas.edu/ues-report/%s", sectionID)
@@ -57,10 +62,10 @@ func ScrapeEvals(inDir string) {
 						panic(err)
 					}
 					fptr.Close()
-					log.Print("Eval found and downloaded!\n")
+					log.Print("Eval found and downloaded!")
 					return err
 				} else {
-					log.Print("No eval found!\n")
+					log.Print("No eval found!")
 					return nil
 				}
 			}, chromedp.AtLeast(0)),

@@ -1,4 +1,6 @@
-// This file contains utility methods used throughout various files in this repo.
+/*
+	This file contains utility methods used throughout various files in this repo.
+*/
 
 package utils
 

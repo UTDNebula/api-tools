@@ -12,13 +12,13 @@ import (
 func loadProfiles(inDir string) {
 	fptr, err := os.Open(fmt.Sprintf("%s/profiles.json", inDir))
 	if err != nil {
-		log.Print("Couldn't find/open profiles.json in the input directory. Skipping profile load.\n")
+		log.Print("Couldn't find/open profiles.json in the input directory. Skipping profile load.")
 		return
 	}
 
 	decoder := json.NewDecoder(fptr)
 
-	log.Print("Beginning profile load.\n")
+	log.Print("Beginning profile load.")
 
 	// Read open bracket
 	_, err = decoder.Token()
@@ -46,6 +46,6 @@ func loadProfiles(inDir string) {
 		panic(err)
 	}
 
-	log.Printf("Loaded %d profiles!\n\n", profileCount)
+	log.Printf("Loaded %d profiles!", profileCount)
 	fptr.Close()
 }

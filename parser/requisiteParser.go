@@ -94,7 +94,7 @@ func ORMatcher(group string, subgroups []string) interface{} {
 func CourseMinGradeMatcher(group string, subgroups []string) interface{} {
 	icn, err := findICN(subgroups[1], subgroups[2])
 	if err != nil {
-		log.Printf("WARN: %s\n", err)
+		log.Printf("WARN: %s", err)
 		return OtherMatcher(group, subgroups)
 	}
 	return schema.NewCourseRequirement(icn, subgroups[3])
@@ -103,7 +103,7 @@ func CourseMinGradeMatcher(group string, subgroups []string) interface{} {
 func CourseMatcher(group string, subgroups []string) interface{} {
 	icn, err := findICN(subgroups[1], subgroups[2])
 	if err != nil {
-		log.Printf("WARN: %s\n", err)
+		log.Printf("WARN: %s", err)
 		return OtherMatcher(group, subgroups)
 	}
 	return schema.NewCourseRequirement(icn, "D")
@@ -411,7 +411,6 @@ func getReqParser(course *schema.Course, hasEnrollmentReqs bool, enrollmentReqs 
 				if len(parsedChunks) > 0 {
 					*reqPtr = schema.NewCollectionRequirement("REQUISITES", len(parsedChunks), parsedChunks)
 				}
-				log.Printf("\n\n")
 			}
 		}
 	}
@@ -469,7 +468,6 @@ func joinAdjacentOthers(reqs []interface{}, joinString string) []interface{} {
 	if temp.Description != "" {
 		joinedReqs = append(joinedReqs, temp)
 	}
-	//log.Printf("JOINEDREQS ARE: %v\n", joinedReqs)
 	return joinedReqs
 }
 
@@ -499,22 +497,18 @@ func parseGroup(grp string) interface{} {
 		if matches != nil {
 			// If an applicable matcher has been found, return the result of calling its handler
 			result := matcher.Handler(grp, matches)
-			log.Printf("'%s' -> %T\n", grp, result)
+			utils.VPrintf("'%s' -> %T", grp, result)
 			return result
 		}
 	}
-	// Panic if no matcher was able to be found for a given group -- this means we need to add handling for it!!!
-	//log.Panicf("NO MATCHER FOUND FOR GROUP '%s'\nSTACK IS: %#v\n", grp, requisiteList)
-	//log.Printf("NO MATCHER FOR: '%s'\n", grp)
-	log.Printf("'%s' -> parser.OtherRequirement\n", grp)
-	//var temp string
-	//fmt.Scanf("%s", temp)
+	// If the group couldn't be parsed, give up and make it an OtherRequirement
+	utils.VPrintf("'%s' -> parser.OtherRequirement", grp)
 	return *schema.NewOtherRequirement(ungroupText(grp), "")
 }
 
 // Outermost function for parsing a chunk of requisite text (potentially containing multiple nested text groups)
 func parseChunk(chunk string) interface{} {
-	log.Printf("\nPARSING CHUNK: '%s'\n", chunk)
+	utils.VPrintf("\nPARSING CHUNK: '%s'", chunk)
 	// Extract parenthesized groups from chunk text
 	parseText, parseGroups := groupParens(chunk)
 	// Initialize the requisite list and group list

@@ -1,3 +1,7 @@
+/*
+	This file contains the code for the student organization scraper.
+*/
+
 package scrapers
 
 import (
@@ -17,6 +21,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/UTDNebula/api-tools/utils"
 	"github.com/UTDNebula/nebula-api/api/schema"
 	"github.com/chromedp/cdproto/browser"
 	"github.com/chromedp/cdproto/network"
@@ -119,7 +124,7 @@ func scrapeData(ctx context.Context, outdir string) error {
 	})
 
 	tempDir, _ := filepath.Abs(filepath.Join(outdir, "tmp"))
-	log.Printf("Downloading CSV to %s ...\n", tempDir)
+	utils.VPrintf("Downloading CSV to %s ...", tempDir)
 	if err := os.MkdirAll(tempDir, 0755); err != nil {
 		return err
 	}
@@ -184,7 +189,7 @@ func processCsv(ctx context.Context, inputPath string, storageFilePath string) e
 			return err
 		}
 
-		log.Printf("Processing row %d\n", i)
+		utils.VPrintf("Processing row %d", i)
 		org, err := parseCsvRecord(ctx, entry)
 		if err != nil {
 			return err
@@ -219,7 +224,7 @@ func parseCsvRecord(ctx context.Context, entry []string) (*schema.Organization, 
 
 	imageData, err := retrieveImage(ctx, entry[5])
 	if err != nil {
-		log.Printf("Error retrieving image for %s: %v\n", entry[0], err)
+		utils.VPrintf("Error retrieving image for %s: %v", entry[0], err)
 	}
 	return &schema.Organization{
 		Id:             schema.IdWrapper(primitive.NewObjectID().Hex()),
@@ -263,7 +268,7 @@ func retrieveImage(ctx context.Context, imageUri string) (string, error) {
 
 	requestUrl := baseUrlStruct.ResolveReference(urlStruct).String()
 
-	//log.Printf("loading image %s\n", requestUrl)
+	//log.Printf("loading image %s", requestUrl)
 	// method adapted from https://github.com/chromedp/examples/blob/master/download_image/main.go
 
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
@@ -289,20 +294,20 @@ func retrieveImage(ctx context.Context, imageUri string) (string, error) {
 	})
 
 	if err := chromedp.Run(ctx, chromedp.Navigate(requestUrl)); err != nil {
-		log.Printf("Error navigating to %s: %v\n", requestUrl, err)
+		log.Printf("Error navigating to %s: %v", requestUrl, err)
 		return "", err
 	}
 
 	// wait for image request to finish
 	<-done
-	//log.Printf("Done retrieving image from %s\n", requestUrl)
+	//log.Printf("Done retrieving image from %s", requestUrl)
 
 	var buf []byte
 	if err := chromedp.Run(ctx, chromedp.ActionFunc(func(ctx context.Context) error {
 		var err error
 		buf, err = network.GetResponseBody(requestID).Do(ctx)
 		if err != nil {
-			log.Printf("Error getting response body for %s: %v\n", requestUrl, err)
+			log.Printf("Error getting response body for %s: %v", requestUrl, err)
 		}
 		return err
 	})); err != nil {

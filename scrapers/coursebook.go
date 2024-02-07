@@ -1,3 +1,7 @@
+/*
+	This file contains the code for the coursebook scraper.
+*/
+
 package scrapers
 
 import (
@@ -18,10 +22,10 @@ import (
 )
 
 func initChromeDp() (chromedpCtx context.Context, cancelFnc context.CancelFunc) {
-	log.Printf("Initializing chromedp...\n")
+	log.Printf("Initializing chromedp...")
 	allocCtx, cancelFnc := chromedp.NewExecAllocator(context.Background())
 	chromedpCtx, _ = chromedp.NewContext(allocCtx)
-	log.Printf("Initialized chromedp!\n")
+	log.Printf("Initialized chromedp!")
 	return
 }
 
@@ -36,7 +40,7 @@ func refreshToken(chromedpCtx context.Context) map[string][]string {
 		log.Panic("LOGIN_PASSWORD is missing from .env!")
 	}
 
-	log.Printf("Getting new token...\n")
+	utils.VPrintf("Getting new token...")
 	_, err := chromedp.RunResponse(chromedpCtx,
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			err := network.ClearBrowserCookies().Do(ctx)
@@ -63,7 +67,7 @@ func refreshToken(chromedpCtx context.Context) map[string][]string {
 			for i, cookie := range cookies {
 				cookieStrs[i] = fmt.Sprintf("%s=%s", cookie.Name, cookie.Value)
 				if cookie.Name == "PTGSESSID" {
-					fmt.Printf("Got new token: PTGSESSID = %s\n", cookie.Value)
+					utils.VPrintf("Got new token: PTGSESSID = %s", cookie.Value)
 					gotToken = true
 				}
 			}
@@ -150,7 +154,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 		// String builder to store accumulated course HTML data for both class levels
 		courseBuilder := strings.Builder{}
 
-		log.Printf("Finding sections for course prefix %s...\n", coursePrefix)
+		log.Printf("Finding sections for course prefix %s...", coursePrefix)
 
 		// Get courses for term and prefix, split by grad and undergrad to avoid 300 section cap
 		for _, clevel := range []string{"clevel_u", "clevel_g"} {
@@ -178,7 +182,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 		for _, matchSet := range smatches {
 			sectionIDs = append(sectionIDs, matchSet[1])
 		}
-		log.Printf("Found %d sections for course prefix %s\n", len(sectionIDs), coursePrefix)
+		log.Printf("Found %d sections for course prefix %s", len(sectionIDs), coursePrefix)
 
 		// Get HTML data for all section IDs
 		sectionsInCoursePrefix := 0
@@ -211,7 +215,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 			fptr.Close()
 
 			// Report success, refresh token periodically
-			fmt.Printf("Got section: %s\n", id)
+			utils.VPrintf("Got section: %s", id)
 			if sectionIndex%30 == 0 && sectionIndex != 0 {
 				// Ratelimit? What ratelimit?
 				coursebookHeaders = refreshToken(chromedpCtx)
@@ -220,7 +224,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 			}
 			sectionsInCoursePrefix++
 		}
-		log.Printf("\nFinished scraping course prefix %s. Got %d sections.\n", coursePrefix, sectionsInCoursePrefix)
+		log.Printf("\nFinished scraping course prefix %s. Got %d sections.", coursePrefix, sectionsInCoursePrefix)
 		totalSections += sectionsInCoursePrefix
 	}
 	log.Printf("\nDone scraping term! Scraped a total of %d sections.", totalSections)

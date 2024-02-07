@@ -1,3 +1,7 @@
+/*
+	This file contains the code for the events scraper.
+*/
+
 package scrapers
 
 import (
@@ -10,6 +14,7 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/UTDNebula/api-tools/utils"
 	"github.com/UTDNebula/nebula-api/api/schema"
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/runtime"
@@ -33,7 +38,7 @@ func ScrapeEvents(outDir string) {
 
 	events := []schema.Event{}
 
-	log.Printf("Scraping event page links\n")
+	log.Printf("Scraping event page links")
 	//Grab all links to event pages
 	var pageLinks []string = []string{}
 	_, err = chromedp.RunResponse(chromedpCtx,
@@ -55,7 +60,7 @@ func ScrapeEvents(outDir string) {
 	if err != nil {
 		panic(err)
 	}
-	log.Printf("Scraped event page links!\n")
+	log.Printf("Scraped event page links!")
 
 	for _, page := range pageLinks {
 		//Navigate to page and get page summary
@@ -75,7 +80,7 @@ func ScrapeEvents(outDir string) {
 		if err != nil {
 			panic(err)
 		}
-		log.Printf("Navigated to page %s\n", summary)
+		utils.VPrintf("Navigated to page %s", summary)
 
 		// Grab date/time of the event
 		var dateTimeStart time.Time
@@ -119,7 +124,7 @@ func ScrapeEvents(outDir string) {
 		if err != nil {
 			continue
 		}
-		log.Printf("Scraped time: %s to %s \n", dateTimeStart, dateTimeEnd)
+		utils.VPrintf("Scraped time: %s to %s ", dateTimeStart, dateTimeEnd)
 
 		//Grab Location of Event
 		var location string = ""
@@ -136,7 +141,7 @@ func ScrapeEvents(outDir string) {
 		if err != nil {
 			continue
 		}
-		log.Printf("Scraped location: %s, \n", location)
+		utils.VPrintf("Scraped location: %s, ", location)
 
 		//Get description of event
 		var description string = ""
@@ -153,7 +158,7 @@ func ScrapeEvents(outDir string) {
 		if err != nil {
 			continue
 		}
-		log.Printf("Scraped description: %s, \n", description)
+		utils.VPrintf("Scraped description: %s, ", description)
 
 		//Grab Event Type
 		var eventType []string = []string{}
@@ -170,7 +175,7 @@ func ScrapeEvents(outDir string) {
 		if err != nil {
 			panic(err)
 		}
-		log.Printf("Scraped event type: %s\n", eventType)
+		utils.VPrintf("Scraped event type: %s", eventType)
 
 		//Grab Target Audience
 		targetAudience := []string{}
@@ -187,7 +192,7 @@ func ScrapeEvents(outDir string) {
 		if err != nil {
 			panic(err)
 		}
-		log.Printf("Scraped target audience: %s, \n", targetAudience)
+		utils.VPrintf("Scraped target audience: %s, ", targetAudience)
 
 		//Grab Topic
 		topic := []string{}
@@ -204,7 +209,7 @@ func ScrapeEvents(outDir string) {
 		if err != nil {
 			panic(err)
 		}
-		log.Printf("Scraped topic: %s, \n", topic)
+		utils.VPrintf("Scraped topic: %s, ", topic)
 
 		//Grab Event Tags
 		tags := []string{}
@@ -221,7 +226,7 @@ func ScrapeEvents(outDir string) {
 		if err != nil {
 			panic(err)
 		}
-		log.Printf("Scraped tags: %s, \n", tags)
+		utils.VPrintf("Scraped tags: %s, ", tags)
 
 		//Grab Website
 		var eventWebsite string = ""
@@ -242,7 +247,7 @@ func ScrapeEvents(outDir string) {
 		if err != nil {
 			continue
 		}
-		log.Printf("Scraped website: %s, \n", eventWebsite)
+		utils.VPrintf("Scraped website: %s, ", eventWebsite)
 
 		//Grab Department
 		var eventDepartment []string = []string{}
@@ -259,7 +264,7 @@ func ScrapeEvents(outDir string) {
 		if err != nil {
 			panic(err)
 		}
-		log.Printf("Scraped department: %s, \n", eventDepartment)
+		utils.VPrintf("Scraped department: %s, ", eventDepartment)
 
 		//Grab Contact information
 		var contactInformationName string = ""
@@ -297,9 +302,9 @@ func ScrapeEvents(outDir string) {
 		if err != nil {
 			panic(err)
 		}
-		log.Printf("Scraped contact name info: %s\n", contactInformationName)
-		log.Printf("Scraped contact email info: %s\n", contactInformationEmail)
-		log.Printf("Scraped contact phone info: %s\n", contactInformationPhone)
+		utils.VPrintf("Scraped contact name info: %s", contactInformationName)
+		utils.VPrintf("Scraped contact email info: %s", contactInformationEmail)
+		utils.VPrintf("Scraped contact phone info: %s", contactInformationPhone)
 
 		events = append(events, schema.Event{
 			Id:                 schema.IdWrapper(primitive.NewObjectID().Hex()),

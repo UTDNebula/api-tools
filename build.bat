@@ -24,6 +24,6 @@ echo[
 
 ::build
 echo Building...
-go build -o %EXEC_NAME% ./main/main.go
+go build -o %EXEC_NAME% ./main.go
 if ERRORLEVEL 1 exit /b %ERRORLEVEL% :: fail if error occurred
 echo Build complete!

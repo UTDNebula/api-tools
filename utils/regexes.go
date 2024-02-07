@@ -1,6 +1,8 @@
-package utils
+/*
+	This file simply acts as a space to store useful regexp pattern constants for consistency across the project.
+*/
 
-// This file simply acts as a space to store useful regexp pattern constants for consistency across the project.
+package utils
 
 // Subject, i.e. HIST
 const R_SUBJECT string = `[A-Z]{2,4}`

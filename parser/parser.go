@@ -42,7 +42,7 @@ func Parse(inDir string, outDir string, csvPath string, skipValidation bool) {
 	// Load grade data from csv in advance
 	GradeMap = loadGrades(csvPath)
 	if len(GradeMap) != 0 {
-		log.Printf("Loaded grade distributions for %d semesters.\n\n", len(GradeMap))
+		log.Printf("Loaded grade distributions for %d semesters.", len(GradeMap))
 	}
 
 	// Try to load any existing profile data
@@ -51,9 +51,9 @@ func Parse(inDir string, outDir string, csvPath string, skipValidation bool) {
 	// Find paths of all scraped data
 	paths := utils.GetAllFilesWithExtension(inDir, ".html")
 	if !skipValidation {
-		log.Printf("Parsing and validating %d files...\n", len(paths))
+		log.Printf("Parsing and validating %d files...", len(paths))
 	} else {
-		log.Printf("Parsing %d files WITHOUT VALIDATION...\n", len(paths))
+		log.Printf("Parsing %d files WITHOUT VALIDATION...", len(paths))
 	}
 
 	// Parse all data
@@ -61,9 +61,9 @@ func Parse(inDir string, outDir string, csvPath string, skipValidation bool) {
 		parse(path)
 	}
 
-	log.Printf("\nParsing complete. Created %d courses, %d sections, and %d professors.\n", len(Courses), len(Sections), len(Professors))
+	log.Printf("\nParsing complete. Created %d courses, %d sections, and %d professors.", len(Courses), len(Sections), len(Professors))
 
-	log.Print("\nParsing course requisites...\n")
+	log.Print("\nParsing course requisites...")
 
 	// Initialize matchers at runtime for requisite parsing; this is necessary to avoid circular reference errors with compile-time initialization
 	initMatchers()
@@ -71,12 +71,12 @@ func Parse(inDir string, outDir string, csvPath string, skipValidation bool) {
 	for _, course := range Courses {
 		ReqParsers[course.Id]()
 	}
-	log.Print("Finished parsing course requisites!\n")
+	log.Print("Finished parsing course requisites!")
 
 	if !skipValidation {
-		log.Print("\nStarting validation stage...\n")
+		log.Print("\nStarting validation stage...")
 		validate()
-		log.Print("\nValidation complete!\n")
+		log.Print("\nValidation complete!")
 	}
 
 	// Make outDir if it doesn't already exist
@@ -93,7 +93,8 @@ func Parse(inDir string, outDir string, csvPath string, skipValidation bool) {
 
 // Internal parse function
 func parse(path string) {
-	log.Printf("Parsing %s...\n", path)
+
+	utils.VPrintf("Parsing %s...", path)
 
 	// Open data file for reading
 	fptr, err := os.Open(path)
@@ -156,5 +157,5 @@ func parse(path string) {
 	// Try to create the course and section based on collected info
 	courseRef := parseCourse(courseNum, session, rowInfo, classInfo)
 	parseSection(courseRef, classNum, syllabusURI, session, rowInfo, classInfo)
-	log.Print("Parsed!\n")
+	utils.VPrint("Parsed!")
 }

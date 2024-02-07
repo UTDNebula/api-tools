@@ -15,7 +15,7 @@ func loadGrades(csvDir string) map[string]map[string][]int {
 	gradeMap := make(map[string]map[string][]int)
 
 	if csvDir == "" {
-		log.Print("No grade data CSV directory specified. Grade data will not be included.\n")
+		log.Print("No grade data CSV directory specified. Grade data will not be included.")
 		return gradeMap
 	}
 

@@ -12,8 +12,8 @@ check:
 	gofmt -w ./..
 	goimports -w ./..
 
-build: ./main/main.go
-	go build -o $(EXEC_NAME) ./main/main.go
+build: ./main.go
+	go build -o $(EXEC_NAME) ./main.go
 
 clean: $(EXEC_NAME)
 	rm $(EXEC_NAME)

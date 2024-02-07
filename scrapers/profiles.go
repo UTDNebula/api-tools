@@ -1,3 +1,7 @@
+/*
+	This file contains the code for the professor profile scraper.
+*/
+
 package scrapers
 
 import (
@@ -11,6 +15,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/UTDNebula/api-tools/utils"
 	"github.com/UTDNebula/nebula-api/api/schema"
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/runtime"
@@ -54,11 +59,11 @@ func parseList(list []string) (string, schema.Location) {
 
 	for _, element := range list {
 		element = strings.Trim(element, " ")
-		log.Printf("Element is: %s\n", element)
+		utils.VPrintf("Element is: %s", element)
 		if strings.Contains(element, "-") {
 			phoneNumber = element
 		} else if primaryLocationRegex.MatchString(element) || fallbackLocationRegex.MatchString(element) {
-			log.Printf("Element match is: %s\n", element)
+			utils.VPrintf("Element match is: %s", element)
 			office = parseLocation(element)
 			break
 		}
@@ -148,16 +153,16 @@ func ScrapeProfiles(outDir string) {
 
 	var professors []schema.Professor
 
-	log.Print("Scraping professor links...\n")
+	log.Print("Scraping professor links...")
 	professorLinks := scrapeProfessorLinks(chromedpCtx)
-	log.Print("Scraped professor links!\n\n")
+	log.Print("Scraped professor links!")
 
 	for _, link := range professorLinks {
 
 		// Navigate to the link and get the names
 		var firstName, lastName string
 
-		log.Print("Scraping name...\n")
+		utils.VPrint("Scraping name...")
 
 		_, err := chromedp.RunResponse(chromedpCtx,
 			chromedp.Navigate(link),
@@ -175,7 +180,7 @@ func ScrapeProfiles(outDir string) {
 		// Get the image uri
 		var imageUri string
 
-		log.Print("Scraping imageUri...\n")
+		utils.VPrint("Scraping imageUri...")
 
 		err = chromedp.Run(chromedpCtx,
 			chromedp.ActionFunc(func(ctx context.Context) error {
@@ -215,7 +220,7 @@ func ScrapeProfiles(outDir string) {
 		// Get the titles
 		titles := make([]string, 0, 3)
 
-		log.Print("Scraping titles...\n")
+		utils.VPrint("Scraping titles...")
 
 		err = chromedp.Run(chromedpCtx,
 			chromedp.QueryAfter("//h6",
@@ -237,7 +242,7 @@ func ScrapeProfiles(outDir string) {
 		// Get the email
 		var email string
 
-		log.Print("Scraping email...\n")
+		utils.VPrint("Scraping email...")
 
 		err = chromedp.Run(chromedpCtx,
 			chromedp.Text("//a[contains(@id,'☄️')]", &email, chromedp.AtLeast(0)),
@@ -249,14 +254,14 @@ func ScrapeProfiles(outDir string) {
 		// Get the phone number and office location
 		var texts []string
 
-		log.Print("Scraping list text...\n")
+		utils.VPrint("Scraping list text...")
 
 		err = chromedp.Run(chromedpCtx,
 			chromedp.QueryAfter("div.contact_info > div",
 				func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
 					var tempText string
 					err := chromedp.Text("div.contact_info > div", &tempText).Do(ctx)
-					texts = strings.Split(tempText, "\n")
+					texts = strings.Split(tempText, "")
 					return err
 				},
 			),
@@ -265,9 +270,9 @@ func ScrapeProfiles(outDir string) {
 			panic(err)
 		}
 
-		log.Print("Parsing list...\n")
+		utils.VPrint("Parsing list...")
 		phoneNumber, office := parseList(texts)
-		log.Printf("Parsed list! #: %s, Office: %v\n\n", phoneNumber, office)
+		utils.VPrintf("Parsed list! #: %s, Office: %v", phoneNumber, office)
 
 		professors = append(professors, schema.Professor{
 			Id:           schema.IdWrapper(primitive.NewObjectID().Hex()),
@@ -283,7 +288,7 @@ func ScrapeProfiles(outDir string) {
 			Sections:     []schema.IdWrapper{},
 		})
 
-		log.Printf("Scraped profile for %s %s!\n\n", firstName, lastName)
+		utils.VPrintf("Scraped profile for %s %s!", firstName, lastName)
 	}
 
 	// Write professor data to output file

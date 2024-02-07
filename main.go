@@ -10,6 +10,7 @@ import (
 	"github.com/UTDNebula/api-tools/parser"
 	"github.com/UTDNebula/api-tools/scrapers"
 	"github.com/UTDNebula/api-tools/uploader"
+	"github.com/UTDNebula/api-tools/utils"
 )
 
 func main() {
@@ -47,6 +48,9 @@ func main() {
 	upload := flag.Bool("upload", false, "Puts the tool into upload mode.")
 	replace := flag.Bool("replace", false, "Alongside -upload, specifies that uploaded data should replace existing data rather than being merged.")
 
+	// Flags for logging
+	verbose := flag.Bool("verbose", false, "Enables verbose logging, good for debugging purposes.")
+
 	// Parse flags
 	flag.Parse()
 
@@ -66,7 +70,14 @@ func main() {
 	}
 
 	defer logFile.Close()
-	log.SetOutput(logFile)
+	// Set logging output destination to a SplitWriter that writes to both the log file and stdout
+	log.SetOutput(utils.NewSplitWriter(logFile, os.Stdout))
+	// Do verbose logging if verbose flag specified
+	if *verbose {
+		log.SetFlags(log.Ltime | log.Lmicroseconds | log.Lshortfile | utils.Lverbose)
+	} else {
+		log.SetFlags(log.Ltime)
+	}
 
 	// Perform actions based on flags
 	switch {

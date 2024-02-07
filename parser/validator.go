@@ -14,7 +14,7 @@ func validate() {
 		}
 	}()
 
-	log.Printf("\nValidating courses...\n")
+	log.Printf("\nValidating courses...")
 	courseKeys := utils.GetMapKeys(Courses)
 	for i := 0; i < len(courseKeys)-1; i++ {
 		course1 := Courses[courseKeys[i]]
@@ -22,7 +22,7 @@ func validate() {
 		for j := i + 1; j < len(courseKeys); j++ {
 			course2 := Courses[courseKeys[j]]
 			if course2.Catalog_year == course1.Catalog_year && course2.Course_number == course1.Course_number && course2.Subject_prefix == course1.Subject_prefix {
-				log.Printf("Duplicate course found for %s%s!\n", course1.Subject_prefix, course1.Course_number)
+				log.Printf("Duplicate course found for %s%s!", course1.Subject_prefix, course1.Course_number)
 				log.Printf("Course 1: %v\n\nCourse 2: %v", course1, course2)
 				log.Panic("Courses failed to validate!")
 			}
@@ -31,21 +31,21 @@ func validate() {
 		for _, sectionId := range course1.Sections {
 			section, exists := Sections[sectionId]
 			if !exists {
-				log.Printf("Nonexistent section reference found for %s%s!\n", course1.Subject_prefix, course1.Course_number)
-				log.Printf("Referenced section ID: %s\nCourse ID: %s\n", sectionId, course1.Id)
+				log.Printf("Nonexistent section reference found for %s%s!", course1.Subject_prefix, course1.Course_number)
+				log.Printf("Referenced section ID: %s\nCourse ID: %s", sectionId, course1.Id)
 				log.Panic("Courses failed to validate!")
 			}
 			if section.Course_reference != course1.Id {
-				log.Printf("Inconsistent section reference found for %s%s! The course references the section, but not vice-versa!\n", course1.Subject_prefix, course1.Course_number)
-				log.Printf("Referenced section ID: %s\nCourse ID: %s\nSection course reference: %s\n", sectionId, course1.Id, section.Course_reference)
+				log.Printf("Inconsistent section reference found for %s%s! The course references the section, but not vice-versa!", course1.Subject_prefix, course1.Course_number)
+				log.Printf("Referenced section ID: %s\nCourse ID: %s\nSection course reference: %s", sectionId, course1.Id, section.Course_reference)
 				log.Panic("Courses failed to validate!")
 			}
 		}
 	}
 	courseKeys = nil
-	log.Print("No invalid courses!\n\n")
+	log.Print("No invalid courses!")
 
-	log.Print("Validating sections...\n")
+	log.Print("Validating sections...")
 	sectionKeys := utils.GetMapKeys(Sections)
 	for i := 0; i < len(sectionKeys)-1; i++ {
 		section1 := Sections[sectionKeys[i]]
@@ -55,7 +55,7 @@ func validate() {
 			if section2.Section_number == section1.Section_number &&
 				section2.Course_reference == section1.Course_reference &&
 				section2.Academic_session == section1.Academic_session {
-				log.Print("Duplicate section found!\n")
+				log.Print("Duplicate section found!")
 				log.Printf("Section 1: %v\n\nSection 2: %v", section1, section2)
 				log.Panic("Sections failed to validate!")
 			}
@@ -64,8 +64,8 @@ func validate() {
 		for _, profId := range section1.Professors {
 			professorKey, exists := ProfessorIDMap[profId]
 			if !exists {
-				log.Printf("Nonexistent professor reference found for section ID %s!\n", section1.Id)
-				log.Printf("Referenced professor ID: %s\n", profId)
+				log.Printf("Nonexistent professor reference found for section ID %s!", section1.Id)
+				log.Printf("Referenced professor ID: %s", profId)
 				log.Panic("Sections failed to validate!")
 			}
 			profRefsSection := false
@@ -76,23 +76,23 @@ func validate() {
 				}
 			}
 			if !profRefsSection {
-				log.Printf("Inconsistent professor reference found for section ID %s! The section references the professor, but not vice-versa!\n", section1.Id)
-				log.Printf("Referenced professor ID: %s\n", profId)
+				log.Printf("Inconsistent professor reference found for section ID %s! The section references the professor, but not vice-versa!", section1.Id)
+				log.Printf("Referenced professor ID: %s", profId)
 				log.Panic("Sections failed to validate!")
 			}
 		}
 		// Make sure section isn't referencing a nonexistant course
 		_, exists := CourseIDMap[section1.Course_reference]
 		if !exists {
-			log.Printf("Nonexistent course reference found for section ID %s!\n", section1.Id)
-			log.Printf("Referenced course ID: %s\n", section1.Course_reference)
+			log.Printf("Nonexistent course reference found for section ID %s!", section1.Id)
+			log.Printf("Referenced course ID: %s", section1.Course_reference)
 			log.Panic("Sections failed to validate!")
 		}
 	}
 	sectionKeys = nil
-	log.Printf("No invalid sections!\n\n")
+	log.Printf("No invalid sections!")
 
-	log.Printf("Validating professors...\n")
+	log.Printf("Validating professors...")
 	profKeys := utils.GetMapKeys(Professors)
 	// Check for duplicate professors by comparing first_name, last_name, and sections as a compound key
 	for i := 0; i < len(profKeys)-1; i++ {
@@ -102,11 +102,11 @@ func validate() {
 			if prof2.First_name == prof1.First_name &&
 				prof2.Last_name == prof1.Last_name &&
 				prof2.Profile_uri == prof1.Profile_uri {
-				log.Printf("Duplicate professor found!\n")
+				log.Printf("Duplicate professor found!")
 				log.Printf("Professor 1: %v\n\nProfessor 2: %v", prof1, prof2)
 				log.Panic("Professors failed to validate!")
 			}
 		}
 	}
-	log.Printf("No invalid professors!\n\n")
+	log.Printf("No invalid professors!")
 }
