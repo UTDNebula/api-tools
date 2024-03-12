@@ -31,12 +31,12 @@ func initChromeDp() (chromedpCtx context.Context, cancelFnc context.CancelFunc) 
 
 // This function generates a fresh auth token and returns the new headers
 func refreshToken(chromedpCtx context.Context) map[string][]string {
-	netID := os.Getenv("LOGIN_NETID")
-	if netID == "" {
+	netID, present := os.LookupEnv("LOGIN_NETID")
+	if !present {
 		log.Panic("LOGIN_NETID is missing from .env!")
 	}
-	password := os.Getenv("LOGIN_PASSWORD")
-	if password == "" {
+	password, present := os.LookupEnv("LOGIN_PASSWORD")
+	if !present {
 		log.Panic("LOGIN_PASSWORD is missing from .env!")
 	}
 
