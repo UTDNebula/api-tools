@@ -4,7 +4,7 @@
 
 package uploader
 
-/* import (
+import (
 	//"go.mongodb.org/mongo-driver/bson"
 	//"go.mongodb.org/mongo-driver/bson/primitive"
 	"context"
@@ -56,4 +56,4 @@ func getEnvMongoURI() string {
 		os.Exit(1)
 	}
 	return uri
-} */
+}
