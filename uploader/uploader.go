@@ -10,10 +10,13 @@ import (
 	"fmt"
 	"log"
 	"os"
+
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/UTDNebula/nebula-api/api/schema"
 	"github.com/joho/godotenv"
@@ -26,7 +29,7 @@ import (
 //  Also note that this uploader assumes that the collection names match the names of these files, which they should.
 //  If the names of these collections ever change, the file names should be updated accordingly.
 
-var filesToUpload []string = []string{"courses.json", "professors.json", "sections.json"}
+var filesToUpload [3]string = [3]string{"courses.json", "professors.json", "sections.json"}
 
 func Upload(inDir string, replace bool) {
 
@@ -39,7 +42,7 @@ func Upload(inDir string, replace bool) {
 	client := connectDB()
 
 	// Get context
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
 	for _, path := range filesToUpload {
@@ -51,7 +54,7 @@ func Upload(inDir string, replace bool) {
 
 		switch path {
 		case "courses.json":
-			fmt.Println("Uploading courses.json ...")
+			log.Println("Uploading courses.json ...")
 
 			// Decode courses from courses.json
 			var courses []schema.Course
@@ -62,25 +65,38 @@ func Upload(inDir string, replace bool) {
 			}
 
 			if replace {
-				var empty interface{}
 
 				// Get collection
 				collection := getCollection(client, "courses")
 
 				// Delete all documents from collection
-				_, err := collection.DeleteMany(ctx, empty)
+				_, err := collection.DeleteMany(ctx, bson.D{})
 				if err != nil {
 					log.Panic(err)
 				}
 
-				// Add all documents decoded from courses.json into Mongo collection
-				for _, course := range courses {
-					_, err := collection.InsertOne(ctx, course)
-					if err != nil {
-						log.Panic(err)
-					}
+				// Convert your courses to []interface{}
+				courseDocs := make([]interface{}, len(courses))
+				for i := range courses {
+					courseDocs[i] = courses[i]
 				}
+
+				// Add all documents decoded from courses.json into the temporary collection
+				opts := options.InsertMany().SetOrdered(false)
+				_, err = collection.InsertMany(ctx, courseDocs, opts)
+				if err != nil {
+					log.Panic(err)
+				}
+
 			} else {
+
+				// If a temp collection already exists, drop it
+				tempCollection := getCollection(client, "temp")
+				err = tempCollection.Drop(ctx)
+				if err != nil {
+					log.Panic(err)
+				}
+
 				// Create a temporary collection
 				err := client.Database("combinedDB").CreateCollection(ctx, "temp")
 				if err != nil {
@@ -88,23 +104,28 @@ func Upload(inDir string, replace bool) {
 				}
 
 				// Get the temporary collection
-				tempCollection := getCollection(client, "temp")
+				tempCollection = getCollection(client, "temp")
+
+				// Convert your courses to []interface{}
+				courseDocs := make([]interface{}, len(courses))
+				for i := range courses {
+					courseDocs[i] = courses[i]
+				}
 
 				// Add all documents decoded from courses.json into the temporary collection
-				for _, course := range courses {
-					_, err := tempCollection.InsertOne(ctx, course)
-					if err != nil {
-						log.Panic(err)
-					}
+				opts := options.InsertMany().SetOrdered(false)
+				_, err = tempCollection.InsertMany(ctx, courseDocs, opts)
+				if err != nil {
+					log.Panic(err)
 				}
 
 				// Create a merge aggregate pipeline
 				// Matched documents from the temporary collection will replace matched documents from the Mongo collection
 				// Unmatched documents from the temporary collection will be inserted into the Mongo collection
-				mergeStage := bson.D{primitive.E{Key: "$merge", Value: bson.D{primitive.E{Key: "into", Value: "courses"}, primitive.E{Key: "on", Value: []string{"catalog_year", "course_number", "subject_prefix"}}, primitive.E{Key: "whenMatched", Value: "replace"}, primitive.E{Key: "whenNotMatched", Value: "insert"}}}}
+				mergeStage := bson.D{primitive.E{Key: "$merge", Value: bson.D{primitive.E{Key: "into", Value: "courses"}, primitive.E{Key: "on", Value: [3]string{"catalog_year", "course_number", "subject_prefix"}}, primitive.E{Key: "whenMatched", Value: "replace"}, primitive.E{Key: "whenNotMatched", Value: "insert"}}}}
 
 				// Execute aggregate pipeline
-				_, err = tempCollection.Aggregate(ctx, mergeStage)
+				_, err = tempCollection.Aggregate(ctx, mongo.Pipeline{mergeStage})
 				if err != nil {
 					log.Panic(err)
 				}
@@ -116,10 +137,10 @@ func Upload(inDir string, replace bool) {
 				}
 			}
 
-			fmt.Println("Done uploading courses.json!")
+			log.Println("Done uploading courses.json!")
 
 		case "professors.json":
-			fmt.Println("Uploading professors.json ...")
+			log.Println("Uploading professors.json ...")
 
 			// Decode courses from professors.json
 			var professors []schema.Professor
@@ -130,25 +151,38 @@ func Upload(inDir string, replace bool) {
 			}
 
 			if replace {
-				var empty interface{}
 
 				// Get collection
 				collection := getCollection(client, "professors")
 
 				// Delete all documents from collection
-				_, err := collection.DeleteMany(ctx, empty)
+				_, err := collection.DeleteMany(ctx, bson.D{})
 				if err != nil {
 					log.Panic(err)
 				}
 
-				// Add all documents decoded from professors.json into Mongo collection
-				for _, professor := range professors {
-					_, err := collection.InsertOne(ctx, professor)
-					if err != nil {
-						log.Panic(err)
-					}
+				// Convert your professors to []interface{}
+				professorsDocs := make([]interface{}, len(professors))
+				for i := range professors {
+					professorsDocs[i] = professors[i]
 				}
+
+				// Add all documents decoded from professors.json into the temporary collection
+				opts := options.InsertMany().SetOrdered(false)
+				_, err = collection.InsertMany(ctx, professorsDocs, opts)
+				if err != nil {
+					log.Panic(err)
+				}
+
 			} else {
+
+				// If a temp collection already exists, drop it
+				tempCollection := getCollection(client, "temp")
+				err = tempCollection.Drop(ctx)
+				if err != nil {
+					log.Panic(err)
+				}
+
 				// Create a temporary collection
 				err := client.Database("combinedDB").CreateCollection(ctx, "temp")
 				if err != nil {
@@ -156,23 +190,28 @@ func Upload(inDir string, replace bool) {
 				}
 
 				// Get the temporary collection
-				tempCollection := getCollection(client, "temp")
+				tempCollection = getCollection(client, "temp")
+
+				// Convert your professors to []interface{}
+				professorsDocs := make([]interface{}, len(professors))
+				for i := range professors {
+					professorsDocs[i] = professors[i]
+				}
 
 				// Add all documents decoded from professors.json into the temporary collection
-				for _, professor := range professors {
-					_, err = tempCollection.InsertOne(ctx, professor)
-					if err != nil {
-						log.Panic(err)
-					}
+				opts := options.InsertMany().SetOrdered(false)
+				_, err = tempCollection.InsertMany(ctx, professorsDocs, opts)
+				if err != nil {
+					log.Panic(err)
 				}
 
 				// Create a merge aggregate pipeline
 				// Matched documents from the temporary collection will replace matched documents from the Mongo collection
 				// Unmatched documents from the temporary collection will be inserted into the Mongo collection
-				mergeStage := bson.D{primitive.E{Key: "$merge", Value: bson.D{primitive.E{Key: "into", Value: "professors"}, primitive.E{Key: "on", Value: []string{"first_name", "last_name"}}, primitive.E{Key: "whenMatched", Value: "replace"}, primitive.E{Key: "whenNotMatched", Value: "insert"}}}}
+				mergeStage := bson.D{primitive.E{Key: "$merge", Value: bson.D{primitive.E{Key: "into", Value: "professors"}, primitive.E{Key: "on", Value: [2]string{"first_name", "last_name"}}, primitive.E{Key: "whenMatched", Value: "replace"}, primitive.E{Key: "whenNotMatched", Value: "insert"}}}}
 
 				// Execute aggregate pipeline
-				_, err = tempCollection.Aggregate(ctx, mergeStage)
+				_, err = tempCollection.Aggregate(ctx, mongo.Pipeline{mergeStage})
 				if err != nil {
 					log.Panic(err)
 				}
@@ -184,10 +223,10 @@ func Upload(inDir string, replace bool) {
 				}
 			}
 
-			fmt.Println("Done uploading professors.json!")
+			log.Println("Done uploading professors.json!")
 
 		case "sections.json":
-			fmt.Println("Uploading sections.json ...")
+			log.Println("Uploading sections.json ...")
 
 			// Decode courses from sections.json
 			var sections []schema.Section
@@ -198,25 +237,36 @@ func Upload(inDir string, replace bool) {
 			}
 
 			if replace {
-				var empty interface{}
 
 				// Get collection
 				collection := getCollection(client, "sections")
 
 				// Delete all documents from collection
-				_, err := collection.DeleteMany(ctx, empty)
+				_, err := collection.DeleteMany(ctx, bson.D{})
 				if err != nil {
 					log.Panic(err)
 				}
 
-				// Add all documents decoded from sections.json into Mongo collection
-				for _, section := range sections {
-					_, err := collection.InsertOne(ctx, section)
-					if err != nil {
-						log.Panic(err)
-					}
+				// Convert your sections to []interface{}
+				sectionsDocs := make([]interface{}, len(sections))
+				for i := range sections {
+					sectionsDocs[i] = sections[i]
+				}
+
+				// Add all documents decoded from sections.json into the temporary collection
+				opts := options.InsertMany().SetOrdered(false)
+				_, err = collection.InsertMany(ctx, sectionsDocs, opts)
+				if err != nil {
+					log.Panic(err)
 				}
 			} else {
+				// If a temp collection already exists, drop it
+				tempCollection := getCollection(client, "temp")
+				err = tempCollection.Drop(ctx)
+				if err != nil {
+					log.Panic(err)
+				}
+
 				// Create a temporary collection
 				err := client.Database("combinedDB").CreateCollection(ctx, "temp")
 				if err != nil {
@@ -224,23 +274,28 @@ func Upload(inDir string, replace bool) {
 				}
 
 				// Get the temporary collection
-				tempCollection := getCollection(client, "temp")
+				tempCollection = getCollection(client, "temp")
 
-				// Add all documents decoded from sections.json into the temporary collection
-				for _, section := range sections {
-					_, err := tempCollection.InsertOne(ctx, section)
-					if err != nil {
-						log.Panic(err)
-					}
+				// Convert your sections to []interface{}
+				sectionsDocs := make([]interface{}, len(sections))
+				for i := range sections {
+					sectionsDocs[i] = sections[i]
+				}
+
+				// Add all documents decoded from professors.json into the temporary collection
+				opts := options.InsertMany().SetOrdered(false)
+				_, err = tempCollection.InsertMany(ctx, sectionsDocs, opts)
+				if err != nil {
+					log.Panic(err)
 				}
 
 				// Create a merge aggregate pipeline
 				// Matched documents from the temporary collection will replace matched documents from the Mongo collection
 				// Unmatched documents from the temporary collection will be inserted into the Mongo collection
-				mergeStage := bson.D{primitive.E{Key: "$merge", Value: bson.D{primitive.E{Key: "into", Value: "sections"}, primitive.E{Key: "on", Value: []string{"section_number", "course_reference", "academic_session"}}, primitive.E{Key: "whenMatched", Value: "replace"}, primitive.E{Key: "whenNotMatched", Value: "insert"}}}}
+				mergeStage := bson.D{primitive.E{Key: "$merge", Value: bson.D{primitive.E{Key: "into", Value: "sections"}, primitive.E{Key: "on", Value: [3]string{"section_number", "course_reference", "academic_session"}}, primitive.E{Key: "whenMatched", Value: "replace"}, primitive.E{Key: "whenNotMatched", Value: "insert"}}}}
 
 				// Execute aggregate pipeline
-				_, err = tempCollection.Aggregate(ctx, mergeStage)
+				_, err = tempCollection.Aggregate(ctx, mongo.Pipeline{mergeStage})
 				if err != nil {
 					log.Panic(err)
 				}
@@ -252,7 +307,7 @@ func Upload(inDir string, replace bool) {
 				}
 			}
 
-			fmt.Println("Done uploading sections.json!")
+			log.Println("Done uploading sections.json!")
 		}
 
 		defer fptr.Close()

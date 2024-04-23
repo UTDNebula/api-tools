@@ -17,18 +17,15 @@ import (
 )
 
 func connectDB() *mongo.Client {
-	client, err := mongo.NewClient(options.Client().ApplyURI(getEnvMongoURI()))
-	if err != nil {
-		log.Panic("Unable to create MongoDB client")
-		os.Exit(1)
-	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	err = client.Connect(ctx)
+	opts := options.Client().ApplyURI(getEnvMongoURI())
+
+	client, err := mongo.Connect(ctx, opts)
 	if err != nil {
-		log.Panic("Unable to connect to database")
+		log.Panic("Unable to create MongoDB client and connect to database")
 		os.Exit(1)
 	}
 
