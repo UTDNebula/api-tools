@@ -275,7 +275,7 @@ func ScrapeProfiles(outDir string) {
 		utils.VPrintf("Parsed list! #: %s, Office: %v", phoneNumber, office)
 
 		professors = append(professors, schema.Professor{
-			Id:           schema.IdWrapper(primitive.NewObjectID().Hex()),
+			Id:           primitive.NewObjectID(),
 			First_name:   firstName,
 			Last_name:    lastName,
 			Titles:       titles,
@@ -285,7 +285,7 @@ func ScrapeProfiles(outDir string) {
 			Profile_uri:  link,
 			Image_uri:    imageUri,
 			Office_hours: []schema.Meeting{},
-			Sections:     []schema.IdWrapper{},
+			Sections:     []primitive.ObjectID{},
 		})
 
 		utils.VPrintf("Scraped profile for %s %s!", firstName, lastName)
