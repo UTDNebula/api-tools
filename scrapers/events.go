@@ -307,7 +307,7 @@ func ScrapeEvents(outDir string) {
 		utils.VPrintf("Scraped contact phone info: %s", contactInformationPhone)
 
 		events = append(events, schema.Event{
-			Id:                 schema.IdWrapper(primitive.NewObjectID().Hex()),
+			Id:                 primitive.NewObjectID(),
 			Summary:            summary,
 			Location:           location,
 			StartTime:          dateTimeStart,

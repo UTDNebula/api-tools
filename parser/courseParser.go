@@ -48,7 +48,7 @@ func parseCourse(courseNum string, session schema.AcademicSession, rowInfo map[s
 
 	course = &schema.Course{}
 
-	course.Id = schema.IdWrapper(primitive.NewObjectID().Hex())
+	course.Id = primitive.NewObjectID()
 	course.Course_number = idMatches[2]
 	course.Subject_prefix = idMatches[1]
 	course.Title = rowInfo["Course Title:"]
