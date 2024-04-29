@@ -104,6 +104,9 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 	chromedpCtx, cancel := initChromeDp()
 	defer cancel()
 
+	// Refresh the token
+	refreshToken(chromedpCtx)
+
 	log.Printf("Finding course prefix nodes...")
 
 	var coursePrefixes []string
