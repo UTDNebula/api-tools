@@ -24,7 +24,7 @@ Part of [Project Nebula](https://about.utdnebula.com).
 
 ### Prerequisites
 
-- Golang 1.19 (or higher)
+- Golang 1.23 (or higher)
 
 ### Development
 

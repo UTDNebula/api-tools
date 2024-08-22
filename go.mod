@@ -1,12 +1,12 @@
 module github.com/UTDNebula/api-tools
 
-go 1.19
+go 1.23
 
 require (
 	github.com/PuerkitoBio/goquery v1.8.1
 	github.com/UTDNebula/nebula-api/api v0.0.0-20240423212728-2ef02f280c6c
-	github.com/chromedp/cdproto v0.0.0-20240421230201-ab917191657d
-	github.com/chromedp/chromedp v0.9.5
+	github.com/chromedp/cdproto v0.0.0-20240801214329-3f85d328b335
+	github.com/chromedp/chromedp v0.10.0
 	github.com/joho/godotenv v1.5.1
 	go.mongodb.org/mongo-driver v1.15.0
 )
@@ -26,7 +26,7 @@ require (
 	github.com/go-playground/validator/v10 v10.19.0 // indirect
 	github.com/gobwas/httphead v0.1.0 // indirect
 	github.com/gobwas/pool v0.2.1 // indirect
-	github.com/gobwas/ws v1.3.2 // indirect
+	github.com/gobwas/ws v1.4.0 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/gorilla/schema v1.3.0 // indirect
@@ -51,7 +51,7 @@ require (
 	golang.org/x/crypto v0.22.0 // indirect
 	golang.org/x/net v0.24.0 // indirect
 	golang.org/x/sync v0.7.0 // indirect
-	golang.org/x/sys v0.19.0 // indirect
+	golang.org/x/sys v0.22.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

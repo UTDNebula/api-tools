@@ -58,7 +58,7 @@ func parseList(list []string) (string, schema.Location) {
 	var office schema.Location
 
 	for _, element := range list {
-		element = strings.Trim(element, " ")
+		element = strings.TrimSpace(element)
 		utils.VPrintf("Element is: %s", element)
 		if strings.Contains(element, "-") {
 			phoneNumber = element
@@ -168,7 +168,7 @@ func ScrapeProfiles(outDir string) {
 			chromedp.Navigate(link),
 			chromedp.ActionFunc(func(ctx context.Context) error {
 				var text string
-				err := chromedp.Text("//h2", &text).Do(ctx)
+				err := chromedp.Text("div.contact_info>h1", &text).Do(ctx)
 				firstName, lastName = parseName(text)
 				return err
 			}),
@@ -223,7 +223,7 @@ func ScrapeProfiles(outDir string) {
 		utils.VPrint("Scraping titles...")
 
 		err = chromedp.Run(chromedpCtx,
-			chromedp.QueryAfter("//h6",
+			chromedp.QueryAfter("div.profile-title",
 				func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
 					for _, node := range nodes {
 						tempText := getNodeText(node)
@@ -257,11 +257,11 @@ func ScrapeProfiles(outDir string) {
 		utils.VPrint("Scraping list text...")
 
 		err = chromedp.Run(chromedpCtx,
-			chromedp.QueryAfter("div.contact_info > div",
+			chromedp.QueryAfter("div.contact_info>div ~ div",
 				func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
 					var tempText string
-					err := chromedp.Text("div.contact_info > div", &tempText).Do(ctx)
-					texts = strings.Split(tempText, "")
+					err := chromedp.Text("div.contact_info>div ~ div", &tempText).Do(ctx)
+					texts = strings.Split(tempText, "\n")
 					return err
 				},
 			),
