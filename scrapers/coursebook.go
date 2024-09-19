@@ -12,7 +12,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -21,20 +20,6 @@ import (
 	"github.com/chromedp/chromedp"
 	"github.com/joho/godotenv"
 )
-
-func initChromeDp() (chromedpCtx context.Context, cancelFnc context.CancelFunc) {
-	log.Printf("Initializing chromedp...")
-	headlessEnv, present := os.LookupEnv("HEADLESS_MODE")
-	doHeadless, _ := strconv.ParseBool(headlessEnv)
-	if present && doHeadless {
-		chromedpCtx, cancelFnc = chromedp.NewContext(context.Background())
-		log.Printf("Initialized chromedp!")
-	} else {
-		allocCtx, _ := chromedp.NewExecAllocator(context.Background())
-		chromedpCtx, cancelFnc = chromedp.NewContext(allocCtx)
-	}
-	return
-}
 
 // This function generates a fresh auth token and returns the new headers
 func refreshToken(chromedpCtx context.Context) map[string][]string {
@@ -108,7 +93,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 	}
 
 	// Start chromedp
-	chromedpCtx, cancel := initChromeDp()
+	chromedpCtx, cancel := utils.InitChromeDp()
 	defer cancel()
 
 	// Find index of starting prefix, if one has been given

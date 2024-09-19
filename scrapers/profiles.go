@@ -143,7 +143,7 @@ func scrapeProfessorLinks(chromedpCtx context.Context) []string {
 
 func ScrapeProfiles(outDir string) {
 
-	chromedpCtx, cancel := initChromeDp()
+	chromedpCtx, cancel := utils.InitChromeDp()
 	defer cancel()
 
 	err := os.MkdirAll(outDir, 0777)

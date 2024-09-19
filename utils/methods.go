@@ -5,14 +5,34 @@
 package utils
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/fs"
+	"log"
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
+
+	"github.com/chromedp/chromedp"
 )
+
+// Initializes Chrome DevTools Protocol
+func InitChromeDp() (chromedpCtx context.Context, cancelFnc context.CancelFunc) {
+	log.Printf("Initializing chromedp...")
+	headlessEnv, present := os.LookupEnv("HEADLESS_MODE")
+	doHeadless, _ := strconv.ParseBool(headlessEnv)
+	if present && doHeadless {
+		chromedpCtx, cancelFnc = chromedp.NewContext(context.Background())
+		log.Printf("Initialized chromedp!")
+	} else {
+		allocCtx, _ := chromedp.NewExecAllocator(context.Background())
+		chromedpCtx, cancelFnc = chromedp.NewContext(allocCtx)
+	}
+	return
+}
 
 // Encodes and writes the given data as tab-indented JSON to the given filepath.
 func WriteJSON(filepath string, data interface{}) error {
