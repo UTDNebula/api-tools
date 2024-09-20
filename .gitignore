@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
@@ -43,6 +41,7 @@ deploy_log.sh
 .idea/
 .vscode/
 .firebase/
+/api-tools
 
 # output data and logs
 data/
