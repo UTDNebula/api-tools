@@ -6,99 +6,16 @@ package scrapers
 
 import (
 	"bytes"
-	"context"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/UTDNebula/api-tools/utils"
-	"github.com/chromedp/cdproto/network"
-	"github.com/chromedp/chromedp"
 	"github.com/joho/godotenv"
 )
-
-func initChromeDp() (chromedpCtx context.Context, cancelFnc context.CancelFunc) {
-	log.Printf("Initializing chromedp...")
-	headlessEnv, present := os.LookupEnv("HEADLESS_MODE")
-	doHeadless, _ := strconv.ParseBool(headlessEnv)
-	if present && doHeadless {
-		chromedpCtx, cancelFnc = chromedp.NewContext(context.Background())
-		log.Printf("Initialized chromedp!")
-	} else {
-		allocCtx, _ := chromedp.NewExecAllocator(context.Background())
-		chromedpCtx, cancelFnc = chromedp.NewContext(allocCtx)
-	}
-	return
-}
-
-// This function generates a fresh auth token and returns the new headers
-func refreshToken(chromedpCtx context.Context) map[string][]string {
-	netID, present := os.LookupEnv("LOGIN_NETID")
-	if !present {
-		log.Panic("LOGIN_NETID is missing from .env!")
-	}
-	password, present := os.LookupEnv("LOGIN_PASSWORD")
-	if !present {
-		log.Panic("LOGIN_PASSWORD is missing from .env!")
-	}
-
-	utils.VPrintf("Getting new token...")
-	_, err := chromedp.RunResponse(chromedpCtx,
-		chromedp.ActionFunc(func(ctx context.Context) error {
-			err := network.ClearBrowserCookies().Do(ctx)
-			return err
-		}),
-		chromedp.Navigate(`https://wat.utdallas.edu/login`),
-		chromedp.WaitVisible(`form#login-form`),
-		chromedp.SendKeys(`input#netid`, netID),
-		chromedp.SendKeys(`input#password`, password),
-		chromedp.WaitVisible(`input#login-button`),
-		chromedp.Click(`input#login-button`),
-		//chromedp.WaitVisible(`body`),
-	)
-	if err != nil {
-		panic(err)
-	}
-
-	var cookieStrs []string
-	_, err = chromedp.RunResponse(chromedpCtx,
-		chromedp.Navigate(`https://coursebook.utdallas.edu/`),
-		chromedp.ActionFunc(func(ctx context.Context) error {
-			cookies, err := network.GetCookies().Do(ctx)
-			cookieStrs = make([]string, len(cookies))
-			gotToken := false
-			for i, cookie := range cookies {
-				cookieStrs[i] = fmt.Sprintf("%s=%s", cookie.Name, cookie.Value)
-				if cookie.Name == "PTGSESSID" {
-					utils.VPrintf("Got new token: PTGSESSID = %s", cookie.Value)
-					gotToken = true
-				}
-			}
-			if !gotToken {
-				return errors.New("failed to get a new token")
-			}
-			return err
-		}),
-	)
-	if err != nil {
-		panic(err)
-	}
-
-	return map[string][]string{
-		"Host":            {"coursebook.utdallas.edu"},
-		"User-Agent":      {"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/110.0"},
-		"Accept":          {"text/html"},
-		"Accept-Language": {"en-US"},
-		"Content-Type":    {"application/x-www-form-urlencoded"},
-		"Cookie":          cookieStrs,
-		"Connection":      {"keep-alive"},
-	}
-}
 
 func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 
@@ -108,7 +25,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 	}
 
 	// Start chromedp
-	chromedpCtx, cancel := initChromeDp()
+	chromedpCtx, cancel := utils.InitChromeDp()
 	defer cancel()
 
 	// Find index of starting prefix, if one has been given
@@ -156,7 +73,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 			panic(err)
 		}
 		// Get a fresh token at the start of each new prefix because we can lol
-		coursebookHeaders := refreshToken(chromedpCtx)
+		coursebookHeaders := utils.RefreshToken(chromedpCtx)
 		// Give coursebook some time to recognize the new token
 		time.Sleep(500 * time.Millisecond)
 		// String builder to store accumulated course HTML data for both class levels
@@ -226,7 +143,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 			utils.VPrintf("Got section: %s", id)
 			if sectionIndex%30 == 0 && sectionIndex != 0 {
 				// Ratelimit? What ratelimit?
-				coursebookHeaders = refreshToken(chromedpCtx)
+				coursebookHeaders = utils.RefreshToken(chromedpCtx)
 				// Give coursebook some time to recognize the new token
 				time.Sleep(500 * time.Millisecond)
 			}

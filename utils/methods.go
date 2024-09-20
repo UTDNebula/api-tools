@@ -5,14 +5,100 @@
 package utils
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/fs"
+	"log"
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
+
+	"github.com/chromedp/cdproto/network"
+	"github.com/chromedp/chromedp"
 )
+
+// Initializes Chrome DevTools Protocol
+func InitChromeDp() (chromedpCtx context.Context, cancelFnc context.CancelFunc) {
+	log.Printf("Initializing chromedp...")
+	headlessEnv, present := os.LookupEnv("HEADLESS_MODE")
+	doHeadless, _ := strconv.ParseBool(headlessEnv)
+	if present && doHeadless {
+		chromedpCtx, cancelFnc = chromedp.NewContext(context.Background())
+		log.Printf("Initialized chromedp!")
+	} else {
+		allocCtx, _ := chromedp.NewExecAllocator(context.Background())
+		chromedpCtx, cancelFnc = chromedp.NewContext(allocCtx)
+	}
+	return
+}
+
+// This function generates a fresh auth token and returns the new headers
+func RefreshToken(chromedpCtx context.Context) map[string][]string {
+	netID, present := os.LookupEnv("LOGIN_NETID")
+	if !present {
+		log.Panic("LOGIN_NETID is missing from .env!")
+	}
+	password, present := os.LookupEnv("LOGIN_PASSWORD")
+	if !present {
+		log.Panic("LOGIN_PASSWORD is missing from .env!")
+	}
+
+	VPrintf("Getting new token...")
+	_, err := chromedp.RunResponse(chromedpCtx,
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			err := network.ClearBrowserCookies().Do(ctx)
+			return err
+		}),
+		chromedp.Navigate(`https://wat.utdallas.edu/login`),
+		chromedp.WaitVisible(`form#login-form`),
+		chromedp.SendKeys(`input#netid`, netID),
+		chromedp.SendKeys(`input#password`, password),
+		chromedp.WaitVisible(`input#login-button`),
+		chromedp.Click(`input#login-button`),
+		//chromedp.WaitVisible(`body`),
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	var cookieStrs []string
+	_, err = chromedp.RunResponse(chromedpCtx,
+		chromedp.Navigate(`https://coursebook.utdallas.edu/`),
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			cookies, err := network.GetCookies().Do(ctx)
+			cookieStrs = make([]string, len(cookies))
+			gotToken := false
+			for i, cookie := range cookies {
+				cookieStrs[i] = fmt.Sprintf("%s=%s", cookie.Name, cookie.Value)
+				if cookie.Name == "PTGSESSID" {
+					VPrintf("Got new token: PTGSESSID = %s", cookie.Value)
+					gotToken = true
+				}
+			}
+			if !gotToken {
+				return errors.New("failed to get a new token")
+			}
+			return err
+		}),
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	return map[string][]string{
+		"Host":            {"coursebook.utdallas.edu"},
+		"User-Agent":      {"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/110.0"},
+		"Accept":          {"text/html"},
+		"Accept-Language": {"en-US"},
+		"Content-Type":    {"application/x-www-form-urlencoded"},
+		"Cookie":          cookieStrs,
+		"Connection":      {"keep-alive"},
+	}
+}
 
 // Encodes and writes the given data as tab-indented JSON to the given filepath.
 func WriteJSON(filepath string, data interface{}) error {
