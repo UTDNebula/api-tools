@@ -12,6 +12,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -24,20 +25,26 @@ import (
 
 func initChromeDp() (chromedpCtx context.Context, cancelFnc context.CancelFunc) {
 	log.Printf("Initializing chromedp...")
-	allocCtx, cancelFnc := chromedp.NewExecAllocator(context.Background())
-	chromedpCtx, _ = chromedp.NewContext(allocCtx)
-	log.Printf("Initialized chromedp!")
+	headlessEnv, present := os.LookupEnv("HEADLESS_MODE")
+	doHeadless, _ := strconv.ParseBool(headlessEnv)
+	if present && doHeadless {
+		chromedpCtx, cancelFnc = chromedp.NewContext(context.Background())
+		log.Printf("Initialized chromedp!")
+	} else {
+		allocCtx, _ := chromedp.NewExecAllocator(context.Background())
+		chromedpCtx, cancelFnc = chromedp.NewContext(allocCtx)
+	}
 	return
 }
 
 // This function generates a fresh auth token and returns the new headers
 func refreshToken(chromedpCtx context.Context) map[string][]string {
-	netID := os.Getenv("LOGIN_NETID")
-	if netID == "" {
+	netID, present := os.LookupEnv("LOGIN_NETID")
+	if !present {
 		log.Panic("LOGIN_NETID is missing from .env!")
 	}
-	password := os.Getenv("LOGIN_PASSWORD")
-	if password == "" {
+	password, present := os.LookupEnv("LOGIN_PASSWORD")
+	if !present {
 		log.Panic("LOGIN_PASSWORD is missing from .env!")
 	}
 
@@ -51,8 +58,9 @@ func refreshToken(chromedpCtx context.Context) map[string][]string {
 		chromedp.WaitVisible(`form#login-form`),
 		chromedp.SendKeys(`input#netid`, netID),
 		chromedp.SendKeys(`input#password`, password),
+		chromedp.WaitVisible(`input#login-button`),
 		chromedp.Click(`input#login-button`),
-		chromedp.WaitVisible(`body`),
+		//chromedp.WaitVisible(`body`),
 	)
 	if err != nil {
 		panic(err)
