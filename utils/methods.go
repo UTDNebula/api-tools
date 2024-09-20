@@ -57,9 +57,9 @@ func RefreshToken(chromedpCtx context.Context) map[string][]string {
 		chromedp.WaitVisible(`form#login-form`),
 		chromedp.SendKeys(`input#netid`, netID),
 		chromedp.SendKeys(`input#password`, password),
-		chromedp.WaitVisible(`input#login-button`),
-		chromedp.Click(`input#login-button`),
-		//chromedp.WaitVisible(`body`),
+		chromedp.WaitVisible(`button#login-button`),
+		chromedp.Click(`button#login-button`),
+		chromedp.WaitVisible(`body`),
 	)
 	if err != nil {
 		panic(err)
