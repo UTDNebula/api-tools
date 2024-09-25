@@ -100,6 +100,39 @@ func RefreshToken(chromedpCtx context.Context) map[string][]string {
 	}
 }
 
+// This function signs into Astra
+func SignInAstra(chromedpCtx context.Context) error {
+	// Get username and password
+	username, present := os.LookupEnv("LOGIN_ASTRA_USERNAME")
+	if !present {
+		log.Panic("LOGIN_ASTRA_USERNAME is missing from .env!")
+	}
+	password, present := os.LookupEnv("LOGIN_ASTRA_PASSWORD")
+	if !present {
+		log.Panic("LOGIN_ASTRA_PASSWORD is missing from .env!")
+	}
+
+	// Sign in
+	VPrintf("Signing in...")
+	_, err := chromedp.RunResponse(chromedpCtx,
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			err := network.ClearBrowserCookies().Do(ctx)
+			return err
+		}),
+		chromedp.Navigate(`https://www.aaiscloud.com/UTXDallas/logon.aspx?ReturnUrl=%2futxdallas%2fcalendars%2fdailygridcalendar.aspx`),
+		chromedp.WaitVisible(`input#userNameField-inputEl`),
+		chromedp.SendKeys(`input#userNameField-inputEl`, username),
+		chromedp.SendKeys(`input#textfield-1029-inputEl`, password),
+		chromedp.WaitVisible(`a#logonButton`),
+		chromedp.Click(`a#logonButton`),
+		chromedp.WaitVisible(`body`),
+	)
+	if err != nil {
+		panic(err)
+	}
+	return nil
+}
+
 // Encodes and writes the given data as tab-indented JSON to the given filepath.
 func WriteJSON(filepath string, data interface{}) error {
 	fptr, err := os.Create(filepath)
