@@ -126,20 +126,22 @@ func RefreshAstraToken(chromedpCtx context.Context) map[string][]string {
 		chromedp.SendKeys(`input#textfield-1029-inputEl`, password),
 		chromedp.WaitVisible(`a#logonButton`),
 		chromedp.Click(`a#logonButton`),
+		chromedp.WaitVisible(`body`, chromedp.ByQuery),
 	)
 	if err != nil {
 		panic(err)
 	}
 
-	var cookieStrs []string
+	cookieStr := ""
 	_, err = chromedp.RunResponse(chromedpCtx,
 		//chromedp.Navigate(`https://www.aaiscloud.com/UTXDallas/Calendars/DailyGridCalendar.aspx`),
+		chromedp.WaitVisible(`body`, chromedp.ByQuery),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			cookies, err := network.GetCookies().Do(ctx)
-			cookieStrs = make([]string, len(cookies))
 			gotToken := false
-			for i, cookie := range cookies {
-				cookieStrs[i] = fmt.Sprintf("%s=%s", cookie.Name, cookie.Value)
+			for _, cookie := range cookies {
+				cookieStr = fmt.Sprintf("%s%s=%s; ", cookieStr, cookie.Name, cookie.Value)
+				//log.Println(cookieStr)
 				if cookie.Name == "UTXDallas.ASPXFORMSAUTH" {
 					VPrintf("Got new token: PTGSESSID = %s", cookie.Value)
 					gotToken = true
@@ -156,14 +158,19 @@ func RefreshAstraToken(chromedpCtx context.Context) map[string][]string {
 	}
 
 	return map[string][]string{
-		"Host":            {"www.aaiscloud.com"},
-		"User-Agent":      {"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/110.0"},
-		"Accept":          {"*/*"},
-		"Accept-Encoding": {"gzip, deflate, br, zstd"},
-		"Accept-Language": {"en-US,en;q=0.5"},
-		"Content-Type":    {"application/x-www-form-urlencoded; charset=UTF-8"},
-		"Cookie":          cookieStrs,
-		"Connection":      {"keep-alive"},
+		"Host":                      {"www.aaiscloud.com"},
+		"User-Agent":                {"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/110.0"},
+		"Accept":                    {"text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/png,image/svg+xml,*/*;q=0.8"},
+		"Accept-Language":           {"en-US,en;q=0.5"},
+		"Accept-Encoding":           {"gzip, deflate, br, zstd"},
+		"Connection":                {"keep-alive"},
+		"Cookie":                    {cookieStr},
+		"Upgrade-Insecure-Requests": {"1"},
+		"Sec-Fetch-Dest":            {"document"},
+		"Sec-Fetch-Mode":            {"navigate"},
+		"Sec-Fetch-Site":            {"none"},
+		"Sec-Fetch-User":            {"?1"},
+		"Priority":                  {"u=0, i"},
 	}
 }
 
