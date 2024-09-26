@@ -120,7 +120,6 @@ func RefreshAstraToken(chromedpCtx context.Context) map[string][]string {
 			return err
 		}),
 		chromedp.Navigate(`https://www.aaiscloud.com/UTXDallas/logon.aspx?ReturnUrl=%2futxdallas%2fcalendars%2fdailygridcalendar.aspx`),
-		//chromedp.Navigate(`https://www.aaiscloud.com/UTXDallas/logon.aspx`),
 		chromedp.WaitVisible(`input#userNameField-inputEl`),
 		chromedp.SendKeys(`input#userNameField-inputEl`, username),
 		chromedp.SendKeys(`input#textfield-1029-inputEl`, password),
@@ -132,16 +131,15 @@ func RefreshAstraToken(chromedpCtx context.Context) map[string][]string {
 		panic(err)
 	}
 
+	//Save all cookies to string
 	cookieStr := ""
 	_, err = chromedp.RunResponse(chromedpCtx,
-		//chromedp.Navigate(`https://www.aaiscloud.com/UTXDallas/Calendars/DailyGridCalendar.aspx`),
 		chromedp.WaitVisible(`body`, chromedp.ByQuery),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			cookies, err := network.GetCookies().Do(ctx)
 			gotToken := false
 			for _, cookie := range cookies {
 				cookieStr = fmt.Sprintf("%s%s=%s; ", cookieStr, cookie.Name, cookie.Value)
-				//log.Println(cookieStr)
 				if cookie.Name == "UTXDallas.ASPXFORMSAUTH" {
 					VPrintf("Got new token: PTGSESSID = %s", cookie.Value)
 					gotToken = true
@@ -157,6 +155,7 @@ func RefreshAstraToken(chromedpCtx context.Context) map[string][]string {
 		panic(err)
 	}
 
+	//Return headers, copied from a request the actual site made
 	return map[string][]string{
 		"Host":                      {"www.aaiscloud.com"},
 		"User-Agent":                {"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/110.0"},

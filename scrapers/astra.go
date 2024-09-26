@@ -32,7 +32,8 @@ func ScrapeAstra(outDir string) {
 		panic(err)
 	}
 
-	//days := []string
+	days := "{"
+	firstLoop := true
 
 	// Init http client
 	tr := &http.Transport{
@@ -45,35 +46,49 @@ func ScrapeAstra(outDir string) {
 	astraHeaders := utils.RefreshAstraToken(chromedpCtx)
 	time.Sleep(500 * time.Millisecond)
 
-	//Request daily events
-	date := time.Now().Format("2006-01-02")
-	url := fmt.Sprintf("https://www.aaiscloud.com/UTXDallas/~api/calendar/CalendarWeekGrid?_dc=%d&action=GET&start=0&limit=5000&isForWeekView=false&fields=ActivityId,ActivityPk,ActivityName,ParentActivityId,ParentActivityName,MeetingType,Description,StartDate,EndDate,DayOfWeek,StartMinute,EndMinute,ActivityTypeCode,ResourceId,CampusName,BuildingCode,RoomNumber,RoomName,LocationName,InstitutionId,SectionId,SectionPk,IsExam,IsCrosslist,IsAllDay,IsPrivate,EventId,EventPk,CurrentState,NotAllowedUsageMask,UsageColor,UsageColorIsPrimary,EventTypeColor,MaxAttendance,ActualAttendance,Capacity&filter=(StartDate%%3C%%3D%%22%sT23%%3A00%%3A00%%22)%%26%%26(EndDate%%3E%%3D%%22%sT00%%3A00%%3A00%%22)&page=1", time.Now().UnixMilli(), date, date)
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		panic(err)
-	}
+	//Starting date
+	date := time.Now()
 
-	req.Header = astraHeaders
-	res, err := cli.Do(req)
-	if err != nil {
-		panic(err)
-	}
-	if res.StatusCode != 200 {
-		log.Panicf("ERROR: Status was: %s\nIf the status is 404, you've likely been IP ratelimited!", res.Status)
-	}
+	for i := 0; i < 10; i++ {
 
-	defer res.Body.Close()
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		panic(err)
+		//Request daily events
+		formattedDate := date.Format("2006-01-02")
+		url := fmt.Sprintf("https://www.aaiscloud.com/UTXDallas/~api/calendar/CalendarWeekGrid?_dc=%d&action=GET&start=0&limit=5000&isForWeekView=false&fields=ActivityId,ActivityPk,ActivityName,ParentActivityId,ParentActivityName,MeetingType,Description,StartDate,EndDate,DayOfWeek,StartMinute,EndMinute,ActivityTypeCode,ResourceId,CampusName,BuildingCode,RoomNumber,RoomName,LocationName,InstitutionId,SectionId,SectionPk,IsExam,IsCrosslist,IsAllDay,IsPrivate,EventId,EventPk,CurrentState,NotAllowedUsageMask,UsageColor,UsageColorIsPrimary,EventTypeColor,MaxAttendance,ActualAttendance,Capacity&filter=(StartDate%%3C%%3D%%22%sT23%%3A00%%3A00%%22)%%26%%26(EndDate%%3E%%3D%%22%sT00%%3A00%%3A00%%22)&page=1", time.Now().UnixMilli(), formattedDate, formattedDate)
+		req, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			panic(err)
+		}
+		req.Header = astraHeaders
+		res, err := cli.Do(req)
+		if err != nil {
+			panic(err)
+		}
+		if res.StatusCode != 200 {
+			log.Panicf("ERROR: Status was: %s\nIf the status is 404, you've likely been IP ratelimited!", res.Status)
+		}
+
+		//Save to days JSON
+		defer res.Body.Close()
+		body, err := io.ReadAll(res.Body)
+		if err != nil {
+			panic(err)
+		}
+		comma := ","
+		if firstLoop {
+			comma = ""
+			firstLoop = false
+		}
+		days = fmt.Sprintf("%s%s\"%s\":%s", days, comma, formattedDate, string(body))
+		date = date.Add(time.Hour * 24)
 	}
 
 	// Write event data to output file
+	days = fmt.Sprintf("%s}", days)
 	fptr, err := os.Create(fmt.Sprintf("%s/reservations.json", outDir))
 	if err != nil {
 		panic(err)
 	}
-	_, err = fptr.Write(body)
+	_, err = fptr.Write([]byte(days))
 	if err != nil {
 		panic(err)
 	}
