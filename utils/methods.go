@@ -101,7 +101,7 @@ func RefreshToken(chromedpCtx context.Context) map[string][]string {
 }
 
 // This function signs into Astra
-func RefreshAstraToken(chromedpCtx context.Context) error /*map[string][]string*/ {
+func RefreshAstraToken(chromedpCtx context.Context) map[string][]string {
 	// Get username and password
 	username, present := os.LookupEnv("LOGIN_ASTRA_USERNAME")
 	if !present {
@@ -120,27 +120,27 @@ func RefreshAstraToken(chromedpCtx context.Context) error /*map[string][]string*
 			return err
 		}),
 		chromedp.Navigate(`https://www.aaiscloud.com/UTXDallas/logon.aspx?ReturnUrl=%2futxdallas%2fcalendars%2fdailygridcalendar.aspx`),
+		//chromedp.Navigate(`https://www.aaiscloud.com/UTXDallas/logon.aspx`),
 		chromedp.WaitVisible(`input#userNameField-inputEl`),
 		chromedp.SendKeys(`input#userNameField-inputEl`, username),
 		chromedp.SendKeys(`input#textfield-1029-inputEl`, password),
 		chromedp.WaitVisible(`a#logonButton`),
 		chromedp.Click(`a#logonButton`),
-		chromedp.WaitVisible(`body`),
 	)
 	if err != nil {
 		panic(err)
 	}
 
-	/*var cookieStrs []string
+	var cookieStrs []string
 	_, err = chromedp.RunResponse(chromedpCtx,
-		chromedp.Navigate(`https://coursebook.utdallas.edu/`),
+		//chromedp.Navigate(`https://www.aaiscloud.com/UTXDallas/Calendars/DailyGridCalendar.aspx`),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			cookies, err := network.GetCookies().Do(ctx)
 			cookieStrs = make([]string, len(cookies))
 			gotToken := false
 			for i, cookie := range cookies {
 				cookieStrs[i] = fmt.Sprintf("%s=%s", cookie.Name, cookie.Value)
-				if cookie.Name == "PTGSESSID" {
+				if cookie.Name == "UTXDallas.ASPXFORMSAUTH" {
 					VPrintf("Got new token: PTGSESSID = %s", cookie.Value)
 					gotToken = true
 				}
@@ -158,14 +158,13 @@ func RefreshAstraToken(chromedpCtx context.Context) error /*map[string][]string*
 	return map[string][]string{
 		"Host":            {"www.aaiscloud.com"},
 		"User-Agent":      {"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/110.0"},
-		"Accept":          {"/*"}, // add back star
+		"Accept":          {"*/*"},
 		"Accept-Encoding": {"gzip, deflate, br, zstd"},
 		"Accept-Language": {"en-US,en;q=0.5"},
 		"Content-Type":    {"application/x-www-form-urlencoded; charset=UTF-8"},
 		"Cookie":          cookieStrs,
 		"Connection":      {"keep-alive"},
-	}*/
-	return nil
+	}
 }
 
 // Encodes and writes the given data as tab-indented JSON to the given filepath.
