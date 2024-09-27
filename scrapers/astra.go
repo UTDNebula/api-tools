@@ -14,6 +14,7 @@ import (
 
 	"github.com/UTDNebula/api-tools/utils"
 	"github.com/joho/godotenv"
+	"github.com/valyala/fastjson"
 )
 
 func ScrapeAstra(outDir string) {
@@ -27,13 +28,14 @@ func ScrapeAstra(outDir string) {
 	chromedpCtx, cancel := utils.InitChromeDp()
 	defer cancel()
 
+	// Make output folder
 	err := os.MkdirAll(outDir, 0777)
 	if err != nil {
 		panic(err)
 	}
 
-	days := "{"
-	firstLoop := true
+	days := "{"       // String JSON for storing results by day
+	firstLoop := true // To avoid adding a comma to the JSON on the first loop
 
 	// Init http client
 	tr := &http.Transport{
@@ -46,13 +48,18 @@ func ScrapeAstra(outDir string) {
 	astraHeaders := utils.RefreshAstraToken(chromedpCtx)
 	time.Sleep(500 * time.Millisecond)
 
-	//Starting date
+	// Starting date
 	date := time.Now()
 
-	for i := 0; i < 10; i++ {
+	// Stop condition
+	lt10EventsCount := 0
 
-		//Request daily events
+	// Run until 90 days of no events
+	for lt10EventsCount < 90 {
 		formattedDate := date.Format("2006-01-02")
+		log.Printf("Scraping %s...", formattedDate)
+
+		// Request daily events
 		url := fmt.Sprintf("https://www.aaiscloud.com/UTXDallas/~api/calendar/CalendarWeekGrid?_dc=%d&action=GET&start=0&limit=5000&isForWeekView=false&fields=ActivityId,ActivityPk,ActivityName,ParentActivityId,ParentActivityName,MeetingType,Description,StartDate,EndDate,DayOfWeek,StartMinute,EndMinute,ActivityTypeCode,ResourceId,CampusName,BuildingCode,RoomNumber,RoomName,LocationName,InstitutionId,SectionId,SectionPk,IsExam,IsCrosslist,IsAllDay,IsPrivate,EventId,EventPk,CurrentState,NotAllowedUsageMask,UsageColor,UsageColorIsPrimary,EventTypeColor,MaxAttendance,ActualAttendance,Capacity&filter=(StartDate%%3C%%3D%%22%sT23%%3A00%%3A00%%22)%%26%%26(EndDate%%3E%%3D%%22%sT00%%3A00%%3A00%%22)&page=1", time.Now().UnixMilli(), formattedDate, formattedDate)
 		req, err := http.NewRequest("GET", url, nil)
 		if err != nil {
@@ -66,19 +73,30 @@ func ScrapeAstra(outDir string) {
 		if res.StatusCode != 200 {
 			log.Panicf("ERROR: Status was: %s\nIf the status is 404, you've likely been IP ratelimited!", res.Status)
 		}
-
-		//Save to days JSON
 		defer res.Body.Close()
 		body, err := io.ReadAll(res.Body)
 		if err != nil {
 			panic(err)
 		}
+		stringBody := string(body)
+
+		// Check for no events
+		if fastjson.GetInt(body, "totalRecords") < 10 {
+			lt10EventsCount += 1
+			if lt10EventsCount > 30 {
+				log.Printf("There have been %d days in a row with fewer than 10 events.", lt10EventsCount)
+			}
+		} else {
+			lt10EventsCount = 0
+		}
+
+		// Add to record
 		comma := ","
 		if firstLoop {
 			comma = ""
 			firstLoop = false
 		}
-		days = fmt.Sprintf("%s%s\"%s\":%s", days, comma, formattedDate, string(body))
+		days = fmt.Sprintf("%s%s\"%s\":%s", days, comma, formattedDate, stringBody)
 		date = date.Add(time.Hour * 24)
 	}
 

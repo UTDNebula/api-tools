@@ -131,7 +131,7 @@ func RefreshAstraToken(chromedpCtx context.Context) map[string][]string {
 		panic(err)
 	}
 
-	//Save all cookies to string
+	// Save all cookies to string
 	cookieStr := ""
 	_, err = chromedp.RunResponse(chromedpCtx,
 		chromedp.WaitVisible(`body`, chromedp.ByQuery),
@@ -155,7 +155,7 @@ func RefreshAstraToken(chromedpCtx context.Context) map[string][]string {
 		panic(err)
 	}
 
-	//Return headers, copied from a request the actual site made
+	// Return headers, copied from a request the actual site made
 	return map[string][]string{
 		"Host":                      {"www.aaiscloud.com"},
 		"User-Agent":                {"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/110.0"},
