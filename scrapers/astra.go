@@ -53,6 +53,8 @@ func ScrapeAstra(outDir string) {
 
 	// Starting date
 	date := time.Now()
+	// Start on previous date to make sure we have today's data, regardless of what timezone the scraper is in
+	date = date.Add(time.Hour * -24)
 
 	// Stop condition
 	lt10EventsCount := 0
