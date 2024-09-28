@@ -17,6 +17,8 @@ import (
 	"github.com/valyala/fastjson"
 )
 
+var MAX_EVENTS_PER_DAY = 5000
+
 func ScrapeAstra(outDir string) {
 
 	// Load env vars
@@ -60,7 +62,7 @@ func ScrapeAstra(outDir string) {
 		log.Printf("Scraping %s...", formattedDate)
 
 		// Request daily events
-		url := fmt.Sprintf("https://www.aaiscloud.com/UTXDallas/~api/calendar/CalendarWeekGrid?_dc=%d&action=GET&start=0&limit=5000&isForWeekView=false&fields=ActivityId,ActivityPk,ActivityName,ParentActivityId,ParentActivityName,MeetingType,Description,StartDate,EndDate,DayOfWeek,StartMinute,EndMinute,ActivityTypeCode,ResourceId,CampusName,BuildingCode,RoomNumber,RoomName,LocationName,InstitutionId,SectionId,SectionPk,IsExam,IsCrosslist,IsAllDay,IsPrivate,EventId,EventPk,CurrentState,NotAllowedUsageMask,UsageColor,UsageColorIsPrimary,EventTypeColor,MaxAttendance,ActualAttendance,Capacity&filter=(StartDate%%3C%%3D%%22%sT23%%3A00%%3A00%%22)%%26%%26(EndDate%%3E%%3D%%22%sT00%%3A00%%3A00%%22)&page=1&sortOrder=%%2BStartDate,%%2BStartMinute", time.Now().UnixMilli(), formattedDate, formattedDate)
+		url := fmt.Sprintf("https://www.aaiscloud.com/UTXDallas/~api/calendar/CalendarWeekGrid?_dc=%d&action=GET&start=0&limit=%d&isForWeekView=false&fields=ActivityId,ActivityPk,ActivityName,ParentActivityId,ParentActivityName,MeetingType,Description,StartDate,EndDate,DayOfWeek,StartMinute,EndMinute,ActivityTypeCode,ResourceId,CampusName,BuildingCode,RoomNumber,RoomName,LocationName,InstitutionId,SectionId,SectionPk,IsExam,IsCrosslist,IsAllDay,IsPrivate,EventId,EventPk,CurrentState,NotAllowedUsageMask,UsageColor,UsageColorIsPrimary,EventTypeColor,MaxAttendance,ActualAttendance,Capacity&filter=(StartDate%%3C%%3D%%22%sT23%%3A00%%3A00%%22)%%26%%26(EndDate%%3E%%3D%%22%sT00%%3A00%%3A00%%22)&page=1&sortOrder=%%2BStartDate,%%2BStartMinute", time.Now().UnixMilli(), MAX_EVENTS_PER_DAY, formattedDate, formattedDate)
 		req, err := http.NewRequest("GET", url, nil)
 		if err != nil {
 			panic(err)
@@ -81,7 +83,11 @@ func ScrapeAstra(outDir string) {
 		stringBody := string(body)
 
 		// Check for no events
-		if fastjson.GetInt(body, "totalRecords") < 10 {
+		numEvents := fastjson.GetInt(body, "totalRecords")
+		if numEvents >= MAX_EVENTS_PER_DAY {
+			log.Panic("ERROR: Max events per day exceeded!")
+		}
+		if numEvents < 10 {
 			lt10EventsCount += 1
 			if lt10EventsCount > 30 {
 				log.Printf("There have been %d days in a row with fewer than 10 events.", lt10EventsCount)
