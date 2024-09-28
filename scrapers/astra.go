@@ -28,7 +28,6 @@ func ScrapeAstra(outDir string) {
 
 	// Start chromedp
 	chromedpCtx, cancel := utils.InitChromeDp()
-	defer cancel()
 
 	// Make output folder
 	err := os.MkdirAll(outDir, 0777)
@@ -47,8 +46,10 @@ func ScrapeAstra(outDir string) {
 	}
 	cli := &http.Client{Transport: tr}
 
+	// Get cookies for auth
 	astraHeaders := utils.RefreshAstraToken(chromedpCtx)
 	time.Sleep(500 * time.Millisecond)
+	cancel() // Don't need chromedp anymore
 
 	// Starting date
 	date := time.Now()
@@ -75,11 +76,11 @@ func ScrapeAstra(outDir string) {
 		if res.StatusCode != 200 {
 			log.Panicf("ERROR: Status was: %s\nIf the status is 404, you've likely been IP ratelimited!", res.Status)
 		}
-		defer res.Body.Close()
 		body, err := io.ReadAll(res.Body)
 		if err != nil {
 			panic(err)
 		}
+		res.Body.Close()
 		stringBody := string(body)
 
 		// Check for no events
