@@ -138,7 +138,9 @@ func csvToMap(csvFile *os.File, logFile *os.File) map[string][]int {
 		}
 
 		// add new grade distribution to map, keyed by SUBJECT + NUMBER + SECTION
-		distroKey := record[subjectCol] + record[catalogNumberCol] + record[sectionCol]
+		// Be sure to trim left padding on section number
+		trimmedSectionNumber := strings.TrimLeft(record[sectionCol], "0")
+		distroKey := record[subjectCol] + record[catalogNumberCol] + trimmedSectionNumber
 		distroMap[distroKey] = intSlice[:]
 	}
 	return distroMap

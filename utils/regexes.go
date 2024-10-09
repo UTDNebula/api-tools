@@ -9,13 +9,13 @@ const R_SUBJECT string = `[A-Z]{2,4}`
 
 // Course code, i.e. 2252.
 // The first digit of a course code is the course level, the second digit is the # of credit hours.
-const R_COURSE_CODE string = `[0-9v]{4}`
+const R_COURSE_CODE string = `[0-9vV]{4}`
 
 // Subject + Course, captured
-const R_SUBJ_COURSE_CAP string = `([A-Z]{2,4})\s*([0-9V]{4})`
+const R_SUBJ_COURSE_CAP string = `([A-Z]{2,4})\s*([0-9vV]{4})`
 
 // Subject + Course, uncaptured
-const R_SUBJ_COURSE string = `[A-Z]{2,4}\s*[0-9V]{4}`
+const R_SUBJ_COURSE string = `[A-Z]{2,4}\s*[0-9vV]{4}`
 
 // Section code, i.e. 101
 const R_SECTION_CODE string = `[0-9A-z]+`

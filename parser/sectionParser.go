@@ -64,7 +64,9 @@ func parseSection(courseRef *schema.Course, classNum string, syllabusURI string,
 	if exists {
 		// We have to trim leading zeroes from the section number in order to match properly, since the grade data does not use leading zeroes
 		trimmedSectionNumber := strings.TrimLeft(section.Section_number, "0")
-		sectionGrades, exists := semesterGrades[courseRef.Subject_prefix+courseRef.Course_number+trimmedSectionNumber]
+		// Key into grademap should be uppercased like the grade data
+		gradeKey := strings.ToUpper(courseRef.Subject_prefix + courseRef.Course_number + trimmedSectionNumber)
+		sectionGrades, exists := semesterGrades[gradeKey]
 		if exists {
 			section.Grade_distribution = sectionGrades
 		}
@@ -80,7 +82,7 @@ func parseSection(courseRef *schema.Course, classNum string, syllabusURI string,
 var termRegexp *regexp.Regexp = utils.Regexpf(`(?i)Term: (%s)`, utils.R_TERM_CODE)
 var datesRegexp *regexp.Regexp = utils.Regexpf(`(?:Start|End)s: (%s)`, utils.R_DATE_MDY)
 
-func getAcademicSession(rowInfo map[string]string, classInfo map[string]string) schema.AcademicSession {
+func getAcademicSession(rowInfo map[string]string) schema.AcademicSession {
 	session := schema.AcademicSession{}
 	scheduleText := rowInfo["Schedule:"]
 
