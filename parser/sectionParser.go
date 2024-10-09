@@ -62,7 +62,9 @@ func parseSection(courseRef *schema.Course, classNum string, syllabusURI string,
 
 	semesterGrades, exists := GradeMap[session.Name]
 	if exists {
-		sectionGrades, exists := semesterGrades[courseRef.Subject_prefix+courseRef.Course_number+section.Section_number]
+		// We have to trim leading zeroes from the section number in order to match properly, since the grade data does not use leading zeroes
+		trimmedSectionNumber := strings.TrimLeft(section.Section_number, "0")
+		sectionGrades, exists := semesterGrades[courseRef.Subject_prefix+courseRef.Course_number+trimmedSectionNumber]
 		if exists {
 			section.Grade_distribution = sectionGrades
 		}
