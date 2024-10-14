@@ -101,6 +101,79 @@ func RefreshToken(chromedpCtx context.Context) map[string][]string {
 	}
 }
 
+// This function signs into Astra
+func RefreshAstraToken(chromedpCtx context.Context) map[string][]string {
+	// Get username and password
+	username, present := os.LookupEnv("LOGIN_ASTRA_USERNAME")
+	if !present {
+		log.Panic("LOGIN_ASTRA_USERNAME is missing from .env!")
+	}
+	password, present := os.LookupEnv("LOGIN_ASTRA_PASSWORD")
+	if !present {
+		log.Panic("LOGIN_ASTRA_PASSWORD is missing from .env!")
+	}
+
+	// Sign in
+	VPrintf("Signing in...")
+	_, err := chromedp.RunResponse(chromedpCtx,
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			err := network.ClearBrowserCookies().Do(ctx)
+			return err
+		}),
+		chromedp.Navigate(`https://www.aaiscloud.com/UTXDallas/logon.aspx?ReturnUrl=%2futxdallas%2fcalendars%2fdailygridcalendar.aspx`),
+		chromedp.WaitVisible(`input#userNameField-inputEl`),
+		chromedp.SendKeys(`input#userNameField-inputEl`, username),
+		chromedp.SendKeys(`input#textfield-1029-inputEl`, password),
+		chromedp.WaitVisible(`a#logonButton`),
+		chromedp.Click(`a#logonButton`),
+		chromedp.WaitVisible(`body`, chromedp.ByQuery),
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	// Save all cookies to string
+	cookieStr := ""
+	_, err = chromedp.RunResponse(chromedpCtx,
+		chromedp.WaitVisible(`body`, chromedp.ByQuery),
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			cookies, err := network.GetCookies().Do(ctx)
+			gotToken := false
+			for _, cookie := range cookies {
+				cookieStr = fmt.Sprintf("%s%s=%s; ", cookieStr, cookie.Name, cookie.Value)
+				if cookie.Name == "UTXDallas.ASPXFORMSAUTH" {
+					VPrintf("Got new token: PTGSESSID = %s", cookie.Value)
+					gotToken = true
+				}
+			}
+			if !gotToken {
+				return errors.New("failed to get a new token")
+			}
+			return err
+		}),
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	// Return headers, copied from a request the actual site made
+	return map[string][]string{
+		"Host":                      {"www.aaiscloud.com"},
+		"User-Agent":                {"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/110.0"},
+		"Accept":                    {"text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/png,image/svg+xml,*/*;q=0.8"},
+		"Accept-Language":           {"en-US,en;q=0.5"},
+		"Accept-Encoding":           {"gzip, deflate, br, zstd"},
+		"Connection":                {"keep-alive"},
+		"Cookie":                    {cookieStr},
+		"Upgrade-Insecure-Requests": {"1"},
+		"Sec-Fetch-Dest":            {"document"},
+		"Sec-Fetch-Mode":            {"navigate"},
+		"Sec-Fetch-Site":            {"none"},
+		"Sec-Fetch-User":            {"?1"},
+		"Priority":                  {"u=0, i"},
+	}
+}
+
 // Encodes and writes the given data as tab-indented JSON to the given filepath.
 func WriteJSON(filepath string, data interface{}) error {
 	fptr, err := os.Create(filepath)
