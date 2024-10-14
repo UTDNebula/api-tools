@@ -153,7 +153,7 @@ func parse(path string) {
 	courseNum := utils.TrimWhitespace(classAndCourseNum[1])
 
 	// Figure out the academic session associated with this specific course/Section
-	session := getAcademicSession(rowInfo, classInfo)
+	session := getAcademicSession(rowInfo)
 
 	// Try to create the course and section based on collected info
 	courseRef := parseCourse(courseNum, session, rowInfo, classInfo)

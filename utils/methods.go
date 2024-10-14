@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io/fs"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -231,4 +232,22 @@ func GetMapKeys[M ~map[K]V, K comparable, V any](m M) []K {
 // Creates a regexp with MustCompile() using a sprintf input.
 func Regexpf(format string, vars ...interface{}) *regexp.Regexp {
 	return regexp.MustCompile(fmt.Sprintf(format, vars...))
+}
+
+// Attempts to run the given HTTP request with the given HTTP client, wrapping the request with a retry callback
+func RetryHTTP(requestCreator func() *http.Request, client *http.Client, retryCallback func(res *http.Response, numRetries int)) (res *http.Response, err error) {
+	// Retry loop for requests
+	numRetries := 0
+	for {
+		// Perform HTTP request, retrying if we get a non-200 response code
+		res, err = client.Do(requestCreator())
+		// Retry handling
+		if res.StatusCode != 200 {
+			retryCallback(res, numRetries)
+			numRetries++
+			continue
+		}
+		break
+	}
+	return res, err
 }
