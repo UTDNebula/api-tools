@@ -6,100 +6,16 @@ package scrapers
 
 import (
 	"bytes"
-	"context"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/UTDNebula/api-tools/utils"
-	"github.com/chromedp/cdproto/cdp"
-	"github.com/chromedp/cdproto/network"
-	"github.com/chromedp/chromedp"
 	"github.com/joho/godotenv"
 )
-
-func initChromeDp() (chromedpCtx context.Context, cancelFnc context.CancelFunc) {
-	log.Printf("Initializing chromedp...")
-	headlessEnv, present := os.LookupEnv("HEADLESS_MODE")
-	doHeadless, _ := strconv.ParseBool(headlessEnv)
-	if present && doHeadless {
-		chromedpCtx, cancelFnc = chromedp.NewContext(context.Background())
-		log.Printf("Initialized chromedp!")
-	} else {
-		allocCtx, _ := chromedp.NewExecAllocator(context.Background())
-		chromedpCtx, cancelFnc = chromedp.NewContext(allocCtx)
-	}
-	return
-}
-
-// This function generates a fresh auth token and returns the new headers
-func refreshToken(chromedpCtx context.Context) map[string][]string {
-	netID, present := os.LookupEnv("LOGIN_NETID")
-	if !present {
-		log.Panic("LOGIN_NETID is missing from .env!")
-	}
-	password, present := os.LookupEnv("LOGIN_PASSWORD")
-	if !present {
-		log.Panic("LOGIN_PASSWORD is missing from .env!")
-	}
-
-	utils.VPrintf("Getting new token...")
-	_, err := chromedp.RunResponse(chromedpCtx,
-		chromedp.ActionFunc(func(ctx context.Context) error {
-			err := network.ClearBrowserCookies().Do(ctx)
-			return err
-		}),
-		chromedp.Navigate(`https://wat.utdallas.edu/login`),
-		chromedp.WaitVisible(`form#login-form`),
-		chromedp.SendKeys(`input#netid`, netID),
-		chromedp.SendKeys(`input#password`, password),
-		chromedp.WaitVisible(`input#login-button`),
-		chromedp.Click(`input#login-button`),
-		//chromedp.WaitVisible(`body`),
-	)
-	if err != nil {
-		panic(err)
-	}
-
-	var cookieStrs []string
-	_, err = chromedp.RunResponse(chromedpCtx,
-		chromedp.Navigate(`https://coursebook.utdallas.edu/`),
-		chromedp.ActionFunc(func(ctx context.Context) error {
-			cookies, err := network.GetCookies().Do(ctx)
-			cookieStrs = make([]string, len(cookies))
-			gotToken := false
-			for i, cookie := range cookies {
-				cookieStrs[i] = fmt.Sprintf("%s=%s", cookie.Name, cookie.Value)
-				if cookie.Name == "PTGSESSID" {
-					utils.VPrintf("Got new token: PTGSESSID = %s", cookie.Value)
-					gotToken = true
-				}
-			}
-			if !gotToken {
-				return errors.New("failed to get a new token")
-			}
-			return err
-		}),
-	)
-	if err != nil {
-		panic(err)
-	}
-
-	return map[string][]string{
-		"Host":            {"coursebook.utdallas.edu"},
-		"User-Agent":      {"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/110.0"},
-		"Accept":          {"text/html"},
-		"Accept-Language": {"en-US"},
-		"Content-Type":    {"application/x-www-form-urlencoded"},
-		"Cookie":          cookieStrs,
-		"Connection":      {"keep-alive"},
-	}
-}
 
 func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 
@@ -109,7 +25,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 	}
 
 	// Start chromedp
-	chromedpCtx, cancel := initChromeDp()
+	chromedpCtx, cancel := utils.InitChromeDp()
 	defer cancel()
 
 	// Refresh the token
@@ -189,7 +105,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 			panic(err)
 		}
 		// Get a fresh token at the start of each new prefix because we can lol
-		coursebookHeaders := refreshToken(chromedpCtx)
+		coursebookHeaders := utils.RefreshToken(chromedpCtx)
 		// Give coursebook some time to recognize the new token
 		time.Sleep(500 * time.Millisecond)
 		// String builder to store accumulated course HTML data for both class levels
@@ -200,18 +116,33 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 		// Get courses for term and prefix, split by grad and undergrad to avoid 300 section cap
 		for _, clevel := range []string{"clevel_u", "clevel_g"} {
 			queryStr := fmt.Sprintf("action=search&s%%5B%%5D=term_%s&s%%5B%%5D=%s&s%%5B%%5D=%s", term, coursePrefix, clevel)
-			req, err := http.NewRequest("POST", "https://coursebook.utdallas.edu/clips/clip-cb11-hat.zog", strings.NewReader(queryStr))
+
+			// Try HTTP request, retrying if necessary
+			res, err := utils.RetryHTTP(func() *http.Request {
+				req, err := http.NewRequest("POST", "https://coursebook.utdallas.edu/clips/clip-cb11-hat.zog", strings.NewReader(queryStr))
+				if err != nil {
+					panic(err)
+				}
+				req.Header = coursebookHeaders
+				return req
+			}, cli, func(res *http.Response, numRetries int) {
+				log.Printf("ERROR: Section find for course prefix %s failed! Response code was: %s", coursePrefix, res.Status)
+				// Wait longer if 3 retries fail; we've probably been IP ratelimited...
+				if numRetries >= 3 {
+					log.Printf("WARNING: More than 3 retries have failed. Waiting for 5 minutes before attempting further retries.")
+					time.Sleep(5 * time.Minute)
+				} else {
+					log.Printf("Getting new token and retrying in 3 seconds...")
+					time.Sleep(3 * time.Second)
+				}
+				coursebookHeaders = utils.RefreshToken(chromedpCtx)
+				// Give coursebook some time to recognize the new token
+				time.Sleep(500 * time.Millisecond)
+			})
 			if err != nil {
 				panic(err)
 			}
-			req.Header = coursebookHeaders
-			res, err := cli.Do(req)
-			if err != nil {
-				panic(err)
-			}
-			if res.StatusCode != 200 {
-				log.Panicf("ERROR: Section find failed! Status was: %s\nIf the status is 404, you've likely been IP ratelimited!", res.Status)
-			}
+
 			buf := bytes.Buffer{}
 			buf.ReadFrom(res.Body)
 			courseBuilder.Write(buf.Bytes())
@@ -232,18 +163,33 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 			// Get section info
 			// Worth noting that the "req" and "div" params in the request below don't actually seem to matter... consider them filler to make sure the request goes through
 			queryStr := fmt.Sprintf("id=%s&req=0bd73666091d3d1da057c5eeb6ef20a7df3CTp0iTMYFuu9paDeUptMzLYUiW4BIk9i8LIFcBahX2E2b18WWXkUUJ1Y7Xq6j3WZAKPbREfGX7lZY96lI7btfpVS95YAprdJHX9dc5wM=&action=section&div=r-62childcontent", id)
-			req, err := http.NewRequest("POST", "https://coursebook.utdallas.edu/clips/clip-cb11-hat.zog", strings.NewReader(queryStr))
+
+			// Try HTTP request, retrying if necessary
+			res, err := utils.RetryHTTP(func() *http.Request {
+				req, err := http.NewRequest("POST", "https://coursebook.utdallas.edu/clips/clip-cb11-hat.zog", strings.NewReader(queryStr))
+				if err != nil {
+					panic(err)
+				}
+				req.Header = coursebookHeaders
+				return req
+			}, cli, func(res *http.Response, numRetries int) {
+				log.Printf("ERROR: Section id lookup for id %s failed! Response code was: %s", id, res.Status)
+				// Wait longer if 3 retries fail; we've probably been IP ratelimited...
+				if numRetries >= 3 {
+					log.Printf("WARNING: More than 3 retries have failed. Waiting for 5 minutes before attempting further retries.")
+					time.Sleep(5 * time.Minute)
+				} else {
+					log.Printf("Getting new token and retrying in 3 seconds...")
+					time.Sleep(3 * time.Second)
+				}
+				coursebookHeaders = utils.RefreshToken(chromedpCtx)
+				// Give coursebook some time to recognize the new token
+				time.Sleep(500 * time.Millisecond)
+			})
 			if err != nil {
 				panic(err)
 			}
-			req.Header = coursebookHeaders
-			res, err := cli.Do(req)
-			if err != nil {
-				panic(err)
-			}
-			if res.StatusCode != 200 {
-				log.Panicf("ERROR: Section id lookup for id %s failed! Status was: %s\nIf the status is 404, you've likely been IP ratelimited!", id, res.Status)
-			}
+
 			fptr, err := os.Create(fmt.Sprintf("%s/%s.html", courseDir, id))
 			if err != nil {
 				panic(err)
@@ -259,7 +205,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 			utils.VPrintf("Got section: %s", id)
 			if sectionIndex%30 == 0 && sectionIndex != 0 {
 				// Ratelimit? What ratelimit?
-				coursebookHeaders = refreshToken(chromedpCtx)
+				coursebookHeaders = utils.RefreshToken(chromedpCtx)
 				// Give coursebook some time to recognize the new token
 				time.Sleep(500 * time.Millisecond)
 			}

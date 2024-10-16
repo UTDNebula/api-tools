@@ -8,6 +8,7 @@ require (
 	github.com/chromedp/cdproto v0.0.0-20240801214329-3f85d328b335
 	github.com/chromedp/chromedp v0.10.0
 	github.com/joho/godotenv v1.5.1
+	github.com/valyala/fastjson v1.6.4
 	go.mongodb.org/mongo-driver v1.15.0
 )
 

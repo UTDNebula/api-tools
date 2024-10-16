@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -126,22 +127,21 @@ func csvToMap(csvFile *os.File, logFile *os.File) map[string][]int {
 
 	for _, record := range records {
 		// convert grade distribution from string to int
-		intSlice := make([]int, 0, 13)
-		var tempInt int
+		intSlice := [14]int{}
 
 		for j := 0; j < 13; j++ {
-			fmt.Sscan(record[aPlusCol+j], &tempInt)
-			intSlice = append(intSlice, tempInt)
+			intSlice[j], _ = strconv.Atoi(record[aPlusCol+j])
 		}
 		// add w number to the grade_distribution slice
 		if wCol != -1 {
-			fmt.Sscan(record[wCol], &tempInt)
+			intSlice[13], _ = strconv.Atoi(record[wCol])
 		}
-		intSlice = append(intSlice, tempInt)
 
 		// add new grade distribution to map, keyed by SUBJECT + NUMBER + SECTION
-		distroKey := record[subjectCol] + record[catalogNumberCol] + record[sectionCol]
-		distroMap[distroKey] = intSlice
+		// Be sure to trim left padding on section number
+		trimmedSectionNumber := strings.TrimLeft(record[sectionCol], "0")
+		distroKey := record[subjectCol] + record[catalogNumberCol] + trimmedSectionNumber
+		distroMap[distroKey] = intSlice[:]
 	}
 	return distroMap
 }
