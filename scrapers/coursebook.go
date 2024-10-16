@@ -28,37 +28,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 	chromedpCtx, cancel := utils.InitChromeDp()
 	defer cancel()
 
-	// Refresh the token
-	refreshToken(chromedpCtx)
-
-	log.Printf("Finding course prefix nodes...")
-
-	var coursePrefixes []string
-	var coursePrefixNodes []*cdp.Node
-
-	// Get option elements for course prefix dropdown
-	err := chromedp.Run(chromedpCtx,
-		chromedp.Navigate("https://coursebook.utdallas.edu"),
-		chromedp.Nodes("select#combobox_cp option", &coursePrefixNodes, chromedp.ByQueryAll),
-	)
-
-	if err != nil {
-		log.Panic(err)
-	}
-
-	log.Println("Found the course prefix nodes!")
-
-	log.Println("Finding course prefixes...")
-
-	// Remove the first option due to it being empty
-	coursePrefixNodes = coursePrefixNodes[1:]
-
-	// Get the value of each option and append to coursePrefixes
-	for _, node := range coursePrefixNodes {
-		coursePrefixes = append(coursePrefixes, node.AttributeValue("value"))
-	}
-
-	log.Println("Found the course prefixes!")
+	coursePrefixes := utils.GetCoursePrefixes(chromedpCtx)
 
 	// Find index of starting prefix, if one has been given
 	startPrefixIndex := 0
