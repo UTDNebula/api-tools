@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"github.com/chromedp/cdproto/network"
+	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/chromedp"
 )
 
@@ -250,4 +251,40 @@ func RetryHTTP(requestCreator func() *http.Request, client *http.Client, retryCa
 		break
 	}
 	return res, err
+}
+
+func GetCoursePrefixes(chromedpCtx context.Context) []string {
+	// Refresh the token
+	// refreshToken(chromedpCtx)
+
+	log.Printf("Finding course prefix nodes...")
+
+	var coursePrefixes []string
+	var coursePrefixNodes []*cdp.Node
+
+	// Get option elements for course prefix dropdown
+	err := chromedp.Run(chromedpCtx,
+		chromedp.Navigate("https://coursebook.utdallas.edu"),
+		chromedp.Nodes("select#combobox_cp option", &coursePrefixNodes, chromedp.ByQueryAll),
+	)
+
+	if err != nil {
+		log.Panic(err)
+	}
+
+	log.Println("Found the course prefix nodes!")
+
+	log.Println("Finding course prefixes...")
+
+	// Remove the first option due to it being empty
+	coursePrefixNodes = coursePrefixNodes[1:]
+
+	// Get the value of each option and append to coursePrefixes
+	for _, node := range coursePrefixNodes {
+		coursePrefixes = append(coursePrefixes, node.AttributeValue("value"))
+	}
+
+	log.Println("Found the course prefixes!")
+
+	return coursePrefixes
 }
