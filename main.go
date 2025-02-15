@@ -37,7 +37,7 @@ func main() {
 	// Flag for event scraping
 	scrapeEvents := flag.Bool("events", false, "Alongside -scrape, signifies that events should be scraped.")
 	// Flag for astra scraping
-	scrapeAstra := flag.Bool("astra", false, "Alongside -scrape, signifies that Astra should be scraped.")
+	astra := flag.Bool("astra", false, "Alongside -scrape or -parse, signifies that Astra should be scraped/parsed.")
 
 	// Flags for parsing
 	parse := flag.Bool("parse", false, "Puts the tool into parsing mode.")
@@ -98,13 +98,18 @@ func main() {
 			scrapers.ScrapeOrganizations(*outDir)
 		case *scrapeEvents:
 			scrapers.ScrapeEvents(*outDir)
-		case *scrapeAstra:
+		case *astra:
 			scrapers.ScrapeAstra(*outDir)
 		default:
 			log.Panic("You must specify which type of scraping you would like to perform with one of the scraping flags!")
 		}
 	case *parse:
-		parser.Parse(*inDir, *outDir, *csvDir, *skipValidation)
+		switch {
+		case *astra:
+			parser.ParseAstra(*inDir, *outDir)
+		default:
+			parser.Parse(*inDir, *outDir, *csvDir, *skipValidation)
+		}
 	case *upload:
 		uploader.Upload(*inDir, *replace)
 	default:
