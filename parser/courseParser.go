@@ -5,6 +5,8 @@ import (
 	"regexp"
 	"strconv"
 
+	"github.com/PuerkitoBio/goquery"
+
 	"github.com/UTDNebula/api-tools/utils"
 	"github.com/UTDNebula/nebula-api/api/schema"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -31,7 +33,7 @@ func getCatalogYear(session schema.AcademicSession) string {
 	}
 }
 
-func parseCourse(courseNum string, session schema.AcademicSession, rowInfo map[string]string, classInfo map[string]string) *schema.Course {
+func parseCourse(courseNum string, session schema.AcademicSession, rowInfo map[string]*goquery.Selection, classInfo map[string]string) *schema.Course {
 	// Courses are internally keyed by their internal course number and the catalog year they're part of
 	catalogYear := getCatalogYear(session)
 	courseKey := courseNum + catalogYear
@@ -51,9 +53,9 @@ func parseCourse(courseNum string, session schema.AcademicSession, rowInfo map[s
 	course.Id = primitive.NewObjectID()
 	course.Course_number = idMatches[2]
 	course.Subject_prefix = idMatches[1]
-	course.Title = rowInfo["Course Title:"]
-	course.Description = rowInfo["Description:"]
-	course.School = rowInfo["College:"]
+	course.Title = utils.TrimWhitespace(rowInfo["Course Title:"].Text())
+	course.Description = utils.TrimWhitespace(rowInfo["Description:"].Text())
+	course.School = utils.TrimWhitespace(rowInfo["College:"].Text())
 	course.Credit_hours = classInfo["Semester Credit Hours:"]
 	course.Class_level = classInfo["Class Level:"]
 	course.Activity_type = classInfo["Activity Type:"]
