@@ -15,6 +15,14 @@ type InputData struct {
 	Data   [][]interface{} `json:"data"`
 }
 
+type Date struct {
+	Date string `json:"date"`
+}
+type OutputData struct {
+	Date
+	schema.MultiBuildingEvents[schema.AstraEvent]
+}
+
 func ParseAstra(inDir string, outDir string) {
 
 	astraFile, err := os.ReadFile(inDir + "/astraReservations.json")
@@ -28,7 +36,7 @@ func ParseAstra(inDir string, outDir string) {
 		panic(err)
 	}
 
-	result := make(map[string]schema.MultiBuildingEvents[schema.AstraEvent])
+	var result []OutputData
 
 	for date, data := range rawData {
 		fieldMap := mapFields(data.Fields)
@@ -66,7 +74,11 @@ func ParseAstra(inDir string, outDir string) {
 			}
 			buildings = append(buildings, schema.SingleBuildingEvents[schema.AstraEvent]{Building: buildingCode, Rooms: roomList})
 		}
-		result[date] = schema.MultiBuildingEvents[schema.AstraEvent]{Buildings: buildings}
+		data := OutputData{
+			Date{date},
+			schema.MultiBuildingEvents[schema.AstraEvent]{Buildings: buildings},
+		}
+		result = append(result, data)
 	}
 
 	utils.WriteJSON(fmt.Sprintf("%s/astraParsed.json", outDir), result)
