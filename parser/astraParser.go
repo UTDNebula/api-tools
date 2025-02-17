@@ -15,17 +15,9 @@ type InputData struct {
 	Data   [][]interface{} `json:"data"`
 }
 
-type Date struct {
-	Date string `json:"date"`
-}
-type OutputData struct {
-	Date
-	schema.MultiBuildingEvents[schema.AstraEvent]
-}
-
 func ParseAstra(inDir string, outDir string) {
 
-	astraFile, err := os.ReadFile(inDir + "/astraReservations.json")
+	astraFile, err := os.ReadFile(inDir + "/astraScraped.json")
 	if err != nil {
 		panic(err)
 	}
@@ -36,34 +28,34 @@ func ParseAstra(inDir string, outDir string) {
 		panic(err)
 	}
 
-	var result []OutputData
+	var result []schema.MultiBuildingEvents[schema.AstraEvent]
 
 	for date, data := range rawData {
 		fieldMap := mapFields(data.Fields)
 		buildingsMap := make(map[string]map[string][]schema.AstraEvent)
 
 		for _, record := range data.Data {
+			building := getString(record, fieldMap["BuildingCode"])
+			room := getString(record, fieldMap["RoomNumber"])
 			event := schema.AstraEvent{
 				ActivityName:        getString(record, fieldMap["ActivityName"]),
 				MeetingType:         getString(record, fieldMap["MeetingType"]),
 				StartDate:           getString(record, fieldMap["StartDate"]),
 				EndDate:             getString(record, fieldMap["EndDate"]),
-				BuildingCode:        getString(record, fieldMap["BuildingCode"]),
-				RoomNumber:          getString(record, fieldMap["RoomNumber"]),
 				CurrentState:        getString(record, fieldMap["CurrentState"]),
 				NotAllowedUsageMask: getInt(record, fieldMap["NotAllowedUsageMask"]),
 				UsageColor:          getString(record, fieldMap["UsageColor"]),
 				Capacity:            getInt(record, fieldMap["Capacity"]),
 			}
 
-			if event.BuildingCode == nil || event.RoomNumber == nil || *(event.BuildingCode) == "" || *(event.RoomNumber) == "" {
+			if building == nil || room == nil || *(building) == "" || *(room) == "" {
 				continue
 			}
 
-			if _, exists := buildingsMap[*(event.BuildingCode)]; !exists {
-				buildingsMap[*(event.BuildingCode)] = make(map[string][]schema.AstraEvent)
+			if _, exists := buildingsMap[*(building)]; !exists {
+				buildingsMap[*(building)] = make(map[string][]schema.AstraEvent)
 			}
-			buildingsMap[*(event.BuildingCode)][*(event.RoomNumber)] = append(buildingsMap[*(event.BuildingCode)][*(event.RoomNumber)], event)
+			buildingsMap[*(building)][*(room)] = append(buildingsMap[*(building)][*(room)], event)
 		}
 
 		var buildings []schema.SingleBuildingEvents[schema.AstraEvent]
@@ -74,14 +66,14 @@ func ParseAstra(inDir string, outDir string) {
 			}
 			buildings = append(buildings, schema.SingleBuildingEvents[schema.AstraEvent]{Building: buildingCode, Rooms: roomList})
 		}
-		data := OutputData{
-			Date{date},
-			schema.MultiBuildingEvents[schema.AstraEvent]{Buildings: buildings},
+		data := schema.MultiBuildingEvents[schema.AstraEvent]{
+			Date:      date,
+			Buildings: buildings,
 		}
 		result = append(result, data)
 	}
 
-	utils.WriteJSON(fmt.Sprintf("%s/astraParsed.json", outDir), result)
+	utils.WriteJSON(fmt.Sprintf("%s/astra.json", outDir), result)
 }
 
 func mapFields(fields string) map[string]int {

@@ -35,8 +35,8 @@ func main() {
 	// Flag for soc scraping
 	scrapeOrganizations := flag.Bool("organizations", false, "Alongside -scrape, signifies that SOC organizations should be scraped.")
 	// Flag for event scraping
-	scrapeEvents := flag.Bool("events", false, "Alongside -scrape, signifies that events should be scraped.")
-	// Flag for astra scraping
+	scrapeCalendar := flag.Bool("calendar", false, "Alongside -scrape, signifies that events should be scraped.")
+	// Flag for astra scraping and parsing
 	astra := flag.Bool("astra", false, "Alongside -scrape or -parse, signifies that Astra should be scraped/parsed.")
 	// Flag for mazevo scraping
 	scrapeMazevo := flag.Bool("mazevo", false, "Alongside -scrape, signifies that Mazevo should be scraped.")
@@ -49,12 +49,13 @@ func main() {
 	// Flags for uploading data
 	upload := flag.Bool("upload", false, "Puts the tool into upload mode.")
 	replace := flag.Bool("replace", false, "Alongside -upload, specifies that uploaded data should replace existing data rather than being merged.")
+	events := flag.Bool("events", false, "Alongside -upload, signifies that Astra and Mazevo should be uploaded.")
 
 	// Flags for logging
 	verbose := flag.Bool("verbose", false, "Enables verbose logging, good for debugging purposes.")
 
 	// Flag for headless mode
-	headless := flag.Bool("headless", true, "Enables headless mode for chromedp. Defaults to true.")
+	headless := flag.Bool("headless", false, "Enables headless mode for chromedp. Defaults to true.")
 
 	// Parse flags
 	flag.Parse()
@@ -98,7 +99,7 @@ func main() {
 			scrapers.ScrapeCoursebook(*term, *startPrefix, *outDir)
 		case *scrapeOrganizations:
 			scrapers.ScrapeOrganizations(*outDir)
-		case *scrapeEvents:
+		case *scrapeCalendar:
 			scrapers.ScrapeEvents(*outDir)
 		case *astra:
 			scrapers.ScrapeAstra(*outDir)
@@ -115,7 +116,12 @@ func main() {
 			parser.Parse(*inDir, *outDir, *csvDir, *skipValidation)
 		}
 	case *upload:
-		uploader.Upload(*inDir, *replace)
+		switch {
+		case *events:
+			uploader.UploadEvents(*inDir)
+		default:
+			uploader.Upload(*inDir, *replace)
+		}
 	default:
 		flag.PrintDefaults()
 		return
