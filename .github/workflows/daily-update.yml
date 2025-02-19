@@ -39,6 +39,9 @@ jobs:
     - name: Build
       run: make build
 
+    - name: ls
+      run: ls -a
+
     - name: Scrape Astra
       run: ./api-tools.exe -scrape -astra
 
