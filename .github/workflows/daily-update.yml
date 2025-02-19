@@ -34,13 +34,13 @@ jobs:
       run: make
 
     - name: Scrape Astra
-      run: api-tools.exe -scrape -astra
+      run: ./api-tools.exe -scrape -astra
 
 #    - name: Parse Astra
-#      run: api-tools.exe -parse -astra
+#      run: ./api-tools.exe -parse -astra
 
 #    - name: Upload Astra
-#      run: api-tools.exe -upload -events
+#      run: ./api-tools.exe -upload -events
 
     - name: Fill env for prod
       run: |
@@ -54,7 +54,7 @@ jobs:
       run: make
 
 #    - name: Upload Astra
-#      run: api-tools.exe -upload -events
+#      run: ./api-tools.exe -upload -events
 
   mazevo:
     runs-on: ubuntu-latest
@@ -80,13 +80,13 @@ jobs:
       run: make
 
     - name: Scrape Mazevo
-      run: api-tools.exe -scrape -mazevo
+      run: ./api-tools.exe -scrape -mazevo
 
 #    - name: Parse Mazevo
-#      run: api-tools.exe -parse -mazevo
+#      run: ./api-tools.exe -parse -mazevo
 
 #    - name: Upload Mazevo
-#      run: api-tools.exe -upload -events
+#      run: ./api-tools.exe -upload -events
 
     - name: Fill env for prod
       run: |
@@ -100,4 +100,4 @@ jobs:
       run: make
 
 #    - name: Upload Mazevo
-#      run: api-tools.exe -upload -events
+#      run: ./api-tools.exe -upload -events
