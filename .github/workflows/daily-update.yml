@@ -12,6 +12,7 @@ jobs:
 
   astra:
     runs-on: ubuntu-latest
+    container: docker.io/chromedp/headless-shell:latest # container with chrome
     steps:
     
     - name: Checkout
