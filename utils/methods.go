@@ -159,10 +159,12 @@ func RefreshAstraToken(chromedpCtx context.Context) map[string][]string {
 			if !gotToken {
 				return errors.New("failed to get a new token")
 			}
+			log.Print("5.3.3")
 			return nil
 		}),
+		chromedp.WaitVisible(`body`, chromedp.ByQuery),
 	)
-	log.Print("5.3.3")
+	log.Print("5.3.4")
 	if err != nil {
 		panic(err)
 	}
