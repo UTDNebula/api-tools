@@ -15,7 +15,7 @@ jobs:
     steps:
 
     - name: Install Chromium
-      run: apt-get update && apt-get install -y chromium
+      run: sudo apt-get install -y chromium-browser
 
     - name: Checkout
       uses: actions/checkout@v4
