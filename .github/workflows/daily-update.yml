@@ -1,0 +1,102 @@
+# This workflow scrapes, parses, and uploads data to MongoDB on a daily basis
+
+name: Go
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '10 1 * * *'
+
+jobs:
+
+  astra:
+    runs-on: ubuntu-latest
+    steps:
+    
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.23'
+
+    - name: Fill env for dev
+      run: |
+        cp .env.example .env
+        sed -i 's|LOGIN_ASTRA_USERNAME=|LOGIN_ASTRA_USERNAME=${{ secrets.LOGIN_ASTRA_USERNAME }}|' .env
+        sed -i 's|LOGIN_ASTRA_PASSWORD=/LOGIN_ASTRA_PASSWORD=${{ secrets.LOGIN_ASTRA_PASSWORD }}|' .env
+        sed -i 's|MAZEVO_API_KEY=/MAZEVO_API_KEY=${{ secrets.MAZEVO_API_KEY }}|' .env
+        sed -i 's|MONGODB_URI=/MONGODB_URI=${{ secrets.MONGODB_URI_DEV }}|' .env
+
+    - name: Build
+      run: make
+
+    - name: Scrape Astra
+      run: api-tools.exe -scrape -astra
+
+#    - name: Parse Astra
+#      run: api-tools.exe -parse -astra
+
+#    - name: Upload Astra
+#      run: api-tools.exe -upload -events
+
+    - name: Fill env for prod
+      run: |
+        cp .env.example .env
+        sed -i 's|LOGIN_ASTRA_USERNAME=|LOGIN_ASTRA_USERNAME=${{ secrets.LOGIN_ASTRA_USERNAME }}|' .env
+        sed -i 's|LOGIN_ASTRA_PASSWORD=/LOGIN_ASTRA_PASSWORD=${{ secrets.LOGIN_ASTRA_PASSWORD }}|' .env
+        sed -i 's|MAZEVO_API_KEY=/MAZEVO_API_KEY=${{ secrets.MAZEVO_API_KEY }}|' .env
+        sed -i 's|MONGODB_URI=/MONGODB_URI=${{ secrets.MONGODB_URI_PROD }}|' .env
+
+    - name: Build
+      run: make
+
+#    - name: Upload Astra
+#      run: api-tools.exe -upload -events
+
+  mazevo:
+    runs-on: ubuntu-latest
+    steps:
+    
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.23'
+
+    - name: Fill env for dev
+      run: |
+        cp .env.example .env
+        sed -i 's|LOGIN_ASTRA_USERNAME=|LOGIN_ASTRA_USERNAME=${{ secrets.LOGIN_ASTRA_USERNAME }}|' .env
+        sed -i 's|LOGIN_ASTRA_PASSWORD=/LOGIN_ASTRA_PASSWORD=${{ secrets.LOGIN_ASTRA_PASSWORD }}|' .env
+        sed -i 's|MAZEVO_API_KEY=/MAZEVO_API_KEY=${{ secrets.MAZEVO_API_KEY }}|' .env
+        sed -i 's|MONGODB_URI=/MONGODB_URI=${{ secrets.MONGODB_URI_DEV }}|' .env
+
+    - name: Build
+      run: make
+
+    - name: Scrape Mazevo
+      run: api-tools.exe -scrape -mazevo
+
+#    - name: Parse Mazevo
+#      run: api-tools.exe -parse -mazevo
+
+#    - name: Upload Mazevo
+#      run: api-tools.exe -upload -events
+
+    - name: Fill env for prod
+      run: |
+        cp .env.example .env
+        sed -i 's|LOGIN_ASTRA_USERNAME=|LOGIN_ASTRA_USERNAME=${{ secrets.LOGIN_ASTRA_USERNAME }}|' .env
+        sed -i 's|LOGIN_ASTRA_PASSWORD=/LOGIN_ASTRA_PASSWORD=${{ secrets.LOGIN_ASTRA_PASSWORD }}|' .env
+        sed -i 's|MAZEVO_API_KEY=/MAZEVO_API_KEY=${{ secrets.MAZEVO_API_KEY }}|' .env
+        sed -i 's|MONGODB_URI=/MONGODB_URI=${{ secrets.MONGODB_URI_PROD }}|' .env
+
+    - name: Build
+      run: make
+
+#    - name: Upload Mazevo
+#      run: api-tools.exe -upload -events
