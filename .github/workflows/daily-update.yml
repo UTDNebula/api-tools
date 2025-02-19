@@ -25,7 +25,7 @@ jobs:
     - name: Fill env for dev
       run: |
         cp .env.template .env
-        sed -i 's|LOGIN_ASTRA_USERNAME=|LOGIN_ASTRA_USERNAME=${{ secrets.LOGIN_ASTRA_USERNAME }}|' .env
+        sed -i 's|LOGIN_ASTRA_USERNAME=/LOGIN_ASTRA_USERNAME=${{ secrets.LOGIN_ASTRA_USERNAME }}|' .env
         sed -i 's|LOGIN_ASTRA_PASSWORD=/LOGIN_ASTRA_PASSWORD=${{ secrets.LOGIN_ASTRA_PASSWORD }}|' .env
         sed -i 's|MAZEVO_API_KEY=/MAZEVO_API_KEY=${{ secrets.MAZEVO_API_KEY }}|' .env
         sed -i 's|MONGODB_URI=/MONGODB_URI=${{ secrets.MONGODB_URI_DEV }}|' .env
@@ -45,7 +45,7 @@ jobs:
     - name: Fill env for prod
       run: |
         cp .env.template .env
-        sed -i 's|LOGIN_ASTRA_USERNAME=|LOGIN_ASTRA_USERNAME=${{ secrets.LOGIN_ASTRA_USERNAME }}|' .env
+        sed -i 's|LOGIN_ASTRA_USERNAME=/LOGIN_ASTRA_USERNAME=${{ secrets.LOGIN_ASTRA_USERNAME }}|' .env
         sed -i 's|LOGIN_ASTRA_PASSWORD=/LOGIN_ASTRA_PASSWORD=${{ secrets.LOGIN_ASTRA_PASSWORD }}|' .env
         sed -i 's|MAZEVO_API_KEY=/MAZEVO_API_KEY=${{ secrets.MAZEVO_API_KEY }}|' .env
         sed -i 's|MONGODB_URI=/MONGODB_URI=${{ secrets.MONGODB_URI_PROD }}|' .env
@@ -71,7 +71,7 @@ jobs:
     - name: Fill env for dev
       run: |
         cp .env.template .env
-        sed -i 's|LOGIN_ASTRA_USERNAME=|LOGIN_ASTRA_USERNAME=${{ secrets.LOGIN_ASTRA_USERNAME }}|' .env
+        sed -i 's|LOGIN_ASTRA_USERNAME=/LOGIN_ASTRA_USERNAME=${{ secrets.LOGIN_ASTRA_USERNAME }}|' .env
         sed -i 's|LOGIN_ASTRA_PASSWORD=/LOGIN_ASTRA_PASSWORD=${{ secrets.LOGIN_ASTRA_PASSWORD }}|' .env
         sed -i 's|MAZEVO_API_KEY=/MAZEVO_API_KEY=${{ secrets.MAZEVO_API_KEY }}|' .env
         sed -i 's|MONGODB_URI=/MONGODB_URI=${{ secrets.MONGODB_URI_DEV }}|' .env
@@ -91,7 +91,7 @@ jobs:
     - name: Fill env for prod
       run: |
         cp .env.template .env
-        sed -i 's|LOGIN_ASTRA_USERNAME=|LOGIN_ASTRA_USERNAME=${{ secrets.LOGIN_ASTRA_USERNAME }}|' .env
+        sed -i 's|LOGIN_ASTRA_USERNAME=/LOGIN_ASTRA_USERNAME=${{ secrets.LOGIN_ASTRA_USERNAME }}|' .env
         sed -i 's|LOGIN_ASTRA_PASSWORD=/LOGIN_ASTRA_PASSWORD=${{ secrets.LOGIN_ASTRA_PASSWORD }}|' .env
         sed -i 's|MAZEVO_API_KEY=/MAZEVO_API_KEY=${{ secrets.MAZEVO_API_KEY }}|' .env
         sed -i 's|MONGODB_URI=/MONGODB_URI=${{ secrets.MONGODB_URI_PROD }}|' .env
