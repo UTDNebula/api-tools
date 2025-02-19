@@ -144,18 +144,22 @@ func RefreshAstraToken(chromedpCtx context.Context) map[string][]string {
 			cookies, err := network.GetCookies().Do(ctx)
 			gotToken := false
 			for _, cookie := range cookies {
+				log.Printf("5.3.1 %s=%s; ", cookie.Name, cookie.Value)
 				cookieStr = fmt.Sprintf("%s%s=%s; ", cookieStr, cookie.Name, cookie.Value)
 				if cookie.Name == "UTXDallas.ASPXFORMSAUTH" {
-					VPrintf("Got new token: PTGSESSID = %s", cookie.Value)
+					VPrintf("Got new token: UTXDallas.ASPXFORMSAUTH = %s", cookie.Value)
 					gotToken = true
 				}
+				log.Print("5.3.2")
 			}
+			log.Print(gotToken)
 			if !gotToken {
 				return errors.New("failed to get a new token")
 			}
 			return err
 		}),
 	)
+	log.Print("5.3.3")
 	if err != nil {
 		panic(err)
 	}
