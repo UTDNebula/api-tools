@@ -40,13 +40,13 @@ jobs:
       run: make build
 
     - name: Scrape Astra
-      run: ./api-tools.exe -scrape -astra
+      run: ./api-tools -scrape -astra
 
 #    - name: Parse Astra
-#      run: ./api-tools.exe -parse -astra
+#      run: ./api-tools -parse -astra
 
 #    - name: Upload Astra
-#      run: ./api-tools.exe -upload -events
+#      run: ./api-tools -upload -events
 
     - name: Fill env for prod
       run: |
@@ -57,7 +57,7 @@ jobs:
         sed -i 's#MONGODB_URI=#MONGODB_URI=${{ secrets.MONGODB_URI_PROD }}#' .env
 
 #    - name: Upload Astra
-#      run: ./api-tools.exe -upload -events
+#      run: ./api-tools -upload -events
 
   mazevo:
     runs-on: ubuntu-latest
@@ -89,13 +89,13 @@ jobs:
       run: make build
 
     - name: Scrape Mazevo
-      run: ./api-tools.exe -scrape -mazevo
+      run: ./api-tools -scrape -mazevo
 
 #    - name: Parse Mazevo
-#      run: ./api-tools.exe -parse -mazevo
+#      run: ./api-tools -parse -mazevo
 
 #    - name: Upload Mazevo
-#      run: ./api-tools.exe -upload -events
+#      run: ./api-tools -upload -events
 
     - name: Fill env for prod
       run: |
@@ -106,4 +106,4 @@ jobs:
         sed -i 's#MONGODB_URI=#MONGODB_URI=${{ secrets.MONGODB_URI_PROD }}#' .env
 
 #    - name: Upload Mazevo
-#      run: ./api-tools.exe -upload -events
+#      run: ./api-tools -upload -events
