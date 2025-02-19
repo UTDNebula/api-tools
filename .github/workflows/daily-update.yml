@@ -1,6 +1,6 @@
 # This workflow scrapes, parses, and uploads data to MongoDB on a daily basis
 
-name: Go
+name: Daily update
 
 on:
   workflow_dispatch:
@@ -24,7 +24,7 @@ jobs:
 
     - name: Fill env for dev
       run: |
-        cp .env.example .env
+        cp .env.template .env
         sed -i 's|LOGIN_ASTRA_USERNAME=|LOGIN_ASTRA_USERNAME=${{ secrets.LOGIN_ASTRA_USERNAME }}|' .env
         sed -i 's|LOGIN_ASTRA_PASSWORD=/LOGIN_ASTRA_PASSWORD=${{ secrets.LOGIN_ASTRA_PASSWORD }}|' .env
         sed -i 's|MAZEVO_API_KEY=/MAZEVO_API_KEY=${{ secrets.MAZEVO_API_KEY }}|' .env
@@ -44,7 +44,7 @@ jobs:
 
     - name: Fill env for prod
       run: |
-        cp .env.example .env
+        cp .env.template .env
         sed -i 's|LOGIN_ASTRA_USERNAME=|LOGIN_ASTRA_USERNAME=${{ secrets.LOGIN_ASTRA_USERNAME }}|' .env
         sed -i 's|LOGIN_ASTRA_PASSWORD=/LOGIN_ASTRA_PASSWORD=${{ secrets.LOGIN_ASTRA_PASSWORD }}|' .env
         sed -i 's|MAZEVO_API_KEY=/MAZEVO_API_KEY=${{ secrets.MAZEVO_API_KEY }}|' .env
@@ -70,7 +70,7 @@ jobs:
 
     - name: Fill env for dev
       run: |
-        cp .env.example .env
+        cp .env.template .env
         sed -i 's|LOGIN_ASTRA_USERNAME=|LOGIN_ASTRA_USERNAME=${{ secrets.LOGIN_ASTRA_USERNAME }}|' .env
         sed -i 's|LOGIN_ASTRA_PASSWORD=/LOGIN_ASTRA_PASSWORD=${{ secrets.LOGIN_ASTRA_PASSWORD }}|' .env
         sed -i 's|MAZEVO_API_KEY=/MAZEVO_API_KEY=${{ secrets.MAZEVO_API_KEY }}|' .env
@@ -90,7 +90,7 @@ jobs:
 
     - name: Fill env for prod
       run: |
-        cp .env.example .env
+        cp .env.template .env
         sed -i 's|LOGIN_ASTRA_USERNAME=|LOGIN_ASTRA_USERNAME=${{ secrets.LOGIN_ASTRA_USERNAME }}|' .env
         sed -i 's|LOGIN_ASTRA_PASSWORD=/LOGIN_ASTRA_PASSWORD=${{ secrets.LOGIN_ASTRA_PASSWORD }}|' .env
         sed -i 's|MAZEVO_API_KEY=/MAZEVO_API_KEY=${{ secrets.MAZEVO_API_KEY }}|' .env
