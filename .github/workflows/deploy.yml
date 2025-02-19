@@ -1,0 +1,31 @@
+# This workflow deploys the repository to run daily on google cloud run
+
+name: Deploy
+
+on:
+  push:
+#    branches: develop
+
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Google Cloud Auth
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+    - name: Set up Google Cloud
+      uses: google-github-actions/setup-gcloud@v2
+
+    - name: Build Docker image
+      run: gcloud builds submit --tag us-south1-docker.pkg.dev/api-tools-451421/runners/daily-update-events .
+
+    - name: Upload to dev job
+      run: gcloud run jobs deploy daily-update-events-dev --image us-south1-docker.pkg.dev/api-tools-451421/runners/daily-update-events --tasks 1 --max-retries 5 --region us-south1 --project=api-tools-451421
+
+    - name: Upload to prod job
+      run: gcloud run jobs deploy daily-update-events-prod --image us-south1-docker.pkg.dev/api-tools-451421/runners/daily-update-events --tasks 1 --max-retries 5 --region us-south1 --project=api-tools-451421
