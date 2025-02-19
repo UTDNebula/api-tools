@@ -142,6 +142,9 @@ func RefreshAstraToken(chromedpCtx context.Context) map[string][]string {
 		chromedp.WaitVisible(`body`, chromedp.ByQuery),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			cookies, err := network.GetCookies().Do(ctx)
+			if err != nil {
+				return err
+			}
 			gotToken := false
 			for _, cookie := range cookies {
 				log.Printf("5.3.1 %s=%s; ", cookie.Name, cookie.Value)
@@ -156,7 +159,7 @@ func RefreshAstraToken(chromedpCtx context.Context) map[string][]string {
 			if !gotToken {
 				return errors.New("failed to get a new token")
 			}
-			return err
+			return nil
 		}),
 	)
 	log.Print("5.3.3")
