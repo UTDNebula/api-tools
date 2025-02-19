@@ -14,8 +14,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-    - name: Install Chromium
-      run: sudo apt-get install -y chromium-browser
+    - name: Install Chrome
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y wget gnupg
+        wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+        sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list'
+        sudo apt-get update
+        sudo apt-get install -y google-chrome-stable
 
     - name: Checkout
       uses: actions/checkout@v4
@@ -43,7 +49,10 @@ jobs:
       run: make build
 
     - name: Scrape Astra
-      run: ./api-tools -scrape -astra
+      env:
+        CHROME_BIN: /usr/bin/google-chrome
+      run: |
+        xvfb-run --auto-servernum ./api-tools -scrape -astra
 
 #    - name: Parse Astra
 #      run: ./api-tools -parse -astra
