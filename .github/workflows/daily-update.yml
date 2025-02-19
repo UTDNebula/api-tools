@@ -43,7 +43,7 @@ jobs:
       run: make build
 
     - name: Scrape Astra
-      run: ./api-tools -scrape -astra
+      run: ./api-tools -scrape -astra -verbose
 
 #    - name: Parse Astra
 #      run: ./api-tools -parse -astra

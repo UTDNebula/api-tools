@@ -26,17 +26,21 @@ func ScrapeAstra(outDir string) {
 		log.Panic("Error loading .env file")
 	}
 
+	log.Print("1")
 	// Start chromedp
 	chromedpCtx, cancel := utils.InitChromeDp()
+	log.Print("2")
 
 	// Make output folder
 	err := os.MkdirAll(outDir, 0777)
 	if err != nil {
 		panic(err)
 	}
+	log.Print("3")
 
 	days := "{"       // String JSON for storing results by day
 	firstLoop := true // To avoid adding a comma to the JSON on the first loop
+	log.Print("4")
 
 	// Init http client
 	tr := &http.Transport{
@@ -45,11 +49,13 @@ func ScrapeAstra(outDir string) {
 		DisableCompression: true,
 	}
 	cli := &http.Client{Transport: tr}
+	log.Print("5")
 
 	// Get cookies for auth
 	astraHeaders := utils.RefreshAstraToken(chromedpCtx)
 	time.Sleep(500 * time.Millisecond)
 	cancel() // Don't need chromedp anymore
+	log.Print("6")
 
 	// Starting date
 	date := time.Now()

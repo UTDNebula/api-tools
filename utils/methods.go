@@ -104,6 +104,7 @@ func RefreshToken(chromedpCtx context.Context) map[string][]string {
 
 // This function signs into Astra
 func RefreshAstraToken(chromedpCtx context.Context) map[string][]string {
+	log.Print("5.1")
 	// Get username and password
 	username, present := os.LookupEnv("LOGIN_ASTRA_USERNAME")
 	if !present {
@@ -113,6 +114,7 @@ func RefreshAstraToken(chromedpCtx context.Context) map[string][]string {
 	if !present {
 		log.Panic("LOGIN_ASTRA_PASSWORD is missing from .env!")
 	}
+	log.Print("5.2")
 
 	// Sign in
 	VPrintf("Signing in...")
@@ -132,6 +134,7 @@ func RefreshAstraToken(chromedpCtx context.Context) map[string][]string {
 	if err != nil {
 		panic(err)
 	}
+	log.Print("5.3")
 
 	// Save all cookies to string
 	cookieStr := ""
@@ -156,6 +159,7 @@ func RefreshAstraToken(chromedpCtx context.Context) map[string][]string {
 	if err != nil {
 		panic(err)
 	}
+	log.Print("5.4")
 
 	// Return headers, copied from a request the actual site made
 	return map[string][]string{
