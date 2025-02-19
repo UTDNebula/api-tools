@@ -143,7 +143,7 @@ func RefreshAstraToken(chromedpCtx context.Context) map[string][]string {
 			for _, cookie := range cookies {
 				cookieStr = fmt.Sprintf("%s%s=%s; ", cookieStr, cookie.Name, cookie.Value)
 				if cookie.Name == "UTXDallas.ASPXFORMSAUTH" {
-					VPrintf("Got new token: PTGSESSID = %s", cookie.Value)
+					VPrintf("Got new token: UTXDallas.ASPXFORMSAUTH = %s", cookie.Value)
 					gotToken = true
 				}
 			}
