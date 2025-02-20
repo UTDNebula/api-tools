@@ -45,9 +45,11 @@ jobs:
       with:
         job: 'daily-update-events-dev'
         image: 'us-south1-docker.pkg.dev/api-tools-451421/runners/daily-update-events'
+        region: us-central1
 
     - name: Upload to prod job
       uses: google-github-actions/deploy-cloudrun@v2
       with:
         job: 'daily-update-events-prod'
         image: 'us-south1-docker.pkg.dev/api-tools-451421/runners/daily-update-events'
+        region: us-central1
