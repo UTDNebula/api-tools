@@ -12,6 +12,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/UTDNebula/api-tools/utils"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -47,10 +48,9 @@ func getCollection(client *mongo.Client, collectionName string) *mongo.Collectio
 }
 
 func getEnvMongoURI() string {
-	uri, exist := os.LookupEnv("MONGODB_URI")
-	if !exist || uri == "" {
-		log.Panic("Error loading 'MONGODB_URI' from the .env file")
-		os.Exit(1)
+	uri, err := utils.GetEnv("MONGODB_URI")
+	if err != nil {
+		panic(err)
 	}
 	return uri
 }

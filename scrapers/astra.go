@@ -13,19 +13,12 @@ import (
 	"time"
 
 	"github.com/UTDNebula/api-tools/utils"
-	"github.com/joho/godotenv"
 	"github.com/valyala/fastjson"
 )
 
 var MAX_EVENTS_PER_DAY = 5000
 
 func ScrapeAstra(outDir string) {
-
-	// Load env vars
-	if err := godotenv.Load(); err != nil {
-		log.Panic("Error loading .env file")
-	}
-
 	// Start chromedp
 	chromedpCtx, cancel := utils.InitChromeDp()
 
