@@ -11,9 +11,12 @@ import (
 	"github.com/UTDNebula/api-tools/scrapers"
 	"github.com/UTDNebula/api-tools/uploader"
 	"github.com/UTDNebula/api-tools/utils"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	// Load environment variables
+	godotenv.Load()
 
 	// Setup flags
 

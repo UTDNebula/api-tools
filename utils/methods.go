@@ -25,32 +25,41 @@ import (
 
 var Headless = true
 
+// Finds .env value and produces proper error if not found
+func GetEnv(name string) (string, error) {
+	value, exists := os.LookupEnv(name)
+	if !exists {
+		return "", errors.New(name + " is missing from .env!")
+	}
+	return value, nil
+}
+
 // Initializes Chrome DevTools Protocol
 func InitChromeDp() (chromedpCtx context.Context, cancelFnc context.CancelFunc) {
 	log.Printf("Initializing chromedp...")
 	if Headless {
 		chromedpCtx, cancelFnc = chromedp.NewContext(context.Background())
-		log.Printf("Initialized chromedp!")
 	} else {
 		allocCtx, _ := chromedp.NewExecAllocator(context.Background())
 		chromedpCtx, cancelFnc = chromedp.NewContext(allocCtx)
 	}
+	log.Printf("Initialized chromedp!")
 	return
 }
 
 // This function generates a fresh auth token and returns the new headers
 func RefreshToken(chromedpCtx context.Context) map[string][]string {
-	netID, present := os.LookupEnv("LOGIN_NETID")
-	if !present {
-		log.Panic("LOGIN_NETID is missing from .env!")
+	netID, err := GetEnv("LOGIN_NETID")
+	if err != nil {
+		panic(err)
 	}
-	password, present := os.LookupEnv("LOGIN_PASSWORD")
-	if !present {
-		log.Panic("LOGIN_PASSWORD is missing from .env!")
+	password, err := GetEnv("LOGIN_PASSWORD")
+	if err != nil {
+		panic(err)
 	}
 
 	VPrintf("Getting new token...")
-	_, err := chromedp.RunResponse(chromedpCtx,
+	_, err = chromedp.RunResponse(chromedpCtx,
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			err := network.ClearBrowserCookies().Do(ctx)
 			return err
@@ -105,18 +114,18 @@ func RefreshToken(chromedpCtx context.Context) map[string][]string {
 // This function signs into Astra
 func RefreshAstraToken(chromedpCtx context.Context) map[string][]string {
 	// Get username and password
-	username, present := os.LookupEnv("LOGIN_ASTRA_USERNAME")
-	if !present {
+	username, err := GetEnv("LOGIN_ASTRA_USERNAME")
+	if err != nil {
 		log.Panic("LOGIN_ASTRA_USERNAME is missing from .env!")
 	}
-	password, present := os.LookupEnv("LOGIN_ASTRA_PASSWORD")
-	if !present {
+	password, err := GetEnv("LOGIN_ASTRA_PASSWORD")
+	if err != nil {
 		log.Panic("LOGIN_ASTRA_PASSWORD is missing from .env!")
 	}
 
 	// Sign in
 	VPrintf("Signing in...")
-	_, err := chromedp.RunResponse(chromedpCtx,
+	_, err = chromedp.RunResponse(chromedpCtx,
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			err := network.ClearBrowserCookies().Do(ctx)
 			return err

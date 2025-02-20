@@ -15,5 +15,8 @@ check:
 build: ./main.go
 	go build -o $(EXEC_NAME) ./main.go
 
+test:
+	go test ./...
+
 clean: $(EXEC_NAME)
 	rm $(EXEC_NAME)

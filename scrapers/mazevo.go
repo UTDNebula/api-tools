@@ -14,22 +14,17 @@ import (
 	"os"
 	"time"
 
-	"github.com/joho/godotenv"
+	"github.com/UTDNebula/api-tools/utils"
 )
 
 func ScrapeMazevo(outDir string) {
-
-	// Load env vars
-	if err := godotenv.Load(); err != nil {
-		log.Panic("Error loading .env file")
-	}
-	apikey, present := os.LookupEnv("MAZEVO_API_KEY")
-	if !present {
-		log.Panic("MAZEVO_API_KEY is missing from .env!")
+	apikey, err := utils.GetEnv("MAZEVO_API_KEY")
+	if err != nil {
+		panic(err)
 	}
 
 	// Make output folder
-	err := os.MkdirAll(outDir, 0777)
+	err = os.MkdirAll(outDir, 0777)
 	if err != nil {
 		panic(err)
 	}
