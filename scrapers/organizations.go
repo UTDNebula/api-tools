@@ -10,7 +10,6 @@ import (
 	"encoding/base64"
 	"encoding/csv"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -26,7 +25,6 @@ import (
 	"github.com/chromedp/cdproto/browser"
 	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/chromedp"
-	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -46,16 +44,7 @@ var (
 
 func ScrapeOrganizations(outdir string) {
 	log.Println("Scraping SOC ...")
-	if err := godotenv.Load(); err != nil {
-		log.Panic("error loading .env file")
-	}
-
-	opts := append(chromedp.DefaultExecAllocatorOptions[:], chromedp.Flag("headless", false))
-	allocCtx, cancel := chromedp.NewExecAllocator(context.Background(), opts...)
-	defer cancel()
-
-	ctx, cancel := chromedp.NewContext(allocCtx)
-	// ensure cleanup occurs
+	ctx, cancel := utils.InitChromeDp()
 	defer cancel()
 
 	if err := loginToSoc(ctx); err != nil {
@@ -66,21 +55,13 @@ func ScrapeOrganizations(outdir string) {
 	}
 }
 
-func lookupEnvWithError(name string) (string, error) {
-	value, exists := os.LookupEnv(name)
-	if !exists {
-		return "", errors.New(name + " is missing from .env!")
-	}
-	return value, nil
-}
-
 func loginToSoc(ctx context.Context) error {
 	log.Println("Logging into SOC ...")
-	netID, err := lookupEnvWithError("LOGIN_NETID")
+	netID, err := utils.GetEnv("LOGIN_NETID")
 	if err != nil {
 		return err
 	}
-	password, err := lookupEnvWithError("LOGIN_PASSWORD")
+	password, err := utils.GetEnv("LOGIN_PASSWORD")
 	if err != nil {
 		return err
 	}

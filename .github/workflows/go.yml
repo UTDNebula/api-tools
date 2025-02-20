@@ -33,6 +33,9 @@ jobs:
     - name: Build
       run: make build
 
+    - name: Test
+      run: make test
+
   build_windows:
     runs-on: windows-latest
     steps:
@@ -45,5 +48,11 @@ jobs:
       with:
         go-version: '1.23'
 
-    - name: Check & Build
-      run: .\build.bat
+    - name: Check
+      run: .\build.bat check
+
+    - name: Build
+      run: .\build.bat build
+
+    - name: Test
+      run: .\build.bat test
