@@ -16,8 +16,8 @@ jobs:
       id-token: 'write'
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+#    - name: Checkout
+#      uses: actions/checkout@v4
 
     - name: Google Cloud Auth
       uses: google-github-actions/auth@v2
@@ -32,7 +32,11 @@ jobs:
       run: 'gcloud info'
 
     - name: Build Docker image
-      run: gcloud builds submit --tag us-south1-docker.pkg.dev/api-tools-451421/runners/daily-update-events .
+#      run: gcloud builds submit --tag us-south1-docker.pkg.dev/api-tools-451421/runners/daily-update-events .
+      uses: docker/build-push-action@v3
+      with:
+        push: true 
+        tags: us-south1-docker.pkg.dev/api-tools-451421/runners/daily-update-events
 
     - name: Upload to dev job
       run: gcloud run jobs deploy daily-update-events-dev --image us-south1-docker.pkg.dev/api-tools-451421/runners/daily-update-events --tasks 1 --max-retries 5 --region us-south1 --project=api-tools-451421
