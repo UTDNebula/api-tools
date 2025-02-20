@@ -45,7 +45,13 @@ jobs:
         tags: us-south1-docker.pkg.dev/api-tools-451421/runners/daily-update-events
 
     - name: Upload to dev job
-      run: gcloud run jobs deploy daily-update-events-dev --image us-south1-docker.pkg.dev/api-tools-451421/runners/daily-update-events --tasks 1 --max-retries 5 --region us-south1 --project=api-tools-451421
+      uses: 'google-github-actions/deploy-cloudrun@v2'
+      with:
+        service: 'daily-update-events-dev'
+        image: 'us-south1-docker.pkg.dev/api-tools-451421/runners/daily-update-events'
 
     - name: Upload to prod job
-      run: gcloud run jobs deploy daily-update-events-prod --image us-south1-docker.pkg.dev/api-tools-451421/runners/daily-update-events --tasks 1 --max-retries 5 --region us-south1 --project=api-tools-451421
+      uses: 'google-github-actions/deploy-cloudrun@v2'
+      with:
+        service: 'daily-update-events-prod'
+        image: 'us-south1-docker.pkg.dev/api-tools-451421/runners/daily-update-events'
