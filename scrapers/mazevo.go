@@ -78,6 +78,8 @@ func ScrapeMazevo(outDir string) {
 	res.Body.Close()
 	stringBody := string(body)
 
+	log.Printf("Scraped Mazevo up to %s!", endDate)
+
 	// Write event data to output file
 	fptr, err := os.Create(fmt.Sprintf("%s/mazevoReservations.json", outDir))
 	if err != nil {
