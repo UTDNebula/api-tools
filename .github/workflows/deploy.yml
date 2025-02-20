@@ -21,7 +21,7 @@ jobs:
       uses: google-github-actions/auth@v2
       with:
         token_format: access_token
-        workload_identity_provider: projects/762526944259/locations/global/workloadIdentityPools/my-pool/providers/my-provider
+        workload_identity_provider: projects/762526944259/locations/global/workloadIdentityPools/pool/providers/github-deploy
         service_account: 'github-deploy@api-tools-451421.iam.gserviceaccount.com'
 
     - name: Set up Google Cloud
