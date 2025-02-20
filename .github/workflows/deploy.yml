@@ -47,11 +47,11 @@ jobs:
     - name: Upload to dev job
       uses: 'google-github-actions/deploy-cloudrun@v2'
       with:
-        service: 'daily-update-events-dev'
+        job: 'daily-update-events-dev'
         image: 'us-south1-docker.pkg.dev/api-tools-451421/runners/daily-update-events'
 
     - name: Upload to prod job
       uses: 'google-github-actions/deploy-cloudrun@v2'
       with:
-        service: 'daily-update-events-prod'
+        job: 'daily-update-events-prod'
         image: 'us-south1-docker.pkg.dev/api-tools-451421/runners/daily-update-events'
