@@ -19,7 +19,8 @@ jobs:
 #    - name: Checkout
 #      uses: actions/checkout@v4
 
-    - name: Google Cloud Auth
+    - id: auth
+      name: Google Cloud Auth
       uses: google-github-actions/auth@v2
       with:
         workload_identity_provider: projects/762526944259/locations/global/workloadIdentityPools/my-pool/providers/my-provider
