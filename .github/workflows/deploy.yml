@@ -28,6 +28,9 @@ jobs:
     - name: Set up Google Cloud
       uses: google-github-actions/setup-gcloud@v2
 
+    - name: 'Use gcloud CLI'
+      run: 'gcloud info'
+
     - name: Build Docker image
       run: gcloud builds submit --tag us-south1-docker.pkg.dev/api-tools-451421/runners/daily-update-events .
 
