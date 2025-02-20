@@ -68,7 +68,7 @@ func ScrapeOrganizations(outdir string) {
 
 func lookupEnvWithError(name string) (string, error) {
 	value, exists := os.LookupEnv(name)
-	if !exists {
+	if !exists || value == "" {
 		return "", errors.New(name + " is missing from .env!")
 	}
 	return value, nil

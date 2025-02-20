@@ -24,7 +24,7 @@ func ScrapeMazevo(outDir string) {
 		log.Panic("Error loading .env file")
 	}
 	apikey, present := os.LookupEnv("MAZEVO_API_KEY")
-	if !present {
+	if !present || apikey == "" {
 		log.Panic("MAZEVO_API_KEY is missing from .env!")
 	}
 

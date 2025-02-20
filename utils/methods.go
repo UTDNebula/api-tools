@@ -41,11 +41,11 @@ func InitChromeDp() (chromedpCtx context.Context, cancelFnc context.CancelFunc) 
 // This function generates a fresh auth token and returns the new headers
 func RefreshToken(chromedpCtx context.Context) map[string][]string {
 	netID, present := os.LookupEnv("LOGIN_NETID")
-	if !present {
+	if !present || netID == "" {
 		log.Panic("LOGIN_NETID is missing from .env!")
 	}
 	password, present := os.LookupEnv("LOGIN_PASSWORD")
-	if !present {
+	if !present || password == "" {
 		log.Panic("LOGIN_PASSWORD is missing from .env!")
 	}
 
@@ -106,11 +106,11 @@ func RefreshToken(chromedpCtx context.Context) map[string][]string {
 func RefreshAstraToken(chromedpCtx context.Context) map[string][]string {
 	// Get username and password
 	username, present := os.LookupEnv("LOGIN_ASTRA_USERNAME")
-	if !present {
+	if !present || username == "" {
 		log.Panic("LOGIN_ASTRA_USERNAME is missing from .env!")
 	}
 	password, present := os.LookupEnv("LOGIN_ASTRA_PASSWORD")
-	if !present {
+	if !present || password == "" {
 		log.Panic("LOGIN_ASTRA_PASSWORD is missing from .env!")
 	}
 

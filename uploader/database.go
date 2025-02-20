@@ -48,7 +48,7 @@ func getCollection(client *mongo.Client, collectionName string) *mongo.Collectio
 
 func getEnvMongoURI() string {
 	uri, exist := os.LookupEnv("MONGODB_URI")
-	if !exist {
+	if !exist || uri == "" {
 		log.Panic("Error loading 'MONGODB_URI' from the .env file")
 		os.Exit(1)
 	}
