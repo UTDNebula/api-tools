@@ -28,8 +28,12 @@ jobs:
     - name: Set up Google Cloud
       uses: google-github-actions/setup-gcloud@v2
 
-    - name: 'Use gcloud CLI'
-      run: 'gcloud info'
+    - name: Login to Artifact Registry
+      uses: docker/login-action@v1
+      with:
+        registry: us-south1-docker.pkg.dev
+        username: oauth2accesstoken
+        password: ${{ steps.auth.outputs.access_token }}
 
     - name: Build Docker image
 #      run: gcloud builds submit --tag us-south1-docker.pkg.dev/api-tools-451421/runners/daily-update-events .
