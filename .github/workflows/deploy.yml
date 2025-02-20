@@ -17,7 +17,8 @@ jobs:
     - name: Google Cloud Auth
       uses: google-github-actions/auth@v2
       with:
-        credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
+        workload_identity_provider: projects/762526944259/locations/global/workloadIdentityPools/my-pool/attribute.repository/UTDNebula/api-tools
+        service_account: 'github-deploy@api-tools-451421.iam.gserviceaccount.com'
 
     - name: Set up Google Cloud
       uses: google-github-actions/setup-gcloud@v2
