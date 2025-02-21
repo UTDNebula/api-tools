@@ -116,15 +116,12 @@ func getMeetings(rowInfo map[string]*goquery.Selection) []schema.Meeting {
 		meetingInfo := s.FindMatcher(goquery.Single("p.courseinfo__meeting-time"))
 
 		dates := meetingDatesRegexp.FindAllString(meetingInfo.Text(), -1)
-		if len(dates) > 0 {
+		if len(dates) == 2 {
 			meeting.Start_date = parseTimeOrPanic(dates[0])
-
-			//There is an edge case where there is only a start date ie "January 2, 2006 (Single Day)"
-			if len(dates) == 1 {
-				meeting.End_date = meeting.Start_date
-			} else {
-				meeting.End_date = parseTimeOrPanic(dates[1])
-			}
+			meeting.End_date = parseTimeOrPanic(dates[1])
+		} else if len(dates) == 1 {
+			meeting.Start_date = parseTimeOrPanic(dates[0])
+			meeting.End_date = meeting.Start_date
 		}
 
 		meetingText := utils.TrimWhitespace(meetingInfo.Contents().FilterFunction(
@@ -132,23 +129,20 @@ func getMeetings(rowInfo map[string]*goquery.Selection) []schema.Meeting {
 				return s.Nodes[0].Type == html.TextNode
 			}).Text())
 
-		//json will convert []string{} into [] rather than null
-		if days := meetingDaysRegexp.FindAllString(meetingText, -1); days != nil {
+		days := meetingDaysRegexp.FindAllString(meetingText, -1)
+		if days != nil {
 			meeting.Meeting_days = days
 		} else {
 			meeting.Meeting_days = []string{}
 		}
 
-		//Mirroring the handling of start/end date
 		times := meetingTimesRegexp.FindAllString(meetingText, -1)
-		if len(times) > 0 {
+		if len(times) == 2 {
 			meeting.Start_time = times[0]
-
-			if len(times) == 1 {
-				meeting.End_time = meeting.Start_time
-			} else {
-				meeting.End_time = times[1]
-			}
+			meeting.End_time = times[1]
+		} else if len(times) == 1 {
+			meeting.Start_time = times[0]
+			meeting.End_time = meeting.Start_time
 		}
 
 		if locationInfo := meetingInfo.Find("a"); locationInfo != nil {
@@ -165,6 +159,7 @@ func getMeetings(rowInfo map[string]*goquery.Selection) []schema.Meeting {
 						Map_uri:  mapUri,
 					}
 				} else {
+					//panic because there is a new building type that wasn't filtered out by the uri
 					panic(fmt.Errorf("unable to parse location %s", locationInfo.Text()))
 				}
 			}
