@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 	"time"
@@ -93,54 +94,36 @@ func getAcademicSession(rowInfo map[string]*goquery.Selection) schema.AcademicSe
 			case "Term:":
 				session.Name = value
 			case "Starts:":
-				if date, err := time.ParseInLocation("January 2, 2006", value, timeLocation); err != nil {
-					panic(err)
-				} else {
-					session.Start_date = date
-				}
+				session.Start_date = parseTimeOrPanic(value)
 			case "Ends:":
-				if date, err := time.ParseInLocation("January 2, 2006", value, timeLocation); err != nil {
-					panic(err)
-				} else {
-					session.Start_date = date
-				}
-				//case "Type:" value = "Regular Academic Session"
-				//schema.AcademicSession doesn't use type
+				session.End_date = parseTimeOrPanic(value)
 			}
 		}
 	}
 	return session
 }
 
-// separating read the regexes makes it easier to read and allows better handling of edge cases where data is missing
 var meetingDatesRegexp = utils.Regexpf(utils.R_DATE_MDY)
 var meetingDaysRegexp = utils.Regexpf(utils.R_WEEKDAY)
 var meetingTimesRegexp = utils.Regexpf(utils.R_TIME_AM_PM)
 
 func getMeetings(rowInfo map[string]*goquery.Selection) []schema.Meeting {
-	var meetings []schema.Meeting = make([]schema.Meeting, 0, 10)
+	meetingItems := rowInfo["Schedule:"].Find("div.courseinfo__meeting-item--multiple")
+	var meetings []schema.Meeting = make([]schema.Meeting, 0, meetingItems.Length())
 
-	rowInfo["Schedule:"].Find("div.courseinfo__meeting-item--multiple").Each(func(i int, s *goquery.Selection) {
+	meetingItems.Each(func(i int, s *goquery.Selection) {
 		meeting := schema.Meeting{}
 		meetingInfo := s.Find("p.courseinfo__meeting-time")
 
 		dates := meetingDatesRegexp.FindAllString(meetingInfo.Text(), -1)
 		if len(dates) > 0 {
-			startDate, err := time.ParseInLocation("January 2, 2006", dates[0], timeLocation)
-			if err != nil {
-				panic(err)
-			}
-			meeting.Start_date = startDate
+			meeting.Start_date = parseTimeOrPanic(dates[0])
 
 			//There is an edge case where there is only a start date ie "January 2, 2006 (Single Day)"
 			if len(dates) == 1 {
 				meeting.End_date = meeting.Start_date
 			} else {
-				endDate, err := time.ParseInLocation("January 2, 2006", dates[1], timeLocation)
-				if err != nil {
-					panic(err)
-				}
-				meeting.End_date = endDate
+				meeting.End_date = parseTimeOrPanic(dates[1])
 			}
 		}
 
@@ -150,39 +133,49 @@ func getMeetings(rowInfo map[string]*goquery.Selection) []schema.Meeting {
 			}).Text())
 
 		meeting.Meeting_days = meetingDaysRegexp.FindAllString(meetingText, -1)
-		times := meetingTimesRegexp.FindAllString(meetingText, -1)
 
-		//len checks are necessary since some meetings don't include times or have something like tbd-tbd
+		//Mirroring the handling of start/end date
+		times := meetingTimesRegexp.FindAllString(meetingText, -1)
 		if len(times) > 0 {
 			meeting.Start_time = times[0]
-			if len(times) > 1 {
-				meeting.End_time = times[1]
+
+			if len(times) == 1 {
+				meeting.End_time = meeting.Start_time
 			} else {
-				meeting.Start_time = times[0]
+				meeting.End_time = times[1]
 			}
 		}
 
-		//only adding locations for meetings that have actual data, all meetings have a link some are not visible and empty
+		//only add locations for meetings that have actual data, all meetings have a link some are not visible or empty
 		if locationInfo := meetingInfo.Find("a"); locationInfo != nil {
-			map_uri := locationInfo.AttrOr("href", "")
+			mapUri := locationInfo.AttrOr("href", "")
 
-			//don't include location for remote classes or classes without locations
-			//map uri should never be "" but doesn't hurt to check
-			if map_uri != "" && map_uri != "https://locator.utdallas.edu/" && map_uri != "https://locator.utdallas.edu/ONLINE" {
-				splitText := strings.Split(strings.TrimSpace(locationInfo.Text()), " ")
+			//don't include location for remote online or classes without locations
+			if mapUri != "" && mapUri != "https://locator.utdallas.edu/" && mapUri != "https://locator.utdallas.edu/ONLINE" {
+				splitText := strings.Split(utils.TrimWhitespace(locationInfo.Text()), " ")
 
-				if len(splitText) == 1 {
-					panic("")
-				}
-				meeting.Location = schema.Location{
-					Building: splitText[0],
-					Room:     splitText[1],
-					Map_uri:  locationInfo.AttrOr("href", ""),
+				if len(splitText) == 2 {
+					meeting.Location = schema.Location{
+						Building: splitText[0],
+						Room:     splitText[1],
+						Map_uri:  mapUri,
+					}
+				} else {
+					panic(fmt.Errorf("unable to parse location %s", locationInfo.Text()))
 				}
 			}
-
 		}
 		meetings = append(meetings, meeting)
 	})
 	return meetings
+}
+
+const timeLayout = "January 2, 2006"
+
+func parseTimeOrPanic(value string) time.Time {
+	date, err := time.ParseInLocation(timeLayout, value, timeLocation)
+	if err != nil {
+		panic(err)
+	}
+	return date
 }
