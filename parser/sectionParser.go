@@ -84,7 +84,7 @@ func parseSection(courseRef *schema.Course, classNum string, syllabusURI string,
 func getAcademicSession(rowInfo map[string]*goquery.Selection) schema.AcademicSession {
 	session := schema.AcademicSession{}
 
-	for _, node := range rowInfo["Schedule:"].Find("p.courseinfo__sectionterm").Contents().Nodes {
+	for _, node := range rowInfo["Schedule:"].FindMatcher(goquery.Single("p.courseinfo__sectionterm")).Contents().Nodes {
 		if node.DataAtom == atom.B {
 			//since the key is not a TextElement, the Text is stored in it's first child, a TextElement
 			key := utils.TrimWhitespace(node.FirstChild.Data)
@@ -113,7 +113,7 @@ func getMeetings(rowInfo map[string]*goquery.Selection) []schema.Meeting {
 
 	meetingItems.Each(func(i int, s *goquery.Selection) {
 		meeting := schema.Meeting{}
-		meetingInfo := s.Find("p.courseinfo__meeting-time")
+		meetingInfo := s.FindMatcher(goquery.Single("p.courseinfo__meeting-time"))
 
 		dates := meetingDatesRegexp.FindAllString(meetingInfo.Text(), -1)
 		if len(dates) > 0 {
@@ -132,7 +132,12 @@ func getMeetings(rowInfo map[string]*goquery.Selection) []schema.Meeting {
 				return s.Nodes[0].Type == html.TextNode
 			}).Text())
 
-		meeting.Meeting_days = meetingDaysRegexp.FindAllString(meetingText, -1)
+		//json will convert []string{} into [] rather than null
+		if days := meetingDaysRegexp.FindAllString(meetingText, -1); days != nil {
+			meeting.Meeting_days = days
+		} else {
+			meeting.Meeting_days = []string{}
+		}
 
 		//Mirroring the handling of start/end date
 		times := meetingTimesRegexp.FindAllString(meetingText, -1)
@@ -146,11 +151,10 @@ func getMeetings(rowInfo map[string]*goquery.Selection) []schema.Meeting {
 			}
 		}
 
-		//only add locations for meetings that have actual data, all meetings have a link some are not visible or empty
 		if locationInfo := meetingInfo.Find("a"); locationInfo != nil {
 			mapUri := locationInfo.AttrOr("href", "")
 
-			//don't include location for remote online or classes without locations
+			//only add locations for meetings that have actual data, all meetings have a link some are not visible or empty
 			if mapUri != "" && mapUri != "https://locator.utdallas.edu/" && mapUri != "https://locator.utdallas.edu/ONLINE" {
 				splitText := strings.Split(utils.TrimWhitespace(locationInfo.Text()), " ")
 
