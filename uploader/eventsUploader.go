@@ -18,7 +18,7 @@ import (
 //  Note that this uploader assumes that the collection names match the names of these files, which they should.
 //  If the names of these collections ever change, the file names should be updated accordingly.
 
-var eventsFilesToUpload [1]string = [1]string{"astra.json"}
+var eventsFilesToUpload [2]string = [2]string{"astra.json", "mazevo.json"}
 
 func UploadEvents(inDir string) {
 
@@ -51,6 +51,8 @@ func UploadEvents(inDir string) {
 		switch path {
 		case "astra.json":
 			UploadData[schema.MultiBuildingEvents[schema.AstraEvent]](client, ctx, fptr, true)
+		case "mazevo.json":
+			UploadData[schema.MultiBuildingEvents[schema.MazevoEvent]](client, ctx, fptr, true)
 		}
 	}
 }
