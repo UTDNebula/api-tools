@@ -5,9 +5,9 @@ name: Go
 
 on:
   push:
-    branches: [ "develop" ]
+    branches: develop
   pull_request:
-    branches: [ "develop" ]
+    branches: develop
   workflow_dispatch:
 
 jobs:
@@ -17,10 +17,10 @@ jobs:
     steps:
     
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Set up Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v5
       with:
         go-version: '1.23'
 
@@ -45,5 +45,11 @@ jobs:
       with:
         go-version: '1.23'
 
-    - name: Check & Build
-      run: .\build.bat
+    - name: Setup
+      run: .\build.bat setup
+
+    - name: Check
+      run: .\build.bat check
+
+    - name: Build
+      run: .\build.bat build

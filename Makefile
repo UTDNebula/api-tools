@@ -9,11 +9,14 @@ check:
 	go mod tidy
 	go vet ./... 
 	staticcheck ./...
-	gofmt -w ./..
-	goimports -w ./..
+	gofmt -w .
+	goimports -w .
 
 build: ./main.go
 	go build -o $(EXEC_NAME) ./main.go
+
+test:
+	go test ./...
 
 clean: $(EXEC_NAME)
 	rm $(EXEC_NAME)

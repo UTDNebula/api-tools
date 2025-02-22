@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/PuerkitoBio/goquery"
+
 	"github.com/UTDNebula/api-tools/utils"
 	"github.com/UTDNebula/nebula-api/api/schema"
 )
@@ -367,7 +369,7 @@ var coreqRegexp *regexp.Regexp = regexp.MustCompile(`(?i)(Corequisites?:(.*))`)
 var reqRegexes [3]*regexp.Regexp = [3]*regexp.Regexp{preOrCoreqRegexp, prereqRegexp, coreqRegexp}
 
 // Returns a closure that parses the course's requisites
-func getReqParser(course *schema.Course, hasEnrollmentReqs bool, enrollmentReqs string) func() {
+func getReqParser(course *schema.Course, hasEnrollmentReqs bool, enrollmentReqs *goquery.Selection) func() {
 	return func() {
 		// Pointer array to course requisite properties must be in same order as reqRegexes above
 		courseReqs := [3]**schema.CollectionRequirement{&course.Co_or_pre_requisites, &course.Prerequisites, &course.Corequisites}
@@ -375,8 +377,8 @@ func getReqParser(course *schema.Course, hasEnrollmentReqs bool, enrollmentReqs 
 		var checkText string
 		// Extract req text from the enrollment req info if it exists, otherwise try using the description
 		if hasEnrollmentReqs {
-			course.Enrollment_reqs = enrollmentReqs
-			checkText = enrollmentReqs
+			course.Enrollment_reqs = utils.TrimWhitespace(enrollmentReqs.Text())
+			checkText = utils.TrimWhitespace(enrollmentReqs.Text())
 		} else {
 			checkText = course.Description
 		}

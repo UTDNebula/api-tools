@@ -11,9 +11,12 @@ import (
 	"github.com/UTDNebula/api-tools/scrapers"
 	"github.com/UTDNebula/api-tools/uploader"
 	"github.com/UTDNebula/api-tools/utils"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	// Load environment variables
+	godotenv.Load()
 
 	// Setup flags
 
@@ -34,8 +37,8 @@ func main() {
 	scrapeProfiles := flag.Bool("profiles", false, "Alongside -scrape, signifies that professor profiles should be scraped.")
 	// Flag for soc scraping
 	scrapeOrganizations := flag.Bool("organizations", false, "Alongside -scrape, signifies that SOC organizations should be scraped.")
-	// Flag for event scraping
-	scrapeEvents := flag.Bool("events", false, "Alongside -scrape, signifies that events should be scraped.")
+	// Flag for calendar scraping
+	scrapeCalendar := flag.Bool("calendar", false, "Alongside -scrape, signifies that calendar should be scraped.")
 	// Flag for astra scraping
 	astra := flag.Bool("astra", false, "Alongside -scrape or -parse, signifies that Astra should be scraped/parsed.")
 	// Flag for mazevo scraping
@@ -98,9 +101,9 @@ func main() {
 			scrapers.ScrapeCoursebook(*term, *startPrefix, *outDir)
 		case *scrapeOrganizations:
 			scrapers.ScrapeOrganizations(*outDir)
-		case *scrapeEvents:
-			scrapers.ScrapeEvents(*outDir)
-		case *astra:
+		case *scrapeCalendar:
+			scrapers.ScrapeCalendar(*outDir)
+		case *scrapeAstra:
 			scrapers.ScrapeAstra(*outDir)
 		case *scrapeMazevo:
 			scrapers.ScrapeMazevo(*outDir)

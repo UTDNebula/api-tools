@@ -13,19 +13,12 @@ import (
 	"time"
 
 	"github.com/UTDNebula/api-tools/utils"
-	"github.com/joho/godotenv"
 	"github.com/valyala/fastjson"
 )
 
 var MAX_EVENTS_PER_DAY = 5000
 
 func ScrapeAstra(outDir string) {
-
-	// Load env vars
-	if err := godotenv.Load(); err != nil {
-		log.Panic("Error loading .env file")
-	}
-
 	// Start chromedp
 	chromedpCtx, cancel := utils.InitChromeDp()
 
@@ -108,6 +101,8 @@ func ScrapeAstra(outDir string) {
 		days = fmt.Sprintf("%s%s\"%s\":%s", days, comma, formattedDate, stringBody)
 		date = date.Add(time.Hour * 24)
 	}
+
+	log.Printf("Scraped Astra up to %s!", date.Format("2006-01-02"))
 
 	// Write event data to output file
 	days = fmt.Sprintf("%s}", days)

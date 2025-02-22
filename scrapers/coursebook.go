@@ -14,16 +14,9 @@ import (
 	"time"
 
 	"github.com/UTDNebula/api-tools/utils"
-	"github.com/joho/godotenv"
 )
 
 func ScrapeCoursebook(term string, startPrefix string, outDir string) {
-
-	// Load env vars
-	if err := godotenv.Load(); err != nil {
-		log.Panic("Error loading .env file")
-	}
-
 	// Start chromedp
 	chromedpCtx, cancel := utils.InitChromeDp()
 	defer cancel()
