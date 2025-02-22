@@ -43,38 +43,37 @@ func ScrapeMazevo(outDir string) {
 	endDate := date.Add(time.Hour * 24 * 365).Format(time.RFC3339)
 
 	// Request events
-	stringBody := ""
-	{
-		url := "https://east.mymazevo.com/api/PublicCalendar/GetCalendarEvents"
-		requestBodyMap := map[string]string{
-			"apiKey": apikey,
-			"end":    endDate,
-			"start":  startDate,
-		}
-		requestBodyBytes, _ := json.Marshal(requestBodyMap)
-		requestBody := bytes.NewBuffer(requestBodyBytes)
-		req, err := http.NewRequest("POST", url, requestBody)
-		if err != nil {
-			panic(err)
-		}
-		req.Header = http.Header{
-			"Content-type": {"application/json"},
-			"Accept":       {"application/json"},
-		}
-		res, err := cli.Do(req)
-		if err != nil {
-			panic(err)
-		}
-		if res.StatusCode != 200 {
-			log.Panicf("ERROR: Status was: %s\nIf the status is 404, you've likely been IP ratelimited!", res.Status)
-		}
-		body, err := io.ReadAll(res.Body)
-		if err != nil {
-			panic(err)
-		}
-		res.Body.Close()
-		stringBody = string(body)
+	url := "https://east.mymazevo.com/api/PublicCalendar/GetCalendarEvents"
+	requestBodyMap := map[string]string{
+		"apiKey": apikey,
+		"end":    endDate,
+		"start":  startDate,
 	}
+	requestBodyBytes, _ := json.Marshal(requestBodyMap)
+	requestBody := bytes.NewBuffer(requestBodyBytes)
+	req, err := http.NewRequest("POST", url, requestBody)
+	if err != nil {
+		panic(err)
+	}
+	req.Header = http.Header{
+		"Content-type": {"application/json"},
+		"Accept":       {"application/json"},
+	}
+	res, err := cli.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	if res.StatusCode != 200 {
+		log.Panicf("ERROR: Status was: %s\nIf the status is 404, you've likely been IP ratelimited!", res.Status)
+	}
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		panic(err)
+	}
+	res.Body.Close()
+	stringBody := string(body)
+
+	log.Printf("Scraped Mazevo up to %s!", endDate)
 
 	// Write event data to output file
 	fptr, err := os.Create(fmt.Sprintf("%s/mazevoReservations.json", outDir))
