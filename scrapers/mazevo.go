@@ -76,7 +76,7 @@ func ScrapeMazevo(outDir string) {
 	log.Printf("Scraped Mazevo up to %s!", endDate)
 
 	// Write event data to output file
-	fptr, err := os.Create(fmt.Sprintf("%s/mazevoReservations.json", outDir))
+	fptr, err := os.Create(fmt.Sprintf("%s/mazevoScraped.json", outDir))
 	if err != nil {
 		panic(err)
 	}
