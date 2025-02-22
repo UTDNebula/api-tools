@@ -117,18 +117,19 @@ func parse(path string) {
 	var syllabusURI string
 
 	// Dictionary to hold the row data, keyed by row header
-	rowInfo := make(map[string]string, len(infoRows.Nodes))
+	rowInfo := make(map[string]*goquery.Selection, len(infoRows.Nodes))
 
 	// Populate rowInfo
 	infoRows.Each(func(_ int, row *goquery.Selection) {
 		rowHeader := utils.TrimWhitespace(row.FindMatcher(goquery.Single("th")).Text())
-		rowData := row.FindMatcher(goquery.Single("td"))
-		rowInfo[rowHeader] = utils.TrimWhitespace(rowData.Text())
-		// Get syllabusURI from syllabus row link
-		if rowHeader == "Syllabus:" {
-			syllabusURI, _ = rowData.FindMatcher(goquery.Single("a")).Attr("href")
-		}
+		rowInfo[rowHeader] = row.FindMatcher(goquery.Single("td"))
+
 	})
+
+	// Get syllabusURI from syllabus row link
+	if syllabus, ok := rowInfo["syllabus"]; ok {
+		syllabusURI, _ = syllabus.FindMatcher(goquery.Single("a")).Attr("href")
+	}
 
 	// Get the rows of the class info subtable
 	infoSubTable := infoTable.FindMatcher(goquery.Single("table.courseinfo__classsubtable > tbody"))
