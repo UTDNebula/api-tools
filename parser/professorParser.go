@@ -3,13 +3,15 @@ package parser
 import (
 	"strings"
 
+	"github.com/PuerkitoBio/goquery"
+
 	"github.com/UTDNebula/api-tools/utils"
 	"github.com/UTDNebula/nebula-api/api/schema"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func parseProfessors(sectionId primitive.ObjectID, rowInfo map[string]string, classInfo map[string]string) []primitive.ObjectID {
-	professorText := rowInfo["Instructor(s):"]
+func parseProfessors(sectionId primitive.ObjectID, rowInfo map[string]*goquery.Selection, classInfo map[string]string) []primitive.ObjectID {
+	professorText := utils.TrimWhitespace(rowInfo["Instructor(s):"].Text())
 	professorMatches := personRegexp.FindAllStringSubmatch(professorText, -1)
 	var profRefs []primitive.ObjectID = make([]primitive.ObjectID, 0, len(professorMatches))
 	for _, match := range professorMatches {
