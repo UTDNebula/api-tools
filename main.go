@@ -11,9 +11,12 @@ import (
 	"github.com/UTDNebula/api-tools/scrapers"
 	"github.com/UTDNebula/api-tools/uploader"
 	"github.com/UTDNebula/api-tools/utils"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	// Load environment variables
+	godotenv.Load()
 
 	// Setup flags
 
@@ -38,6 +41,8 @@ func main() {
 	scrapeEvents := flag.Bool("events", false, "Alongside -scrape, signifies that events should be scraped.")
 	// Flag for astra scraping
 	scrapeAstra := flag.Bool("astra", false, "Alongside -scrape, signifies that Astra should be scraped.")
+	// Flag for mazevo scraping
+	scrapeMazevo := flag.Bool("mazevo", false, "Alongside -scrape, signifies that Mazevo should be scraped.")
 
 	// Flags for parsing
 	parse := flag.Bool("parse", false, "Puts the tool into parsing mode.")
@@ -100,6 +105,8 @@ func main() {
 			scrapers.ScrapeEvents(*outDir)
 		case *scrapeAstra:
 			scrapers.ScrapeAstra(*outDir)
+		case *scrapeMazevo:
+			scrapers.ScrapeMazevo(*outDir)
 		default:
 			log.Panic("You must specify which type of scraping you would like to perform with one of the scraping flags!")
 		}
