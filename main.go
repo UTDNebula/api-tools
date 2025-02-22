@@ -37,12 +37,12 @@ func main() {
 	scrapeProfiles := flag.Bool("profiles", false, "Alongside -scrape, signifies that professor profiles should be scraped.")
 	// Flag for soc scraping
 	scrapeOrganizations := flag.Bool("organizations", false, "Alongside -scrape, signifies that SOC organizations should be scraped.")
-	// Flag for event scraping
-	scrapeCalendar := flag.Bool("calendar", false, "Alongside -scrape, signifies that events should be scraped.")
+	// Flag for calendar scraping
+	scrapeCalendar := flag.Bool("calendar", false, "Alongside -scrape, signifies that calendar should be scraped.")
 	// Flag for astra scraping and parsing
 	astra := flag.Bool("astra", false, "Alongside -scrape or -parse, signifies that Astra should be scraped/parsed.")
-	// Flag for mazevo scraping
-	scrapeMazevo := flag.Bool("mazevo", false, "Alongside -scrape, signifies that Mazevo should be scraped.")
+	// Flag for mazevo scraping and parsing
+	mazevo := flag.Bool("mazevo", false, "Alongside -scrape or -parse, signifies that Mazevo should be scraped/parsed.")
 
 	// Flags for parsing
 	parse := flag.Bool("parse", false, "Puts the tool into parsing mode.")
@@ -103,10 +103,10 @@ func main() {
 		case *scrapeOrganizations:
 			scrapers.ScrapeOrganizations(*outDir)
 		case *scrapeCalendar:
-			scrapers.ScrapeEvents(*outDir)
+			scrapers.ScrapeCalendar(*outDir)
 		case *astra:
 			scrapers.ScrapeAstra(*outDir)
-		case *scrapeMazevo:
+		case *mazevo:
 			scrapers.ScrapeMazevo(*outDir)
 		default:
 			log.Panic("You must specify which type of scraping you would like to perform with one of the scraping flags!")
@@ -115,6 +115,8 @@ func main() {
 		switch {
 		case *astra:
 			parser.ParseAstra(*inDir, *outDir)
+		case *mazevo:
+			parser.ParseMazevo(*inDir, *outDir)
 		default:
 			parser.Parse(*inDir, *outDir, *csvDir, *skipValidation)
 		}

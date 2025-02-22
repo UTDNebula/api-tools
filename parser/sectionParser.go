@@ -1,21 +1,22 @@
 package parser
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
 	"time"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/UTDNebula/api-tools/utils"
 	"github.com/UTDNebula/nebula-api/api/schema"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"golang.org/x/net/html/atom"
 )
 
 var sectionPrefixRegexp *regexp.Regexp = utils.Regexpf(`^(?i)%s\.(%s)`, utils.R_SUBJ_COURSE, utils.R_SECTION_CODE)
 var coreRegexp *regexp.Regexp = regexp.MustCompile(`[0-9]{3}`)
 var personRegexp *regexp.Regexp = regexp.MustCompile(`(.+)・(.+)・(.+)`)
 
-func parseSection(courseRef *schema.Course, classNum string, syllabusURI string, session schema.AcademicSession, rowInfo map[string]string, classInfo map[string]string) {
+func parseSection(courseRef *schema.Course, classNum string, syllabusURI string, session schema.AcademicSession, rowInfo map[string]*goquery.Selection, classInfo map[string]string) {
 	// Get subject prefix and course number by doing a regexp match on the section id
 	sectionId := classInfo["Class Section:"]
 	idMatches := sectionPrefixRegexp.FindStringSubmatch(sectionId)
@@ -34,7 +35,7 @@ func parseSection(courseRef *schema.Course, classNum string, syllabusURI string,
 	section.Professors = parseProfessors(section.Id, rowInfo, classInfo)
 
 	// Get all TA/RA info
-	assistantText := rowInfo["TA/RA(s):"]
+	assistantText := utils.TrimWhitespace(rowInfo["TA/RA(s):"].Text())
 	assistantMatches := personRegexp.FindAllStringSubmatch(assistantText, -1)
 	section.Teaching_assistants = make([]schema.Assistant, 0, len(assistantMatches))
 	for _, match := range assistantMatches {
@@ -50,18 +51,17 @@ func parseSection(courseRef *schema.Course, classNum string, syllabusURI string,
 
 	section.Internal_class_number = classNum
 	section.Instruction_mode = classInfo["Instruction Mode:"]
-	section.Meetings = getMeetings(rowInfo, classInfo)
+	section.Meetings = getMeetings(rowInfo)
 
 	// Parse core flags (may or may not exist)
-	coreText, hasCore := rowInfo["Core:"]
-	if hasCore {
-		section.Core_flags = coreRegexp.FindAllString(coreText, -1)
+
+	if coreText, hasCore := rowInfo["Core:"]; hasCore {
+		section.Core_flags = coreRegexp.FindAllString(utils.TrimWhitespace(coreText.Text()), -1)
 	}
 
 	section.Syllabus_uri = syllabusURI
 
-	semesterGrades, exists := GradeMap[session.Name]
-	if exists {
+	if semesterGrades, ok := GradeMap[session.Name]; ok {
 		// We have to trim leading zeroes from the section number in order to match properly, since the grade data does not use leading zeroes
 		trimmedSectionNumber := strings.TrimLeft(section.Section_number, "0")
 		// Key into grademap should be uppercased like the grade data
@@ -79,76 +79,93 @@ func parseSection(courseRef *schema.Course, classNum string, syllabusURI string,
 	courseRef.Sections = append(courseRef.Sections, section.Id)
 }
 
-var termRegexp *regexp.Regexp = utils.Regexpf(`(?i)Term: (%s)`, utils.R_TERM_CODE)
-var datesRegexp *regexp.Regexp = utils.Regexpf(`(?:Start|End)s: (%s)`, utils.R_DATE_MDY)
-
-func getAcademicSession(rowInfo map[string]string) schema.AcademicSession {
+func getAcademicSession(rowInfo map[string]*goquery.Selection) schema.AcademicSession {
 	session := schema.AcademicSession{}
-	scheduleText := rowInfo["Schedule:"]
 
-	session.Name = termRegexp.FindStringSubmatch(scheduleText)[1]
-	dateMatches := datesRegexp.FindAllStringSubmatch(scheduleText, -1)
+	infoNodes := rowInfo["Schedule:"].FindMatcher(goquery.Single("p.courseinfo__sectionterm")).Contents().Nodes
+	for _, node := range infoNodes {
+		if node.DataAtom == atom.B {
+			//since the key is not a TextElement, the Text is stored in it's first child, a TextElement
+			key := utils.TrimWhitespace(node.FirstChild.Data)
+			value := utils.TrimWhitespace(node.NextSibling.Data)
 
-	datesFound := len(dateMatches)
-	switch {
-	case datesFound == 1:
-		startDate, err := time.ParseInLocation("January 2, 2006", dateMatches[0][1], timeLocation)
-		if err != nil {
-			panic(err)
+			switch key {
+			case "Term:":
+				session.Name = value
+			case "Starts:":
+				session.Start_date = parseTimeOrPanic(value)
+			case "Ends:":
+				session.End_date = parseTimeOrPanic(value)
+			}
 		}
-		session.Start_date = startDate
-	case datesFound == 2:
-		startDate, err := time.ParseInLocation("January 2, 2006", dateMatches[0][1], timeLocation)
-		if err != nil {
-			panic(err)
-		}
-		endDate, err := time.ParseInLocation("January 2, 2006", dateMatches[1][1], timeLocation)
-		if err != nil {
-			panic(err)
-		}
-		session.Start_date = startDate
-		session.End_date = endDate
 	}
 	return session
 }
 
-var meetingsRegexp *regexp.Regexp = utils.Regexpf(`(%s)-(%s)\W+((?:%s(?:, )?)+)\W+(%s)-(%s)(?:\W+(?:(\S+)\s+(\S+)))`, utils.R_DATE_MDY, utils.R_DATE_MDY, utils.R_WEEKDAY, utils.R_TIME_AM_PM, utils.R_TIME_AM_PM)
+var meetingDatesRegexp = regexp.MustCompile(utils.R_DATE_MDY)
+var meetingDaysRegexp = regexp.MustCompile(utils.R_WEEKDAY)
+var meetingTimesRegexp = regexp.MustCompile(utils.R_TIME_AM_PM)
 
-func getMeetings(rowInfo map[string]string, classInfo map[string]string) []schema.Meeting {
-	scheduleText := rowInfo["Schedule:"]
-	meetingMatches := meetingsRegexp.FindAllStringSubmatch(scheduleText, -1)
-	var meetings []schema.Meeting = make([]schema.Meeting, 0, len(meetingMatches))
-	for _, match := range meetingMatches {
+func getMeetings(rowInfo map[string]*goquery.Selection) []schema.Meeting {
+	meetingItems := rowInfo["Schedule:"].Find("div.courseinfo__meeting-item--multiple")
+	var meetings []schema.Meeting = make([]schema.Meeting, 0, meetingItems.Length())
+
+	meetingItems.Each(func(i int, s *goquery.Selection) {
 		meeting := schema.Meeting{}
+		meetingInfo := s.FindMatcher(goquery.Single("p.courseinfo__meeting-time"))
 
-		startDate, err := time.ParseInLocation("January 2, 2006", match[1], timeLocation)
-		if err != nil {
-			panic(err)
-		}
-		meeting.Start_date = startDate
-
-		endDate, err := time.ParseInLocation("January 2, 2006", match[2], timeLocation)
-		if err != nil {
-			panic(err)
-		}
-		meeting.End_date = endDate
-
-		meeting.Meeting_days = strings.Split(match[3], ", ")
-
-		// Don't parse time into time object, adds unnecessary extra data
-		meeting.Start_time = match[4]
-		meeting.End_time = match[5]
-
-		// Only add location data if it's available
-		if len(match) > 6 {
-			location := schema.Location{}
-			location.Building = match[6]
-			location.Room = match[7]
-			location.Map_uri = fmt.Sprintf("https://locator.utdallas.edu/%s_%s", location.Building, location.Room)
-			meeting.Location = location
+		dates := meetingDatesRegexp.FindAllString(meetingInfo.Text(), -1)
+		if len(dates) == 2 {
+			meeting.Start_date = parseTimeOrPanic(dates[0])
+			meeting.End_date = parseTimeOrPanic(dates[1])
+		} else if len(dates) == 1 {
+			meeting.Start_date = parseTimeOrPanic(dates[0])
+			meeting.End_date = meeting.Start_date
 		}
 
+		days := meetingDaysRegexp.FindAllString(meetingInfo.Text(), -1)
+		if days != nil {
+			meeting.Meeting_days = days
+		} else {
+			meeting.Meeting_days = []string{} //avoid null in the json
+		}
+
+		times := meetingTimesRegexp.FindAllString(meetingInfo.Text(), -1)
+		if len(times) == 2 {
+			meeting.Start_time = times[0]
+			meeting.End_time = times[1]
+		} else if len(times) == 1 {
+			meeting.Start_time = times[0]
+			meeting.End_time = meeting.Start_time
+		}
+
+		if locationInfo := meetingInfo.FindMatcher(goquery.Single("a")); locationInfo != nil {
+			mapUri := locationInfo.AttrOr("href", "")
+
+			//only add locations for meetings that have actual data, all meetings have a link some are not visible or empty
+			if mapUri != "" && mapUri != "https://locator.utdallas.edu/" && mapUri != "https://locator.utdallas.edu/ONLINE" {
+				splitText := strings.Split(utils.TrimWhitespace(locationInfo.Text()), " ")
+
+				if len(splitText) == 2 {
+					meeting.Location = schema.Location{
+						Building: splitText[0],
+						Room:     splitText[1],
+						Map_uri:  mapUri,
+					}
+				}
+			}
+		}
 		meetings = append(meetings, meeting)
-	}
+	})
 	return meetings
+}
+
+const timeLayout = "January 2, 2006"
+
+func parseTimeOrPanic(value string) time.Time {
+	date, err := time.ParseInLocation(timeLayout, value, timeLocation)
+	if err != nil {
+		panic(err)
+	}
+	return date
 }
