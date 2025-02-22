@@ -28,7 +28,7 @@ var Headless = true
 // Finds .env value and produces proper error if not found
 func GetEnv(name string) (string, error) {
 	value, exists := os.LookupEnv(name)
-	if !exists {
+	if !exists || value == "" {
 		return "", errors.New(name + " is missing from .env!")
 	}
 	return value, nil
@@ -152,7 +152,7 @@ func RefreshAstraToken(chromedpCtx context.Context) map[string][]string {
 			for _, cookie := range cookies {
 				cookieStr = fmt.Sprintf("%s%s=%s; ", cookieStr, cookie.Name, cookie.Value)
 				if cookie.Name == "UTXDallas.ASPXFORMSAUTH" {
-					VPrintf("Got new token: PTGSESSID = %s", cookie.Value)
+					VPrintf("Got new token: UTXDallas.ASPXFORMSAUTH = %s", cookie.Value)
 					gotToken = true
 				}
 			}
