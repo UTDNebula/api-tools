@@ -10,7 +10,7 @@ gcloud secrets versions access latest --secret="$ENV_SECRET_NAME" > .env
 
 # Scrape, parse, and upload
 ./api-tools -scrape -mazevo -verbose
-#./api-tools -parse -mazevo -verbose
+./api-tools -parse -mazevo -verbose
 ./api-tools -scrape -astra -verbose
-#./api-tools -parse -astra -verbose
-#./api-tools -upload -events -verbose
+./api-tools -parse -astra -verbose
+./api-tools -upload -events -verbose
