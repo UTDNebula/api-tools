@@ -39,8 +39,8 @@ func main() {
 	scrapeOrganizations := flag.Bool("organizations", false, "Alongside -scrape, signifies that SOC organizations should be scraped.")
 	// Flag for calendar scraping
 	scrapeCalendar := flag.Bool("calendar", false, "Alongside -scrape, signifies that calendar should be scraped.")
-	// Flag for astra scraping
-	scrapeAstra := flag.Bool("astra", false, "Alongside -scrape, signifies that Astra should be scraped.")
+	// Flag for astra scraping and parsing
+	astra := flag.Bool("astra", false, "Alongside -scrape or -parse, signifies that Astra should be scraped/parsed.")
 	// Flag for mazevo scraping and parsing
 	mazevo := flag.Bool("mazevo", false, "Alongside -scrape or -parse, signifies that Mazevo should be scraped/parsed.")
 
@@ -52,6 +52,7 @@ func main() {
 	// Flags for uploading data
 	upload := flag.Bool("upload", false, "Puts the tool into upload mode.")
 	replace := flag.Bool("replace", false, "Alongside -upload, specifies that uploaded data should replace existing data rather than being merged.")
+	events := flag.Bool("events", false, "Alongside -upload, signifies that Astra and Mazevo should be uploaded.")
 
 	// Flags for logging
 	verbose := flag.Bool("verbose", false, "Enables verbose logging, good for debugging purposes.")
@@ -103,7 +104,7 @@ func main() {
 			scrapers.ScrapeOrganizations(*outDir)
 		case *scrapeCalendar:
 			scrapers.ScrapeCalendar(*outDir)
-		case *scrapeAstra:
+		case *astra:
 			scrapers.ScrapeAstra(*outDir)
 		case *mazevo:
 			scrapers.ScrapeMazevo(*outDir)
@@ -112,13 +113,20 @@ func main() {
 		}
 	case *parse:
 		switch {
+		case *astra:
+			parser.ParseAstra(*inDir, *outDir)
 		case *mazevo:
 			parser.ParseMazevo(*inDir, *outDir)
 		default:
 			parser.Parse(*inDir, *outDir, *csvDir, *skipValidation)
 		}
 	case *upload:
-		uploader.Upload(*inDir, *replace)
+		switch {
+		case *events:
+			uploader.UploadEvents(*inDir)
+		default:
+			uploader.Upload(*inDir, *replace)
+		}
 	default:
 		flag.PrintDefaults()
 		return
