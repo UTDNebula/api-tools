@@ -52,10 +52,10 @@ func ParseAstra(inDir string, outDir string) {
 				continue
 			}
 
-			if _, exists := buildingsMap[*(building)]; !exists {
-				buildingsMap[*(building)] = make(map[string][]schema.AstraEvent)
+			if _, exists := buildingsMap[*building]; !exists {
+				buildingsMap[*building] = make(map[string][]schema.AstraEvent)
 			}
-			buildingsMap[*(building)][*(room)] = append(buildingsMap[*(building)][*(room)], event)
+			buildingsMap[*building][*room] = append(buildingsMap[*building][*room], event)
 		}
 
 		var buildings []schema.SingleBuildingEvents[schema.AstraEvent]
@@ -72,6 +72,8 @@ func ParseAstra(inDir string, outDir string) {
 		}
 		result = append(result, data)
 	}
+
+	log.Print("Parsed Astra!")
 
 	utils.WriteJSON(fmt.Sprintf("%s/astra.json", outDir), result)
 }
