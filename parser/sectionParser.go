@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
 	"time"
@@ -10,7 +9,6 @@ import (
 	"github.com/UTDNebula/api-tools/utils"
 	"github.com/UTDNebula/nebula-api/api/schema"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
 )
 
@@ -84,7 +82,8 @@ func parseSection(courseRef *schema.Course, classNum string, syllabusURI string,
 func getAcademicSession(rowInfo map[string]*goquery.Selection) schema.AcademicSession {
 	session := schema.AcademicSession{}
 
-	for _, node := range rowInfo["Schedule:"].FindMatcher(goquery.Single("p.courseinfo__sectionterm")).Contents().Nodes {
+	infoNodes := rowInfo["Schedule:"].FindMatcher(goquery.Single("p.courseinfo__sectionterm")).Contents().Nodes
+	for _, node := range infoNodes {
 		if node.DataAtom == atom.B {
 			//since the key is not a TextElement, the Text is stored in it's first child, a TextElement
 			key := utils.TrimWhitespace(node.FirstChild.Data)
@@ -103,9 +102,9 @@ func getAcademicSession(rowInfo map[string]*goquery.Selection) schema.AcademicSe
 	return session
 }
 
-var meetingDatesRegexp = utils.Regexpf(utils.R_DATE_MDY)
-var meetingDaysRegexp = utils.Regexpf(utils.R_WEEKDAY)
-var meetingTimesRegexp = utils.Regexpf(utils.R_TIME_AM_PM)
+var meetingDatesRegexp = regexp.MustCompile(utils.R_DATE_MDY)
+var meetingDaysRegexp = regexp.MustCompile(utils.R_WEEKDAY)
+var meetingTimesRegexp = regexp.MustCompile(utils.R_TIME_AM_PM)
 
 func getMeetings(rowInfo map[string]*goquery.Selection) []schema.Meeting {
 	meetingItems := rowInfo["Schedule:"].Find("div.courseinfo__meeting-item--multiple")
@@ -124,19 +123,14 @@ func getMeetings(rowInfo map[string]*goquery.Selection) []schema.Meeting {
 			meeting.End_date = meeting.Start_date
 		}
 
-		meetingText := utils.TrimWhitespace(meetingInfo.Contents().FilterFunction(
-			func(i int, s *goquery.Selection) bool {
-				return s.Nodes[0].Type == html.TextNode
-			}).Text())
-
-		days := meetingDaysRegexp.FindAllString(meetingText, -1)
+		days := meetingDaysRegexp.FindAllString(meetingInfo.Text(), -1)
 		if days != nil {
 			meeting.Meeting_days = days
 		} else {
-			meeting.Meeting_days = []string{}
+			meeting.Meeting_days = []string{} //avoid null in the json
 		}
 
-		times := meetingTimesRegexp.FindAllString(meetingText, -1)
+		times := meetingTimesRegexp.FindAllString(meetingInfo.Text(), -1)
 		if len(times) == 2 {
 			meeting.Start_time = times[0]
 			meeting.End_time = times[1]
@@ -145,7 +139,7 @@ func getMeetings(rowInfo map[string]*goquery.Selection) []schema.Meeting {
 			meeting.End_time = meeting.Start_time
 		}
 
-		if locationInfo := meetingInfo.Find("a"); locationInfo != nil {
+		if locationInfo := meetingInfo.FindMatcher(goquery.Single("a")); locationInfo != nil {
 			mapUri := locationInfo.AttrOr("href", "")
 
 			//only add locations for meetings that have actual data, all meetings have a link some are not visible or empty
@@ -158,9 +152,6 @@ func getMeetings(rowInfo map[string]*goquery.Selection) []schema.Meeting {
 						Room:     splitText[1],
 						Map_uri:  mapUri,
 					}
-				} else {
-					//panic because there is a new building type that wasn't filtered out by the uri
-					panic(fmt.Errorf("unable to parse location %s", locationInfo.Text()))
 				}
 			}
 		}
