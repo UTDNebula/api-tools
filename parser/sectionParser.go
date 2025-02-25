@@ -12,71 +12,59 @@ import (
 	"golang.org/x/net/html/atom"
 )
 
-var sectionPrefixRegexp *regexp.Regexp = utils.Regexpf(`^(?i)%s\.(%s)`, utils.R_SUBJ_COURSE, utils.R_SECTION_CODE)
-var coreRegexp *regexp.Regexp = regexp.MustCompile(`[0-9]{3}`)
-var personRegexp *regexp.Regexp = regexp.MustCompile(`(.+)・(.+)・(.+)`)
+const timeLayout = "January 2, 2006"
 
-func parseSection(courseRef *schema.Course, classNum string, syllabusURI string, session schema.AcademicSession, rowInfo map[string]*goquery.Selection, classInfo map[string]string) {
-	// Get subject prefix and course number by doing a regexp match on the section id
-	sectionId := classInfo["Class Section:"]
-	idMatches := sectionPrefixRegexp.FindStringSubmatch(sectionId)
+var (
+	sectionPrefixRegexp *regexp.Regexp = utils.Regexpf(`^(?i)%s\.(%s)`, utils.R_SUBJ_COURSE, utils.R_SECTION_CODE)
+	coreRegexp          *regexp.Regexp = regexp.MustCompile(`[0-9]{3}`)
+	personRegexp        *regexp.Regexp = regexp.MustCompile(`(.+)・(.+)・(.+)`)
 
-	section := &schema.Section{}
+	meetingDatesRegexp = regexp.MustCompile(utils.R_DATE_MDY)
+	meetingDaysRegexp  = regexp.MustCompile(utils.R_WEEKDAY)
+	meetingTimesRegexp = regexp.MustCompile(utils.R_TIME_AM_PM)
+)
 
-	section.Id = primitive.NewObjectID()
-	section.Section_number = idMatches[1]
-	section.Course_reference = courseRef.Id
+// TODO: section requisites?
+func parseSection(rowInfo map[string]*goquery.Selection, classInfo map[string]string) {
+	classNum, courseNum := getInternalClassAndCourseNum(classInfo)
+	session := getAcademicSession(rowInfo)
+	courseRef := parseCourse(courseNum, session, rowInfo, classInfo)
 
-	//TODO: section requisites?
+	sectionNumber := getSectionNumber(classInfo)
 
-	// Set academic session
-	section.Academic_session = session
-	// Add professors
-	section.Professors = parseProfessors(section.Id, rowInfo, classInfo)
+	id := primitive.NewObjectID()
 
-	// Get all TA/RA info
-	assistantText := utils.TrimWhitespace(rowInfo["TA/RA(s):"].Text())
-	assistantMatches := personRegexp.FindAllStringSubmatch(assistantText, -1)
-	section.Teaching_assistants = make([]schema.Assistant, 0, len(assistantMatches))
-	for _, match := range assistantMatches {
-		assistant := schema.Assistant{}
-		nameStr := utils.TrimWhitespace(match[1])
-		names := strings.Split(nameStr, " ")
-		assistant.First_name = strings.Join(names[:len(names)-1], " ")
-		assistant.Last_name = names[len(names)-1]
-		assistant.Role = utils.TrimWhitespace(match[2])
-		assistant.Email = utils.TrimWhitespace(match[3])
-		section.Teaching_assistants = append(section.Teaching_assistants, assistant)
-	}
-
-	section.Internal_class_number = classNum
-	section.Instruction_mode = classInfo["Instruction Mode:"]
-	section.Meetings = getMeetings(rowInfo)
-
-	// Parse core flags (may or may not exist)
-
-	if coreText, hasCore := rowInfo["Core:"]; hasCore {
-		section.Core_flags = coreRegexp.FindAllString(utils.TrimWhitespace(coreText.Text()), -1)
-	}
-
-	section.Syllabus_uri = syllabusURI
-
-	if semesterGrades, ok := GradeMap[session.Name]; ok {
-		// We have to trim leading zeroes from the section number in order to match properly, since the grade data does not use leading zeroes
-		trimmedSectionNumber := strings.TrimLeft(section.Section_number, "0")
-		// Key into grademap should be uppercased like the grade data
-		gradeKey := strings.ToUpper(courseRef.Subject_prefix + courseRef.Course_number + trimmedSectionNumber)
-		sectionGrades, exists := semesterGrades[gradeKey]
-		if exists {
-			section.Grade_distribution = sectionGrades
-		}
+	section := schema.Section{
+		Id:                    id,
+		Section_number:        sectionNumber,
+		Course_reference:      courseRef.Id,
+		Academic_session:      session,
+		Professors:            parseProfessors(id, rowInfo, classInfo),
+		Teaching_assistants:   getTeachingAssistants(rowInfo),
+		Internal_class_number: classNum,
+		Instruction_mode:      getInstructionMode(classInfo),
+		Meetings:              getMeetings(rowInfo),
+		Core_flags:            getCoreFlags(rowInfo),
+		Syllabus_uri:          getSyllabusUri(rowInfo),
+		Grade_distribution:    getGradeDistribution(session, sectionNumber, courseRef),
 	}
 
 	// Add new section to section map
-	Sections[section.Id] = section
+	Sections[section.Id] = &section
 
 	// Append new section to course's section listing
 	courseRef.Sections = append(courseRef.Sections, section.Id)
+}
+
+// todo add logging for failing to get feilds? probably only max verbosity
+func getInternalClassAndCourseNum(classInfo map[string]string) (string, string) {
+	if numbers, ok := classInfo["Class/Course Number:"]; ok {
+		classAndCourseNum := strings.Split(numbers, " / ")
+		if len(classAndCourseNum) == 2 {
+			return classAndCourseNum[0], classAndCourseNum[1]
+		}
+	}
+	return "", ""
 }
 
 func getAcademicSession(rowInfo map[string]*goquery.Selection) schema.AcademicSession {
@@ -102,9 +90,40 @@ func getAcademicSession(rowInfo map[string]*goquery.Selection) schema.AcademicSe
 	return session
 }
 
-var meetingDatesRegexp = regexp.MustCompile(utils.R_DATE_MDY)
-var meetingDaysRegexp = regexp.MustCompile(utils.R_WEEKDAY)
-var meetingTimesRegexp = regexp.MustCompile(utils.R_TIME_AM_PM)
+func getSectionNumber(classInfo map[string]string) string {
+	if syllabus, ok := classInfo["Class Section:"]; ok {
+		matches := sectionPrefixRegexp.FindStringSubmatch(syllabus)
+		if len(matches) == 2 {
+			return matches[1]
+		}
+	}
+	return ""
+}
+
+func getTeachingAssistants(rowInfo map[string]*goquery.Selection) []schema.Assistant {
+	assistantMatches := personRegexp.FindAllStringSubmatch(utils.TrimWhitespace(rowInfo["TA/RA(s):"].Text()), -1)
+	assistants := make([]schema.Assistant, 0, len(assistantMatches))
+
+	for _, match := range assistantMatches {
+		names := strings.Split(utils.TrimWhitespace(match[1]), " ")
+
+		assistant := schema.Assistant{
+			First_name: strings.Join(names[:len(names)-1], " "),
+			Last_name:  names[len(names)-1],
+			Role:       utils.TrimWhitespace(match[2]),
+			Email:      utils.TrimWhitespace(match[3]),
+		}
+		assistants = append(assistants, assistant)
+	}
+	return assistants
+}
+
+func getInstructionMode(classInfo map[string]string) string {
+	if mode, ok := classInfo["Instruction Mode:"]; ok {
+		return mode
+	}
+	return ""
+}
 
 func getMeetings(rowInfo map[string]*goquery.Selection) []schema.Meeting {
 	meetingItems := rowInfo["Schedule:"].Find("div.courseinfo__meeting-item--multiple")
@@ -160,7 +179,40 @@ func getMeetings(rowInfo map[string]*goquery.Selection) []schema.Meeting {
 	return meetings
 }
 
-const timeLayout = "January 2, 2006"
+func getCoreFlags(rowInfo map[string]*goquery.Selection) []string {
+	if core, ok := rowInfo["Core:"]; ok {
+		flags := coreRegexp.FindAllString(utils.TrimWhitespace(core.Text()), -1)
+
+		if flags != nil {
+			return flags
+		}
+	}
+	return []string{}
+}
+
+func getSyllabusUri(rowInfo map[string]*goquery.Selection) string {
+	if syllabus, ok := rowInfo["Syllabus:"]; ok {
+		link := syllabus.FindMatcher(goquery.Single("a"))
+		if link.Length() == 1 {
+			return link.AttrOr("href", "")
+		}
+	}
+	return ""
+}
+
+func getGradeDistribution(session schema.AcademicSession, sectionNumber string, courseRef *schema.Course) []int {
+	if semesterGrades, ok := GradeMap[session.Name]; ok {
+		// We have to trim leading zeroes from the section number in order to match properly, since the grade data does not use leading zeroes
+		trimmedSectionNumber := strings.TrimLeft(sectionNumber, "0")
+		// Key into grademap should be uppercased like the grade data
+		gradeKey := strings.ToUpper(courseRef.Subject_prefix + courseRef.Course_number + trimmedSectionNumber)
+		sectionGrades, exists := semesterGrades[gradeKey]
+		if exists {
+			return sectionGrades
+		}
+	}
+	return []int{}
+}
 
 func parseTimeOrPanic(value string) time.Time {
 	date, err := time.ParseInLocation(timeLayout, value, timeLocation)

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/UTDNebula/api-tools/utils"
@@ -110,35 +109,33 @@ func parse(path string) {
 		panic(err)
 	}
 
-	// Get the rows of the info table
-	infoTable := doc.FindMatcher(goquery.Single("table.courseinfo__overviewtable > tbody"))
-	infoRows := infoTable.ChildrenFiltered("tr")
-
-	var syllabusURI string
-
 	// Dictionary to hold the row data, keyed by row header
+	rowInfo := getRowInfo(doc)
+	// Dictionary to hold the class info, keyed by data label
+	classInfo := getClassInfo(doc)
+
+	// Get the class and course num by splitting classInfo value
+
+	parseSection(rowInfo, classInfo)
+	utils.VPrint("Parsed!")
+}
+
+func getRowInfo(doc *goquery.Document) map[string]*goquery.Selection {
+	infoRows := doc.FindMatcher(goquery.Single("table.courseinfo__overviewtable > tbody")).ChildrenFiltered("tr")
 	rowInfo := make(map[string]*goquery.Selection, len(infoRows.Nodes))
 
-	// Populate rowInfo
 	infoRows.Each(func(_ int, row *goquery.Selection) {
 		rowHeader := utils.TrimWhitespace(row.FindMatcher(goquery.Single("th")).Text())
 		rowInfo[rowHeader] = row.FindMatcher(goquery.Single("td"))
 
 	})
+	return rowInfo
+}
 
-	// Get syllabusURI from syllabus row link
-	if syllabus, ok := rowInfo["syllabus"]; ok {
-		syllabusURI, _ = syllabus.FindMatcher(goquery.Single("a")).Attr("href")
-	}
+func getClassInfo(doc *goquery.Document) map[string]string {
+	infoRows := doc.FindMatcher(goquery.Single("table.courseinfo__classsubtable > tbody")).ChildrenFiltered("tr")
+	classInfo := make(map[string]string, len(infoRows.Nodes))
 
-	// Get the rows of the class info subtable
-	infoSubTable := infoTable.FindMatcher(goquery.Single("table.courseinfo__classsubtable > tbody"))
-	infoRows = infoSubTable.ChildrenFiltered("tr")
-
-	// Dictionary to hold the class info, keyed by data label
-	classInfo := make(map[string]string)
-
-	// Populate classInfo
 	infoRows.Each(func(_ int, row *goquery.Selection) {
 		rowHeaders := row.Find("td.courseinfo__classsubtable__th")
 		rowHeaders.Each(func(_ int, header *goquery.Selection) {
@@ -147,17 +144,5 @@ func parse(path string) {
 			classInfo[headerText] = dataText
 		})
 	})
-
-	// Get the class and course num by splitting classInfo value
-	classAndCourseNum := strings.Split(classInfo["Class/Course Number:"], " / ")
-	classNum := classAndCourseNum[0]
-	courseNum := utils.TrimWhitespace(classAndCourseNum[1])
-
-	// Figure out the academic session associated with this specific course/Section
-	session := getAcademicSession(rowInfo)
-
-	// Try to create the course and section based on collected info
-	courseRef := parseCourse(courseNum, session, rowInfo, classInfo)
-	parseSection(courseRef, classNum, syllabusURI, session, rowInfo, classInfo)
-	utils.VPrint("Parsed!")
+	return classInfo
 }

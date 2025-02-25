@@ -7,6 +7,7 @@ require (
 	github.com/UTDNebula/nebula-api/api v0.0.0-20240423212728-2ef02f280c6c
 	github.com/chromedp/cdproto v0.0.0-20250120090109-d38428e4d9c8
 	github.com/chromedp/chromedp v0.12.1
+	github.com/google/go-cmp v0.5.5
 	github.com/joho/godotenv v1.5.1
 	github.com/valyala/fastjson v1.6.4
 	go.mongodb.org/mongo-driver v1.15.0
@@ -54,6 +55,7 @@ require (
 	golang.org/x/sync v0.7.0 // indirect
 	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
+	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
