@@ -26,7 +26,7 @@ const CALENDAR_LINK string = "https://calendar.utdallas.edu/calendar"
 
 var trailingSpaceRegex *regexp.Regexp = regexp.MustCompile(`(\s{2,}?\s{2,})|(\n)`)
 
-func ScrapeEvents(outDir string) {
+func ScrapeCalendar(outDir string) {
 
 	chromedpCtx, cancel := utils.InitChromeDp()
 	defer cancel()

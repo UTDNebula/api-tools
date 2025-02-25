@@ -102,9 +102,11 @@ func ScrapeAstra(outDir string) {
 		date = date.Add(time.Hour * 24)
 	}
 
+	log.Printf("Scraped Astra up to %s!", date.Format("2006-01-02"))
+
 	// Write event data to output file
 	days = fmt.Sprintf("%s}", days)
-	fptr, err := os.Create(fmt.Sprintf("%s/reservations.json", outDir))
+	fptr, err := os.Create(fmt.Sprintf("%s/astraScraped.json", outDir))
 	if err != nil {
 		panic(err)
 	}
