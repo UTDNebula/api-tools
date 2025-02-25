@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"encoding/json"
 	"regexp"
 	"strings"
 	"time"
@@ -49,6 +50,10 @@ func parseSection(rowInfo map[string]*goquery.Selection, classInfo map[string]st
 		Grade_distribution:    getGradeDistribution(session, sectionNumber, courseRef),
 	}
 
+	a, _ := json.Marshal(section)
+	println(string(a))
+	a, _ = json.Marshal(*courseRef)
+	println(string(a))
 	// Add new section to section map
 	Sections[section.Id] = &section
 

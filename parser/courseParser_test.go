@@ -1,10 +1,11 @@
 package parser
 
 import (
+	"testing"
+
 	"github.com/UTDNebula/nebula-api/api/schema"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"testing"
 )
 
 func TestGetCourse(t *testing.T) {
@@ -23,193 +24,82 @@ func TestGetCourse(t *testing.T) {
 			}
 
 		})
-
 	}
 }
 
-/* todo fix
 func TestGetCatalogYear(t *testing.T) {
-	loadTestData(t)
+	testCases := map[string]struct {
+		Session  schema.AcademicSession
+		Expected string
+	}{
+		"Case_001": {
+			Session: schema.AcademicSession{
+				Name: "25S",
+			},
+			Expected: "24",
+		}, "Case_002": {
+			Session: schema.AcademicSession{
+				Name: "25F",
+			},
+			Expected: "25",
+		}, "Case_003": {
+			Session: schema.AcademicSession{
+				Name: "22U",
+			},
+			Expected: "21",
+		}, "Case_004": {
+			Session: schema.AcademicSession{
+				Name: "20S",
+			},
+			Expected: "19",
+		},
+	}
 
-	for name, testCase := range testDataCache {
+	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			output := getCatalogYear(testCase.Section.Academic_session)
-			expected := testCase.Section.Academic_session
+			output := getCatalogYear(tc.Session)
 
-			if diffBuilder.Len() > 0 {
-				t.Errorf("Failed to parse Adacemic Session\n%s\n", diffBuilder.String())
+			if output != tc.Expected {
+				t.Errorf("expected %s got %s", tc.Expected, output)
 			}
 		})
 
 	}
 }
 
-*/
-/*
-
-func TestGetInternalCourseNumber(t *testing.T) {
-	loadTestData(t)
-
-	for name, testCase := range testDataCache {
-		t.Run(name, func(t *testing.T) {
-			output := getInternalCourseNumber(testCase.ClassInfo)
-			expected := testCase.Course.Internal_course_number
-
-			if expected != output {
-				t.Errorf("expected %v got %v", expected, output)
-			}
-		})
-	}
-}
-
-func TestGetTitle(t *testing.T) {
-	loadTestData(t)
-
-	for name, testCase := range testDataCache {
-		t.Run(name, func(t *testing.T) {
-			output := getTitle(testCase.RowInfo)
-			expected := testCase.Course.Title
-
-			if expected != output {
-				t.Errorf("expected %v got %v", expected, output)
-			}
-		})
-	}
-}
-
-func TestGetDescription(t *testing.T) {
-	loadTestData(t)
-
-	for name, testCase := range testDataCache {
-		t.Run(name, func(t *testing.T) {
-			output := getDescription(testCase.RowInfo)
-			expected := testCase.Course.Description
-
-			if expected != output {
-				t.Errorf("expected %v got %v", expected, output)
-			}
-		})
-	}
-}
-
-func TestGetSchool(t *testing.T) {
-	loadTestData(t)
-
-	for name, testCase := range testDataCache {
-		t.Run(name, func(t *testing.T) {
-			output := getSchool(testCase.RowInfo)
-			expected := testCase.Course.School
-
-			if expected != output {
-				t.Errorf("expected %v got %v", expected, output)
-			}
-		})
-	}
-}
-
-func TestCreditHours(t *testing.T) {
-	loadTestData(t)
-
-	for name, testCase := range testDataCache {
-		t.Run(name, func(t *testing.T) {
-			output := getCreditHours(testCase.ClassInfo)
-			expected := testCase.Course.Credit_hours
-
-			if expected != output {
-				t.Errorf("expected %v got %v", expected, output)
-			}
-		})
-	}
-}
-
-func TestGetClassLevel(t *testing.T) {
-	loadTestData(t)
-
-	for name, testCase := range testDataCache {
-		t.Run(name, func(t *testing.T) {
-			output := getClassLevel(testCase.ClassInfo)
-			expected := testCase.Course.Class_level
-
-			if expected != output {
-				t.Errorf("expected %v got %v", expected, output)
-			}
-		})
-	}
-}
-
-func TestGetActivityType(t *testing.T) {
-	loadTestData(t)
-
-	for name, testCase := range testDataCache {
-		t.Run(name, func(t *testing.T) {
-			output := getActivityType(testCase.ClassInfo)
-			expected := testCase.Course.Activity_type
-
-			if expected != output {
-				t.Errorf("expected %v got %v", expected, output)
-			}
-		})
+func TestGetPrefixAndCourseNum(t *testing.T) {
+	testCases := map[string]struct {
+		classInfo map[string]string
+		prefix    string
+		number    string
+	}{
+		"Case_001": {
+			classInfo: map[string]string{
+				"Class Section:": "ACCT2301.001.25S",
+			},
+			prefix: "ACCT",
+			number: "2301",
+		},
+		"Case_002": {
+			classInfo: map[string]string{
+				"Class Section:": "ENTP3301.002.24S",
+			},
+			prefix: "ENTP",
+			number: "3301",
+		},
 	}
 
-}
-
-func TestGetGrading(t *testing.T) {
-	loadTestData(t)
-
-	for name, testCase := range testDataCache {
+	for name, testCase := range testCases {
 		t.Run(name, func(t *testing.T) {
-			output := getGrading(testCase.ClassInfo)
-			expected := testCase.Course.Grading
+			prefix, number := getPrefixAndNumber(testCase.classInfo)
 
-			if expected != output {
-				t.Errorf("expected %v got %v", expected, output)
+			if prefix != testCase.prefix {
+				t.Errorf("expected %s got %s", testCase.prefix, prefix)
+			}
+			if number != testCase.number {
+				t.Errorf("expected %s got %s", testCase.number, number)
 			}
 		})
+
 	}
-
 }
-
-func TestGetCourseNumberAndPrefix(t *testing.T) {
-	loadTestData(t)
-
-	for name, testCase := range testDataCache {
-		t.Run(name, func(t *testing.T) {
-			outputNumber, outputPrefix := getCourseNumberAndPrefix(testCase.ClassInfo)
-			expectedNumber, expectedPrefix := testCase.Course.Course_number, testCase.Course.Subject_prefix
-
-			if outputNumber != expectedNumber {
-				t.Errorf("expected %v got %v", expectedNumber, outputNumber)
-			}
-			if outputPrefix != expectedPrefix {
-				t.Errorf("expected %v got %v", expectedPrefix, outputPrefix)
-			}
-		})
-	}
-
-}
-
-func TestGetContactMatches(t *testing.T) {
-	loadTestData(t)
-
-	for name, testCase := range testDataCache {
-		t.Run(name, func(t *testing.T) {
-			lectureHours, labHours, offeringFrequency := getContactMatches(testCase.Course.Description)
-			expectedLectureHours := testCase.Course.Lecture_contact_hours
-			expectedLabHours := testCase.Course.Laboratory_contact_hours
-			expectedOfferingFrequency := testCase.Course.Offering_frequency
-
-			if lectureHours != expectedLectureHours {
-				t.Errorf("expected %v got %v", expectedLectureHours, lectureHours)
-			}
-			if labHours != expectedLabHours {
-				t.Errorf("expected %v got %v", expectedLabHours, labHours)
-			}
-			if offeringFrequency != expectedOfferingFrequency {
-				t.Errorf("expected %v got %v", expectedOfferingFrequency, offeringFrequency)
-			}
-		})
-	}
-
-}
-
-*/

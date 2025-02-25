@@ -1,0 +1,49 @@
+{
+  "_id": "67bd25abd55e2ff564c3b9f1",
+  "section_number": "501",
+  "course_reference": "67bd25abd55e2ff564c3b9f0",
+  "section_corequisites": null,
+  "academic_session": {
+    "name": "25S",
+    "start_date": "2025-01-21T00:00:00-06:00",
+    "end_date": "2025-05-16T00:00:00-05:00"
+  },
+  "professors": [
+    "67bd25abd55e2ff564c3b9f2"
+  ],
+  "teaching_assistants": [
+    {
+      "first_name": "Ravi Kiran Reddy",
+      "last_name": "Konda",
+      "role": "Teaching Assistant",
+      "email": "rxk230080@utdallas.edu"
+    }
+  ],
+  "internal_class_number": "27195",
+  "instruction_mode": "Face-to-Face",
+  "meetings": [
+    {
+      "start_date": "2025-01-21T00:00:00-06:00",
+      "end_date": "2025-05-09T00:00:00-05:00",
+      "meeting_days": [
+        "Tuesday",
+        "Thursday"
+      ],
+      "start_time": "5:30pm",
+      "end_time": "6:45pm",
+      "modality": "",
+      "location": {
+        "building": "JSOM",
+        "room": "12.218",
+        "map_uri": "https://locator.utdallas.edu/SOM_12.218"
+      }
+    }
+  ],
+  "core_flags": [
+    "080",
+    "090"
+  ],
+  "syllabus_uri": "https://dox.utdallas.edu/syl153033",
+  "grade_distribution": [],
+  "attributes": null
+}

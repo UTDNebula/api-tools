@@ -1,0 +1,38 @@
+{
+  "_id": "67bd25abd55e2ff564c3b9f4",
+  "section_number": "016",
+  "course_reference": "67bd25abd55e2ff564c3b9f3",
+  "section_corequisites": null,
+  "academic_session": {
+    "name": "25S",
+    "start_date": "2025-01-21T00:00:00-06:00",
+    "end_date": "2025-05-16T00:00:00-05:00"
+  },
+  "professors": [
+    "67bd25abd55e2ff564c3b9f5"
+  ],
+  "teaching_assistants": [],
+  "internal_class_number": "29611",
+  "instruction_mode": "Face-to-Face",
+  "meetings": [
+    {
+      "start_date": "2025-01-21T00:00:00-06:00",
+      "end_date": "2025-05-09T00:00:00-05:00",
+      "meeting_days": [
+        "Thursday"
+      ],
+      "start_time": "9:30am",
+      "end_time": "10:20am",
+      "modality": "",
+      "location": {
+        "building": "",
+        "room": "",
+        "map_uri": ""
+      }
+    }
+  ],
+  "core_flags": [],
+  "syllabus_uri": "https://dox.utdallas.edu/syl153921",
+  "grade_distribution": [],
+  "attributes": null
+}
