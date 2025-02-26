@@ -87,6 +87,27 @@ func TestGetPrefixAndCourseNum(t *testing.T) {
 			prefix: "ENTP",
 			number: "3301",
 		},
+		"Case_003": {
+			classInfo: map[string]string{
+				"Class Section:": "Garbage In, Garbage out",
+			},
+			prefix: "",
+			number: "",
+		},
+		"Case_004": {
+			classInfo: map[string]string{
+				"Class Section:": "ENTP33S",
+			},
+			prefix: "",
+			number: "",
+		},
+		"Case_005": {
+			classInfo: map[string]string{
+				"Class Section:": "",
+			},
+			prefix: "",
+			number: "",
+		},
 	}
 
 	for name, testCase := range testCases {
@@ -100,6 +121,5 @@ func TestGetPrefixAndCourseNum(t *testing.T) {
 				t.Errorf("expected %s got %s", testCase.number, number)
 			}
 		})
-
 	}
 }

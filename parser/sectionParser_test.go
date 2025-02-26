@@ -11,14 +11,18 @@ func TestGetInternalClassAndCourseNum(t *testing.T) {
 
 	for name, testCase := range testDataCache {
 		t.Run(name, func(t *testing.T) {
-			classNum, _ := getInternalClassAndCourseNum(testCase.ClassInfo)
+			classNum, courseNum := getInternalClassAndCourseNum(testCase.ClassInfo)
 			expectedClassNum := testCase.Section.Internal_class_number
+			expectedCourseNumber := testCase.Course.Internal_course_number
 
-			diff := cmp.Diff(expectedClassNum, classNum)
-
-			if diff != "" {
-				t.Errorf("Failed (-expected +got)\n %s", diff)
+			if classNum != expectedClassNum {
+				t.Errorf("Class Number: expected %s got %s", expectedClassNum, classNum)
 			}
+
+			if courseNum != expectedCourseNumber {
+				t.Errorf("Class Number: expected %s got %s", expectedCourseNumber, courseNum)
+			}
+
 		})
 	}
 }
@@ -48,10 +52,8 @@ func TestGetSectionNumber(t *testing.T) {
 			output := getSectionNumber(testCase.ClassInfo)
 			expected := testCase.Section.Section_number
 
-			diff := cmp.Diff(expected, output)
-
-			if diff != "" {
-				t.Errorf("Failed (-expected +got)\n %s", diff)
+			if output != expected {
+				t.Errorf("expected %s got %s", expected, output)
 			}
 		})
 
@@ -66,20 +68,10 @@ func TestGetTeachingAssistants(t *testing.T) {
 			output := getTeachingAssistants(testCase.RowInfo)
 			expected := testCase.Section.Teaching_assistants
 
-			if len(output) != len(expected) {
-				t.Errorf("expected %d assistants got %d", len(expected), len(output))
-				return
-			}
+			diff := cmp.Diff(expected, output)
 
-			for i, assistant := range output {
-				expectedAssistant := expected[i]
-
-				diff := cmp.Diff(expectedAssistant, assistant)
-
-				if diff != "" {
-					t.Errorf("Failed (-expected +got)\n %s", diff)
-				}
-
+			if diff != "" {
+				t.Errorf("Failed (-expected +got)\n %s", diff)
 			}
 		})
 	}
@@ -93,10 +85,8 @@ func TestGetInstructionMode(t *testing.T) {
 			output := getInstructionMode(testCase.ClassInfo)
 			expected := testCase.Section.Instruction_mode
 
-			diff := cmp.Diff(expected, output)
-
-			if diff != "" {
-				t.Errorf("Failed (-expected +got)\n %s", diff)
+			if output != expected {
+				t.Errorf("expected %s got %s", expected, output)
 			}
 		})
 
@@ -111,19 +101,10 @@ func TestGetMeetings(t *testing.T) {
 			output := getMeetings(testCase.RowInfo)
 			expected := testCase.Section.Meetings
 
-			if len(output) != len(expected) {
-				t.Errorf("expected %d meetings got %d", len(expected), len(output))
-				return
-			}
+			diff := cmp.Diff(expected, output)
 
-			for i, meeting := range output {
-				expectedMeeting := expected[i]
-
-				diff := cmp.Diff(meeting, expectedMeeting)
-
-				if diff != "" {
-					t.Errorf("Failed (-expected +got)\n %s", diff)
-				}
+			if diff != "" {
+				t.Errorf("Failed (-expected +got)\n %s", diff)
 			}
 		})
 	}
@@ -154,10 +135,8 @@ func TestGetSyllabusUri(t *testing.T) {
 			output := getSyllabusUri(testCase.RowInfo)
 			expected := testCase.Section.Syllabus_uri
 
-			diff := cmp.Diff(expected, output)
-
-			if diff != "" {
-				t.Errorf("Failed (-expected +got)\n %s", diff)
+			if output != expected {
+				t.Errorf("expected %s got %s", expected, output)
 			}
 		})
 

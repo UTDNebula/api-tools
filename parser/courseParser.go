@@ -12,8 +12,10 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-var coursePrefixRexp *regexp.Regexp = utils.Regexpf(`^%s`, utils.R_SUBJ_COURSE_CAP)
-var contactRegexp *regexp.Regexp = regexp.MustCompile(`\(([0-9]+)-([0-9]+)\)\s+([SUFY]+)`)
+var (
+	coursePrefixRexp *regexp.Regexp = utils.Regexpf(`^%s`, utils.R_SUBJ_COURSE_CAP)
+	contactRegexp    *regexp.Regexp = regexp.MustCompile(`\(([0-9]+)-([0-9]+)\)\s+([SUFY]+)`)
+)
 
 func parseCourse(courseNum string, session schema.AcademicSession, rowInfo map[string]*goquery.Selection, classInfo map[string]string) *schema.Course {
 	// Courses are internally keyed by their internal course number and the catalog year they're part of
@@ -37,7 +39,7 @@ func parseCourse(courseNum string, session schema.AcademicSession, rowInfo map[s
 	return course
 }
 
-// getCourse builds and returns a new course from the provided arguments, no global state is changed
+// no global state is changed
 func getCourse(courseNum string, session schema.AcademicSession, rowInfo map[string]*goquery.Selection, classInfo map[string]string) *schema.Course {
 	CoursePrefix, CourseNumber := getPrefixAndNumber(classInfo)
 
