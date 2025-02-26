@@ -137,19 +137,10 @@ func TestGetCoreFlags(t *testing.T) {
 			output := getCoreFlags(testCase.RowInfo)
 			expected := testCase.Section.Core_flags
 
-			if len(output) != len(expected) {
-				t.Errorf("expected %d meetings got %d", len(expected), len(output))
-				return
-			}
+			diff := cmp.Diff(expected, output)
 
-			for i, flag := range output {
-				expectedFlag := expected[i]
-
-				diff := cmp.Diff(expectedFlag, flag)
-
-				if diff != "" {
-					t.Errorf("Failed (-expected +got)\n %s", diff)
-				}
+			if diff != "" {
+				t.Errorf("Failed (-expected +got)\n %s", diff)
 			}
 		})
 	}
