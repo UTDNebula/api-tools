@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"encoding/json"
 	"regexp"
 	"strings"
 	"time"
