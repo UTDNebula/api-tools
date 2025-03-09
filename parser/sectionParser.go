@@ -101,7 +101,11 @@ func getSectionNumber(classInfo map[string]string) string {
 }
 
 func getTeachingAssistants(rowInfo map[string]*goquery.Selection) []schema.Assistant {
-	assistantMatches := personRegexp.FindAllStringSubmatch(utils.TrimWhitespace(rowInfo["TA/RA(s):"].Text()), -1)
+	taRow, ok := rowInfo["TA/RA(s):"]
+	if !ok {
+		return []schema.Assistant{}
+	}
+	assistantMatches := personRegexp.FindAllStringSubmatch(utils.TrimWhitespace(taRow.Text()), -1)
 	assistants := make([]schema.Assistant, 0, len(assistantMatches))
 
 	for _, match := range assistantMatches {

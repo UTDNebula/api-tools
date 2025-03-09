@@ -58,7 +58,7 @@ func main() {
 	verbose := flag.Bool("verbose", false, "Enables verbose logging, good for debugging purposes.")
 
 	// Flag for headless mode
-	headless := flag.Bool("headless", true, "Enables headless mode for chromedp. Defaults to true.")
+	headless := flag.Bool("headless", false, "Enables headless mode for chromedp.")
 
 	// Parse flags
 	flag.Parse()
