@@ -1,6 +1,6 @@
 [
 	{
-		"_id": "67ce6ab15313fcf1d01a908b",
+		"_id": "67cf4366a47508701e598b59",
 		"first_name": "Jieying",
 		"last_name": "Zhang",
 		"titles": [
@@ -17,32 +17,12 @@
 		"image_uri": "",
 		"office_hours": null,
 		"sections": [
-			"67ce6ab15313fcf1d01a908a"
+			"67cf4366a47508701e598b57",
+			"67cf4366a47508701e598b5a"
 		]
 	},
 	{
-		"_id": "67ce6ab15313fcf1d01a908c",
-		"first_name": "Naim Bugra",
-		"last_name": "Ozel",
-		"titles": [
-			"Primary Instructor (50%)"
-		],
-		"email": "nbo150030@utdallas.edu",
-		"phone_number": "",
-		"office": {
-			"building": "",
-			"room": "",
-			"map_uri": ""
-		},
-		"profile_uri": "",
-		"image_uri": "",
-		"office_hours": null,
-		"sections": [
-			"67ce6ab15313fcf1d01a908a"
-		]
-	},
-	{
-		"_id": "67ce6ab15313fcf1d01a908f",
+		"_id": "67cf4366a47508701e598b5d",
 		"first_name": "Peter",
 		"last_name": "Lewin",
 		"titles": [
@@ -59,11 +39,11 @@
 		"image_uri": "",
 		"office_hours": null,
 		"sections": [
-			"67ce6ab15313fcf1d01a908e"
+			"67cf4366a47508701e598b5c"
 		]
 	},
 	{
-		"_id": "67ce6ab15313fcf1d01a9092",
+		"_id": "67cf4366a47508701e598b60",
 		"first_name": "Tian",
 		"last_name": "Hong",
 		"titles": [
@@ -80,17 +60,17 @@
 		"image_uri": "",
 		"office_hours": null,
 		"sections": [
-			"67ce6ab15313fcf1d01a9091"
+			"67cf4366a47508701e598b5f"
 		]
 	},
 	{
-		"_id": "67ce6ab25313fcf1d01a9099",
-		"first_name": "Kathy",
-		"last_name": "Zolton",
+		"_id": "67cf4366a47508701e598b58",
+		"first_name": "Naim Bugra",
+		"last_name": "Ozel",
 		"titles": [
-			"Primary Instructor"
+			"Primary Instructor (50%)"
 		],
-		"email": "kxz121730@utdallas.edu",
+		"email": "nbo150030@utdallas.edu",
 		"phone_number": "",
 		"office": {
 			"building": "",
@@ -101,7 +81,8 @@
 		"image_uri": "",
 		"office_hours": null,
 		"sections": [
-			"67ce6ab25313fcf1d01a9098"
+			"67cf4366a47508701e598b57",
+			"67cf4366a47508701e598b5a"
 		]
 	}
 ]

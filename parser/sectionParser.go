@@ -12,19 +12,32 @@ import (
 	"golang.org/x/net/html/atom"
 )
 
+// timeLayout is the layout string used for parsing dates in "Month Day, Year" format.
 const timeLayout = "January 2, 2006"
 
 var (
-	// sectionPrefixRegexp the regular expression used to
+	// parser.sectionPrefixRegexp matches "SUBJ.101" (e.g., "HIST.101", case-insensitive).
 	sectionPrefixRegexp = utils.Regexpf(`^(?i)%s\.(%s)`, utils.R_SUBJ_COURSE, utils.R_SECTION_CODE)
-	coreRegexp          = regexp.MustCompile(`[0-9]{3}`)
-	personRegexp        = regexp.MustCompile(`(.+)・(.+)・(.+)`)
-	meetingDatesRegexp  = regexp.MustCompile(utils.R_DATE_MDY)
-	meetingDaysRegexp   = regexp.MustCompile(utils.R_WEEKDAY)
-	meetingTimesRegexp  = regexp.MustCompile(utils.R_TIME_AM_PM)
+
+	// coreRegexp matches any 3-digit number, used for core curriculum codes (e.g., "090").
+	coreRegexp = regexp.MustCompile(`[0-9]{3}`)
+
+	// personRegexp matches any 3 strings (no spaces) seperated by '・', (e.g, Name・Role・Email)
+	personRegexp = regexp.MustCompile(`(.+)・(.+)・(.+)`)
+
+	// meetingDatesRegexp matches a full date in "Month Day, Year" format (e.g., "January 5, 2022")
+	meetingDatesRegexp = regexp.MustCompile(utils.R_DATE_MDY)
+
+	// meetingDaysRegexp matches any day of the week (e.g., Monday, Tuesday, etc.)
+	meetingDaysRegexp = regexp.MustCompile(utils.R_WEEKDAY)
+
+	// meetingTimesRegexp matches a time in 12-hour AM/PM format (e.g., "5:00 pm", "11:30am")
+	meetingTimesRegexp = regexp.MustCompile(utils.R_TIME_AM_PM)
 )
 
-// parseSection
+// parseSection creates a schema.Section from rowInfo and classInfo,
+// adds it to Sections, and updates the associated Course and Professors.
+// Internally calls parseCourse and parseProfessors, which modify global maps.
 func parseSection(rowInfo map[string]*goquery.Selection, classInfo map[string]string) {
 	classNum, courseNum := getInternalClassAndCourseNum(classInfo)
 	session := getAcademicSession(rowInfo)
@@ -57,9 +70,10 @@ func parseSection(rowInfo map[string]*goquery.Selection, classInfo map[string]st
 }
 
 // getInternalClassAndCourseNum returns a sections internal course and class number,
-// both 0-padded, 5-digit numbers.
-//
-// Found in a sections `Class Info` table under `Class/Course Number:`
+// both 0-padded, 5-digit numbers as strings.
+// It expects classInfo to contain "Class/Course Number:" key.
+// If the key is not found or the value is not in the expected "classNum / courseNum" format,
+// it returns empty strings.
 func getInternalClassAndCourseNum(classInfo map[string]string) (string, string) {
 	if numbers, ok := classInfo["Class/Course Number:"]; ok {
 		classAndCourseNum := strings.Split(numbers, " / ")
@@ -67,9 +81,12 @@ func getInternalClassAndCourseNum(classInfo map[string]string) (string, string) 
 			return classAndCourseNum[0], classAndCourseNum[1]
 		}
 	}
+
 	return "", ""
 }
 
+// getAcademicSession returns the schema.AcademicSession parsed from the provided rowInfo.
+// It extracts academic session details from the "Schedule:" section in rowInfo.
 func getAcademicSession(rowInfo map[string]*goquery.Selection) schema.AcademicSession {
 	session := schema.AcademicSession{}
 
@@ -93,9 +110,13 @@ func getAcademicSession(rowInfo map[string]*goquery.Selection) schema.AcademicSe
 	return session
 }
 
+// getSectionNumber returns the matched value from a sectionPrefixRegexp on
+// `classInfo["Class Section:"]`. It expects classInfo to contain "Class Section:" key.
+// If there are no matches, an empty string returned.
 func getSectionNumber(classInfo map[string]string) string {
 	if syllabus, ok := classInfo["Class Section:"]; ok {
 		matches := sectionPrefixRegexp.FindStringSubmatch(syllabus)
+		// make sure it matches the correct format but only kep the section number
 		if len(matches) == 2 {
 			return matches[1]
 		}
@@ -103,6 +124,9 @@ func getSectionNumber(classInfo map[string]string) string {
 	return ""
 }
 
+// getTeachingAssistants parses TA/RA information from rowInfo and returns a list of schema.Assistant.
+// Assistants are found by matching personRegexp, and therefore are expected to have Name, Role, and Email.
+// If no "TA/RA(s):" row is found in rowInfo or no assistants are parsed, an empty slice is returned.
 func getTeachingAssistants(rowInfo map[string]*goquery.Selection) []schema.Assistant {
 	taRow, ok := rowInfo["TA/RA(s):"]
 	if !ok {
@@ -125,6 +149,9 @@ func getTeachingAssistants(rowInfo map[string]*goquery.Selection) []schema.Assis
 	return assistants
 }
 
+// getInstructionMode returns the instruction mode (e.g., in-person, online) from classInfo.
+// It expects classInfo to contain "Instruction Mode:" key.
+// If the key is not present, it returns an empty string.
 func getInstructionMode(classInfo map[string]string) string {
 	if mode, ok := classInfo["Instruction Mode:"]; ok {
 		return mode
@@ -148,9 +175,17 @@ func getInstructionMode(classInfo map[string]string) string {
 //   - Accepts 0, 1 or 2 times matched using meetingTimesRegexp.
 //   - If only 1 time is specified, it is used for both times.
 //   - Times are only parsed into strings to save memory
+//
+// Meeting days
+//   - Captures all strings that match meetingDaysRegexp
+//   - If there are no matches an empty slice will be used
+//
+// Location
+//   - Skips locations that don't have a valid locator link
+//   - Skips locations whose text don't match format <any><space><any>
 func getMeetings(rowInfo map[string]*goquery.Selection) []schema.Meeting {
 	meetingItems := rowInfo["Schedule:"].Find("div.courseinfo__meeting-item--multiple")
-	var meetings []schema.Meeting = make([]schema.Meeting, 0, meetingItems.Length())
+	var meetings = make([]schema.Meeting, 0, meetingItems.Length())
 
 	meetingItems.Each(func(i int, s *goquery.Selection) {
 		meeting := schema.Meeting{}
@@ -202,6 +237,10 @@ func getMeetings(rowInfo map[string]*goquery.Selection) []schema.Meeting {
 	return meetings
 }
 
+// getCoreFlags extracts any matching core curriculum flags from rowInfo.
+// It expects rowInfo to contain "Core:" key.
+// Core curriculum flags are expected to be 3-digit numbers.
+// Returns an empty slice if no "Core:" row is found or no flags are found.
 func getCoreFlags(rowInfo map[string]*goquery.Selection) []string {
 	if core, ok := rowInfo["Core:"]; ok {
 		flags := coreRegexp.FindAllString(utils.TrimWhitespace(core.Text()), -1)
@@ -213,6 +252,9 @@ func getCoreFlags(rowInfo map[string]*goquery.Selection) []string {
 	return []string{}
 }
 
+// getSyllabusUri extracts and returns the syllabus URL from rowInfo, if present.
+// It expects rowInfo to contain "Syllabus:" key, and the syllabus URL to be within an <a> tag.
+// Returns an empty string if no "Syllabus:" row or link is found.
 func getSyllabusUri(rowInfo map[string]*goquery.Selection) string {
 	if syllabus, ok := rowInfo["Syllabus:"]; ok {
 		link := syllabus.FindMatcher(goquery.Single("a"))
@@ -224,6 +266,7 @@ func getSyllabusUri(rowInfo map[string]*goquery.Selection) string {
 }
 
 // getGradeDistribution returns the grade distribution for the given section.
+// It retrieves grade distribution from the global `GradeMap`.
 //
 // If GradeMap contains the resulting key it will return the specified slice,
 // otherwise it will return an empty slice, `[]int{}`.
@@ -246,7 +289,7 @@ func getGradeDistribution(session schema.AcademicSession, sectionNumber string, 
 
 // parseTimeOrPanic is a simplified version time.ParseInLocation. The layout and
 // location are constants, timeLayout and timeLocation respectively. If time.ParseInLocation
-// returns an error, parseTimeOrPanic will panic regardless of the error type or reason.
+// returns an error, parseTimeOrPanic will panic regardless of the error type.
 func parseTimeOrPanic(value string) time.Time {
 	date, err := time.ParseInLocation(timeLayout, value, timeLocation)
 	if err != nil {

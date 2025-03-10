@@ -12,39 +12,58 @@ func TestGetCatalogYear(t *testing.T) {
 	testCases := map[string]struct {
 		Session  schema.AcademicSession
 		Expected string
+		Panic    bool
 	}{
 		"Case_001": {
-			Session: schema.AcademicSession{
-				Name: "25S",
-			},
+			Session:  schema.AcademicSession{Name: "25S"},
 			Expected: "24",
-		}, "Case_002": {
-			Session: schema.AcademicSession{
-				Name: "25F",
-			},
+		},
+		"Case_002": {
+			Session:  schema.AcademicSession{Name: "25F"},
 			Expected: "25",
-		}, "Case_003": {
-			Session: schema.AcademicSession{
-				Name: "22U",
-			},
+		},
+		"Case_003": {
+			Session:  schema.AcademicSession{Name: "22U"},
 			Expected: "21",
-		}, "Case_004": {
-			Session: schema.AcademicSession{
-				Name: "20S",
-			},
+		},
+		"Case_004": {
+			Session:  schema.AcademicSession{Name: "20S"},
 			Expected: "19",
+		},
+		"Case_005": {
+			Session: schema.AcademicSession{Name: "Garbage"},
+			Panic:   true,
+		},
+		"Case_006": {
+			Session: schema.AcademicSession{Name: "20P"},
+			Panic:   true,
 		},
 	}
 
 	for name, tc := range testCases {
+		tc := tc // capture range variable
 		t.Run(name, func(t *testing.T) {
-			output := getCatalogYear(tc.Session)
+			t.Parallel()
 
-			if output != tc.Expected {
-				t.Errorf("expected %s got %s", tc.Expected, output)
+			defer func() {
+				// Test fails if we panic when we didn't want to or didn't when we did
+				if rec := recover(); rec != nil {
+					if !tc.Panic {
+						t.Errorf("unexpected panic for session %s: %v", tc.Session.Name, rec)
+					}
+				} else {
+					if tc.Panic {
+						t.Errorf("expected panic for session %s but got none", tc.Session.Name)
+					}
+				}
+			}()
+
+			// only call if we *expect* it to succeed
+			output := getCatalogYear(tc.Session)
+			if !tc.Panic && output != tc.Expected {
+				t.Errorf("expected %s, got %s", tc.Expected, output)
 			}
 		})
-
 	}
 }
 
@@ -105,4 +124,5 @@ func TestGetPrefixAndCourseNum(t *testing.T) {
 			}
 		})
 	}
+
 }

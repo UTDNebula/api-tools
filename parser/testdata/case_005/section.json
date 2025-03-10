@@ -1,7 +1,7 @@
 {
-	"_id": "67cf4366a47508701e598b53",
-	"section_number": "201",
-	"course_reference": "67cf4366a47508701e598b52",
+	"_id": "67cf4366a47508701e598b55",
+	"section_number": "002",
+	"course_reference": "67cf4366a47508701e598b54",
 	"section_corequisites": null,
 	"academic_session": {
 		"name": "25S",
@@ -10,17 +10,32 @@
 	},
 	"professors": [],
 	"teaching_assistants": [],
-	"internal_class_number": "28551",
+	"internal_class_number": "27906",
 	"instruction_mode": "Face-to-Face",
 	"meetings": [
 		{
 			"start_date": "2025-01-21T00:00:00-06:00",
 			"end_date": "2025-05-09T00:00:00-05:00",
 			"meeting_days": [
+				"Tuesday"
+			],
+			"start_time": "1:00pm",
+			"end_time": "3:45pm",
+			"modality": "",
+			"location": {
+				"building": "",
+				"room": "",
+				"map_uri": ""
+			}
+		},
+		{
+			"start_date": "2025-01-21T00:00:00-06:00",
+			"end_date": "2025-05-09T00:00:00-05:00",
+			"meeting_days": [
 				"Thursday"
 			],
-			"start_time": "2:00pm",
-			"end_time": "3:00pm",
+			"start_time": "3:30pm",
+			"end_time": "5:20pm",
 			"modality": "",
 			"location": {
 				"building": "",

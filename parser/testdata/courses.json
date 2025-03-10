@@ -1,122 +1,6 @@
 [
 	{
-		"_id": "67ce6ab15313fcf1d01a9090",
-		"subject_prefix": "BIOL",
-		"course_number": "6111",
-		"title": "Graduate Research Presentation",
-		"description": "BIOL 6111 - Graduate Research Presentation  (1 semester credit hour) This course will train graduate students (MS and PhD) in hypothesis building and testing, designing, and conducting experiments, and presenting scientific findings in an efficient and clear manner. During the class, graduate students will discuss and present their graduate research work-in-progress. Significant time outside of class will also be required to analyze data, assemble, and practice presentations. May be repeated for credit as topics vary (2 semester credit hours maximum). Department consent required. (1-0) S",
-		"enrollment_reqs": "",
-		"school": "School of Natural Sciences and Mathematics",
-		"credit_hours": "1",
-		"class_level": "Graduate",
-		"activity_type": "Lecture",
-		"grading": "Graded - Graduate",
-		"internal_course_number": "016577",
-		"prerequisites": null,
-		"corequisites": null,
-		"co_or_pre_requisites": null,
-		"sections": [
-			"67ce6ab15313fcf1d01a9091"
-		],
-		"lecture_contact_hours": "1",
-		"laboratory_contact_hours": "0",
-		"offering_frequency": "S",
-		"catalog_year": "24",
-		"attributes": null
-	},
-	{
-		"_id": "67ce6ab15313fcf1d01a9093",
-		"subject_prefix": "AERO",
-		"course_number": "3320",
-		"title": "- Recitation",
-		"description": "-  ()",
-		"enrollment_reqs": "",
-		"school": "Undergraduate Studies",
-		"credit_hours": "Non-Enroll",
-		"class_level": "Undergraduate",
-		"activity_type": "Laboratory - No Lab Fee",
-		"grading": "Graded - Undergraduate",
-		"internal_course_number": "000243",
-		"prerequisites": null,
-		"corequisites": null,
-		"co_or_pre_requisites": null,
-		"sections": [
-			"67ce6ab15313fcf1d01a9094"
-		],
-		"lecture_contact_hours": "",
-		"laboratory_contact_hours": "",
-		"offering_frequency": "",
-		"catalog_year": "24",
-		"attributes": null
-	},
-	{
-		"_id": "67ce6ab15313fcf1d01a9095",
-		"subject_prefix": "AERO",
-		"course_number": "4320",
-		"title": "- Laboratory",
-		"description": "-  ()",
-		"enrollment_reqs": "",
-		"school": "Undergraduate Studies",
-		"credit_hours": "4",
-		"class_level": "Undergraduate",
-		"activity_type": "Lecture",
-		"grading": "Graded - Undergraduate",
-		"internal_course_number": "000255",
-		"prerequisites": null,
-		"corequisites": null,
-		"co_or_pre_requisites": null,
-		"sections": [
-			"67ce6ab15313fcf1d01a9096"
-		],
-		"lecture_contact_hours": "",
-		"laboratory_contact_hours": "",
-		"offering_frequency": "",
-		"catalog_year": "24",
-		"attributes": null
-	},
-	{
-		"_id": "67ce6ab25313fcf1d01a9097",
-		"subject_prefix": "ACCT",
-		"course_number": "2302",
-		"title": "Introductory Management Accounting",
-		"description": "ACCT 2302 - Introductory Management Accounting  (3 semester credit hours) This course helps students to build the necessary skills in the managerial use of accounting information for planning, decision making, performance evaluation, and controlling operations. The course uses a general framework for product costing systems, budgeting and variance analysis in order to benefit all students with a wide variety of career paths. A minimum grade of C is required to take upper-division ACCT courses. Prerequisite: ACCT 2301. (3-0) S",
-		"enrollment_reqs": "Prerequisite: ACCT 2301. Repeat Restriction.",
-		"school": "Naveen Jindal School of Management",
-		"credit_hours": "3",
-		"class_level": "Undergraduate",
-		"activity_type": "Lecture",
-		"grading": "Graded - Undergraduate",
-		"internal_course_number": "000062",
-		"prerequisites": {
-			"type": "collection",
-			"name": "REQUISITES",
-			"required": 2,
-			"options": [
-				{
-					"type": "course",
-					"class_reference": "000061",
-					"minimum_grade": "D"
-				},
-				{
-					"type": "other",
-					"description": "Repeat Restriction",
-					"condition": ""
-				}
-			]
-		},
-		"corequisites": null,
-		"co_or_pre_requisites": null,
-		"sections": [
-			"67ce6ab25313fcf1d01a9098"
-		],
-		"lecture_contact_hours": "3",
-		"laboratory_contact_hours": "0",
-		"offering_frequency": "S",
-		"catalog_year": "23",
-		"attributes": null
-	},
-	{
-		"_id": "67ce6ab15313fcf1d01a9089",
+		"_id": "67cf4366a47508701e598b56",
 		"subject_prefix": "ACCT",
 		"course_number": "2301",
 		"title": "Introductory Financial Accounting",
@@ -132,7 +16,8 @@
 		"corequisites": null,
 		"co_or_pre_requisites": null,
 		"sections": [
-			"67ce6ab15313fcf1d01a908a"
+			"67cf4366a47508701e598b57",
+			"67cf4366a47508701e598b5a"
 		],
 		"lecture_contact_hours": "3",
 		"laboratory_contact_hours": "0",
@@ -141,7 +26,7 @@
 		"attributes": null
 	},
 	{
-		"_id": "67ce6ab15313fcf1d01a908d",
+		"_id": "67cf4366a47508701e598b5b",
 		"subject_prefix": "BA",
 		"course_number": "1320",
 		"title": "Business in a Global World",
@@ -157,11 +42,86 @@
 		"corequisites": null,
 		"co_or_pre_requisites": null,
 		"sections": [
-			"67ce6ab15313fcf1d01a908e"
+			"67cf4366a47508701e598b5c"
 		],
 		"lecture_contact_hours": "3",
 		"laboratory_contact_hours": "0",
 		"offering_frequency": "S",
+		"catalog_year": "24",
+		"attributes": null
+	},
+	{
+		"_id": "67cf4366a47508701e598b5e",
+		"subject_prefix": "BIOL",
+		"course_number": "6111",
+		"title": "Graduate Research Presentation",
+		"description": "BIOL 6111 - Graduate Research Presentation  (1 semester credit hour) This course will train graduate students (MS and PhD) in hypothesis building and testing, designing, and conducting experiments, and presenting scientific findings in an efficient and clear manner. During the class, graduate students will discuss and present their graduate research work-in-progress. Significant time outside of class will also be required to analyze data, assemble, and practice presentations. May be repeated for credit as topics vary (2 semester credit hours maximum). Department consent required. (1-0) S",
+		"enrollment_reqs": "",
+		"school": "School of Natural Sciences and Mathematics",
+		"credit_hours": "1",
+		"class_level": "Graduate",
+		"activity_type": "Lecture",
+		"grading": "Graded - Graduate",
+		"internal_course_number": "016577",
+		"prerequisites": null,
+		"corequisites": null,
+		"co_or_pre_requisites": null,
+		"sections": [
+			"67cf4366a47508701e598b5f"
+		],
+		"lecture_contact_hours": "1",
+		"laboratory_contact_hours": "0",
+		"offering_frequency": "S",
+		"catalog_year": "24",
+		"attributes": null
+	},
+	{
+		"_id": "67cf4366a47508701e598b61",
+		"subject_prefix": "AERO",
+		"course_number": "3320",
+		"title": "- Recitation",
+		"description": "-  ()",
+		"enrollment_reqs": "",
+		"school": "Undergraduate Studies",
+		"credit_hours": "Non-Enroll",
+		"class_level": "Undergraduate",
+		"activity_type": "Laboratory - No Lab Fee",
+		"grading": "Graded - Undergraduate",
+		"internal_course_number": "000243",
+		"prerequisites": null,
+		"corequisites": null,
+		"co_or_pre_requisites": null,
+		"sections": [
+			"67cf4366a47508701e598b62"
+		],
+		"lecture_contact_hours": "",
+		"laboratory_contact_hours": "",
+		"offering_frequency": "",
+		"catalog_year": "24",
+		"attributes": null
+	},
+	{
+		"_id": "67cf4366a47508701e598b63",
+		"subject_prefix": "AERO",
+		"course_number": "4320",
+		"title": "- Laboratory",
+		"description": "-  ()",
+		"enrollment_reqs": "",
+		"school": "Undergraduate Studies",
+		"credit_hours": "4",
+		"class_level": "Undergraduate",
+		"activity_type": "Lecture",
+		"grading": "Graded - Undergraduate",
+		"internal_course_number": "000255",
+		"prerequisites": null,
+		"corequisites": null,
+		"co_or_pre_requisites": null,
+		"sections": [
+			"67cf4366a47508701e598b64"
+		],
+		"lecture_contact_hours": "",
+		"laboratory_contact_hours": "",
+		"offering_frequency": "",
 		"catalog_year": "24",
 		"attributes": null
 	}

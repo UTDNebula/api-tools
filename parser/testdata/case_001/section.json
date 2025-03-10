@@ -1,7 +1,7 @@
 {
-	"_id": "67ce6ab15313fcf1d01a907d",
-	"section_number": "501",
-	"course_reference": "67ce6ab15313fcf1d01a907c",
+	"_id": "67cf4366a47508701e598b49",
+	"section_number": "001",
+	"course_reference": "67cf4366a47508701e598b48",
 	"section_corequisites": null,
 	"academic_session": {
 		"name": "25S",
@@ -9,17 +9,24 @@
 		"end_date": "2025-05-16T00:00:00-05:00"
 	},
 	"professors": [
-		"67ce6ab15313fcf1d01a907e"
+		"67cf4366a47508701e598b4a",
+		"67cf4366a47508701e598b4b"
 	],
 	"teaching_assistants": [
 		{
-			"first_name": "Ravi Kiran Reddy",
-			"last_name": "Konda",
+			"first_name": "Galymzhan",
+			"last_name": "Tazhibayev",
 			"role": "Teaching Assistant",
-			"email": "rxk230080@utdallas.edu"
+			"email": "gxt230023@utdallas.edu"
+		},
+		{
+			"first_name": "Dipta",
+			"last_name": "Banik",
+			"role": "Teaching Assistant",
+			"email": "dxb220047@utdallas.edu"
 		}
 	],
-	"internal_class_number": "27195",
+	"internal_class_number": "26595",
 	"instruction_mode": "Face-to-Face",
 	"meetings": [
 		{
@@ -29,21 +36,18 @@
 				"Tuesday",
 				"Thursday"
 			],
-			"start_time": "5:30pm",
-			"end_time": "6:45pm",
+			"start_time": "8:30am",
+			"end_time": "9:45am",
 			"modality": "",
 			"location": {
 				"building": "JSOM",
-				"room": "12.218",
-				"map_uri": "https://locator.utdallas.edu/SOM_12.218"
+				"room": "2.717",
+				"map_uri": "https://locator.utdallas.edu/SOM_2.717"
 			}
 		}
 	],
-	"core_flags": [
-		"080",
-		"090"
-	],
-	"syllabus_uri": "https://dox.utdallas.edu/syl153033",
+	"core_flags": [],
+	"syllabus_uri": "https://dox.utdallas.edu/syl152552",
 	"grade_distribution": [],
 	"attributes": null
 }

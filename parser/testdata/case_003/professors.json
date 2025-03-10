@@ -1,1 +1,23 @@
-[]
+[
+	{
+		"_id": "67cf4366a47508701e598b51",
+		"first_name": "Tian",
+		"last_name": "Hong",
+		"titles": [
+			"Primary Instructor"
+		],
+		"email": "txh240018@utdallas.edu",
+		"phone_number": "",
+		"office": {
+			"building": "",
+			"room": "",
+			"map_uri": ""
+		},
+		"profile_uri": "",
+		"image_uri": "",
+		"office_hours": null,
+		"sections": [
+			"67cf4366a47508701e598b50"
+		]
+	}
+]
