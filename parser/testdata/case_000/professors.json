@@ -1,0 +1,44 @@
+[
+	{
+		"_id": "67ce6ab15313fcf1d01a907a",
+		"first_name": "Jieying",
+		"last_name": "Zhang",
+		"titles": [
+			"Primary Instructor (50%)"
+		],
+		"email": "jxz146230@utdallas.edu",
+		"phone_number": "",
+		"office": {
+			"building": "",
+			"room": "",
+			"map_uri": ""
+		},
+		"profile_uri": "",
+		"image_uri": "",
+		"office_hours": null,
+		"sections": [
+			"67ce6ab15313fcf1d01a9079"
+		]
+	},
+	{
+		"_id": "67ce6ab15313fcf1d01a907b",
+		"first_name": "Naim Bugra",
+		"last_name": "Ozel",
+		"titles": [
+			"Primary Instructor (50%)"
+		],
+		"email": "nbo150030@utdallas.edu",
+		"phone_number": "",
+		"office": {
+			"building": "",
+			"room": "",
+			"map_uri": ""
+		},
+		"profile_uri": "",
+		"image_uri": "",
+		"office_hours": null,
+		"sections": [
+			"67ce6ab15313fcf1d01a9079"
+		]
+	}
+]

@@ -1,0 +1,23 @@
+[
+	{
+		"_id": "67ce6ab15313fcf1d01a907e",
+		"first_name": "Peter",
+		"last_name": "Lewin",
+		"titles": [
+			"Primary Instructor"
+		],
+		"email": "plewin@utdallas.edu",
+		"phone_number": "",
+		"office": {
+			"building": "",
+			"room": "",
+			"map_uri": ""
+		},
+		"profile_uri": "",
+		"image_uri": "",
+		"office_hours": null,
+		"sections": [
+			"67ce6ab15313fcf1d01a907d"
+		]
+	}
+]

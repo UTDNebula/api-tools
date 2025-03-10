@@ -13,25 +13,33 @@ import (
 	"github.com/UTDNebula/nebula-api/api/schema"
 )
 
-// Main dictionaries for mapping unique keys to the actual data
-var Sections = make(map[primitive.ObjectID]*schema.Section)
-var Courses = make(map[string]*schema.Course)
-var Professors = make(map[string]*schema.Professor)
+var (
+	// Sections dictionary for mapping UUIDs to a *schema.Section
+	Sections = make(map[primitive.ObjectID]*schema.Section)
 
-// Auxilliary dictionaries for mapping the generated ObjectIDs to the keys used in the above maps, used for validation purposes
-var CourseIDMap = make(map[primitive.ObjectID]string)
-var ProfessorIDMap = make(map[primitive.ObjectID]string)
+	// Courses dictionary for keys (Internal_course_number +  Catalog_year) to a *schema.Course
+	Courses = make(map[string]*schema.Course)
 
-// Requisite parser closures associated with courses
-var ReqParsers = make(map[primitive.ObjectID]func())
+	// Professors dictionary for keys (First_name +   Last_name) to a *schema.Professor
+	Professors = make(map[string]*schema.Professor)
 
-// Grade mappings for section grade distributions, mapping is MAP[SEMESTER] -> MAP[SUBJECT + NUMBER + SECTION] -> GRADE DISTRIBUTION
-var GradeMap map[string]map[string][]int
+	//CourseIDMap auxiliary dictionary for mapping UUIDs to a *schema.Course
+	CourseIDMap = make(map[primitive.ObjectID]string)
 
-// Time location for dates (uses America/Chicago tz database zone for CDT which accounts for daylight saving)
-var timeLocation, timeError = time.LoadLocation("America/Chicago")
+	//ProfessorIDMap auxiliary dictionary for mapping UUIDs to a *schema.Professor
+	ProfessorIDMap = make(map[primitive.ObjectID]string)
 
-// Externally exposed parse function
+	// ReqParsers dictionary mapping course UUIDs to the func() that parsers its Reqs
+	ReqParsers = make(map[primitive.ObjectID]func())
+
+	// GradeMap mappings for section grade distributions, mapping is MAP[SEMESTER] -> MAP[SUBJECT + NUMBER + SECTION] -> GRADE DISTRIBUTION
+	GradeMap map[string]map[string][]int
+
+	// timeLocation Time location for dates (uses America/Chicago tz database zone for CDT which accounts for daylight saving)
+	timeLocation, timeError = time.LoadLocation("America/Chicago")
+)
+
+// Parse Externally exposed parse function
 func Parse(inDir string, outDir string, csvPath string, skipValidation bool) {
 
 	// Panic if timeLocation didn't load properly
@@ -109,14 +117,14 @@ func parse(path string) {
 		panic(err)
 	}
 
-	// Dictionary to hold the row data, keyed by row header
-	rowInfo := getRowInfo(doc)
-	// Dictionary to hold the class info, keyed by data label
-	classInfo := getClassInfo(doc)
+	//recover from failing to parse a section
+	defer func() {
+		if r := recover(); r != nil {
+			utils.VPrintf("Recovered from panic, skipping section %s: %v", path, r)
+		}
+	}()
+	parseSection(getRowInfo(doc), getClassInfo(doc))
 
-	// Get the class and course num by splitting classInfo value
-
-	parseSection(rowInfo, classInfo)
 	utils.VPrint("Parsed!")
 }
 

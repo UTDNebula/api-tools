@@ -1,15 +1,18 @@
 package parser
 
 import (
+	"strings"
 	"testing"
+
+	"github.com/PuerkitoBio/goquery"
 
 	"github.com/google/go-cmp/cmp"
 )
 
 func TestGetInternalClassAndCourseNum(t *testing.T) {
-	loadTestData(t)
+	t.Parallel()
 
-	for name, testCase := range testDataCache {
+	for name, testCase := range testData {
 		t.Run(name, func(t *testing.T) {
 			classNum, courseNum := getInternalClassAndCourseNum(testCase.ClassInfo)
 			expectedClassNum := testCase.Section.Internal_class_number
@@ -28,9 +31,9 @@ func TestGetInternalClassAndCourseNum(t *testing.T) {
 }
 
 func TestGetAcademicSession(t *testing.T) {
-	loadTestData(t)
+	t.Parallel()
 
-	for name, testCase := range testDataCache {
+	for name, testCase := range testData {
 		t.Run(name, func(t *testing.T) {
 			output := getAcademicSession(testCase.RowInfo)
 			expected := testCase.Section.Academic_session
@@ -45,9 +48,9 @@ func TestGetAcademicSession(t *testing.T) {
 }
 
 func TestGetSectionNumber(t *testing.T) {
-	loadTestData(t)
+	t.Parallel()
 
-	for name, testCase := range testDataCache {
+	for name, testCase := range testData {
 		t.Run(name, func(t *testing.T) {
 			output := getSectionNumber(testCase.ClassInfo)
 			expected := testCase.Section.Section_number
@@ -61,9 +64,9 @@ func TestGetSectionNumber(t *testing.T) {
 }
 
 func TestGetTeachingAssistants(t *testing.T) {
-	loadTestData(t)
+	t.Parallel()
 
-	for name, testCase := range testDataCache {
+	for name, testCase := range testData {
 		t.Run(name, func(t *testing.T) {
 			output := getTeachingAssistants(testCase.RowInfo)
 			expected := testCase.Section.Teaching_assistants
@@ -78,9 +81,9 @@ func TestGetTeachingAssistants(t *testing.T) {
 }
 
 func TestGetInstructionMode(t *testing.T) {
-	loadTestData(t)
+	t.Parallel()
 
-	for name, testCase := range testDataCache {
+	for name, testCase := range testData {
 		t.Run(name, func(t *testing.T) {
 			output := getInstructionMode(testCase.ClassInfo)
 			expected := testCase.Section.Instruction_mode
@@ -94,9 +97,9 @@ func TestGetInstructionMode(t *testing.T) {
 }
 
 func TestGetMeetings(t *testing.T) {
-	loadTestData(t)
+	t.Parallel()
 
-	for name, testCase := range testDataCache {
+	for name, testCase := range testData {
 		t.Run(name, func(t *testing.T) {
 			output := getMeetings(testCase.RowInfo)
 			expected := testCase.Section.Meetings
@@ -111,9 +114,9 @@ func TestGetMeetings(t *testing.T) {
 }
 
 func TestGetCoreFlags(t *testing.T) {
-	loadTestData(t)
+	t.Parallel()
 
-	for name, testCase := range testDataCache {
+	for name, testCase := range testData {
 		t.Run(name, func(t *testing.T) {
 			output := getCoreFlags(testCase.RowInfo)
 			expected := testCase.Section.Core_flags
@@ -128,15 +131,36 @@ func TestGetCoreFlags(t *testing.T) {
 }
 
 func TestGetSyllabusUri(t *testing.T) {
-	loadTestData(t)
+	t.Parallel()
 
-	for name, testCase := range testDataCache {
+	for name, testCase := range testData {
 		t.Run(name, func(t *testing.T) {
 			output := getSyllabusUri(testCase.RowInfo)
 			expected := testCase.Section.Syllabus_uri
 
 			if output != expected {
 				t.Errorf("expected %s got %s", expected, output)
+			}
+		})
+
+	}
+}
+
+func TestGetClassInfo(t *testing.T) {
+	t.Parallel()
+
+	for name, testCase := range testData {
+		t.Run(name, func(t *testing.T) {
+			doc, err := goquery.NewDocumentFromReader(strings.NewReader(testCase.Input))
+			if err != nil {
+				return
+			}
+			output := getClassInfo(doc)
+			expected := testCase.ClassInfo
+
+			diff := cmp.Diff(expected, output)
+			if diff != "" {
+				t.Errorf("Failed (-expected +got)\n %s", diff)
 			}
 		})
 

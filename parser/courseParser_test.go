@@ -4,30 +4,11 @@ import (
 	"testing"
 
 	"github.com/UTDNebula/nebula-api/api/schema"
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
-func TestGetCourse(t *testing.T) {
-	loadTestData(t)
-
-	for name, testCase := range testDataCache {
-		t.Run(name, func(t *testing.T) {
-			_, courseNum := getInternalClassAndCourseNum(testCase.ClassInfo)
-			output := *getCourse(courseNum, testCase.Section.Academic_session, testCase.RowInfo, testCase.ClassInfo)
-			expected := testCase.Course
-
-			diff := cmp.Diff(expected, output, cmpopts.IgnoreFields(schema.Course{}, "Id"))
-
-			if diff != "" {
-				t.Errorf("Failed (-expected +got)\n %s", diff)
-			}
-
-		})
-	}
-}
-
 func TestGetCatalogYear(t *testing.T) {
+	t.Parallel()
+
 	testCases := map[string]struct {
 		Session  schema.AcademicSession
 		Expected string
@@ -68,6 +49,8 @@ func TestGetCatalogYear(t *testing.T) {
 }
 
 func TestGetPrefixAndCourseNum(t *testing.T) {
+	t.Parallel()
+
 	testCases := map[string]struct {
 		classInfo map[string]string
 		prefix    string

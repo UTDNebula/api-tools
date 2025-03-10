@@ -1,0 +1,25 @@
+{
+	"_id": "67ce6ab15313fcf1d01a9078",
+	"subject_prefix": "ACCT",
+	"course_number": "2301",
+	"title": "Introductory Financial Accounting",
+	"description": "ACCT 2301 - Introductory Financial Accounting  (3 semester credit hours) An introduction to financial reporting designed to create an awareness of the accounting concepts and principles for preparing the three basic financial statements: the income statement, balance sheet, and statement of cash flows. A minimum grade of C is required to take upper-division ACCT courses. (3-0) S",
+	"enrollment_reqs": "ACCT 2301 Repeat Restriction",
+	"school": "Naveen Jindal School of Management",
+	"credit_hours": "3",
+	"class_level": "Undergraduate",
+	"activity_type": "Lecture",
+	"grading": "Graded - Undergraduate",
+	"internal_course_number": "000061",
+	"prerequisites": null,
+	"corequisites": null,
+	"co_or_pre_requisites": null,
+	"sections": [
+		"67ce6ab15313fcf1d01a9079"
+	],
+	"lecture_contact_hours": "3",
+	"laboratory_contact_hours": "0",
+	"offering_frequency": "S",
+	"catalog_year": "24",
+	"attributes": null
+}
