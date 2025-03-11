@@ -1,10 +1,31 @@
 package parser
 
 import (
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"testing"
 
 	"github.com/UTDNebula/nebula-api/api/schema"
 )
+
+func TestGetCourse(t *testing.T) {
+	t.Parallel()
+
+	for name, testCase := range testData {
+		t.Run(name, func(t *testing.T) {
+			_, courseNum := getInternalClassAndCourseNum(testCase.ClassInfo)
+			output := *getCourse(courseNum, testCase.Section.Academic_session, testCase.RowInfo, testCase.ClassInfo)
+			expected := testCase.Course
+
+			diff := cmp.Diff(expected, output, cmpopts.IgnoreFields(schema.Course{}, "Id", "Sections", "Enrollment_reqs", "Prerequisites"))
+
+			if diff != "" {
+				t.Errorf("Failed (-expected +got)\n %s", diff)
+			}
+
+		})
+	}
+}
 
 func TestGetCatalogYear(t *testing.T) {
 	t.Parallel()
@@ -124,5 +145,4 @@ func TestGetPrefixAndCourseNum(t *testing.T) {
 			}
 		})
 	}
-
 }
