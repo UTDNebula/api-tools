@@ -518,3 +518,72 @@ func TestGetClassInfo(t *testing.T) {
 
 	}
 }
+
+func TestGetRowInfo(t *testing.T) {
+	t.Parallel()
+	// don't include any weird characters in the content, it's not a bug with getRowInfo but
+	// goquery will modify content when encoding/decoding html so the result will not match content.
+	testCases := map[string]struct {
+		Title   string
+		Content string
+	}{
+		"case_001": {
+			Title:   "Course Title:",
+			Content: "Introductory Financial Accounting",
+		},
+		"case_002": {
+			Title:   "Evaluation:",
+			Content: "<i>An evaluation report for Introductory Financial Accounting  (ACCT2301.003.25S) has not been posted.</i>",
+		},
+		"case_003": {
+			Title:   "Schedule:",
+			Content: "<a href=\"https://dox.utdallas.edu/syl152555\" target=\"_blank\">Syllabus for Introductory Financial Accounting  (ACCT2301.003.25S)</a>",
+		},
+		"case_004": {
+			Title:   "Class Info:",
+			Content: "<table class=\"courseinfo__classsubtable\"><tbody></tbody></table>",
+		},
+		"case_005": {
+			Title:   "",
+			Content: "",
+		},
+	}
+
+	for name, testCase := range testCases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			html := fmt.Sprintf(`
+				<div class="expandblock-content">
+        			<table class="courseinfo__overviewtable">
+            		<tbody>
+							<tr class="courseinfo__overviewtable__tr">
+                				<th class="courseinfo__overviewtable__th text-right">%s</th>
+                				<td class="courseinfo__overviewtable__td courseinfo__overviewtable__coursetitle">%s</td>
+            				</tr>
+						</tbody>
+        			</table>
+    			</div>`, testCase.Title, testCase.Content)
+
+			doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
+			if err != nil {
+				t.Fatalf("failed to create document: %v", err)
+			}
+
+			rowInfo := getRowInfo(doc)
+
+			if row, ok := rowInfo[utils.TrimWhitespace(testCase.Title)]; ok {
+				content, err := row.Html()
+				if err != nil {
+					t.Fatalf("failed to get row content: %v", err)
+				}
+
+				if diff := cmp.Diff(testCase.Content, content); diff != "" {
+					t.Errorf("Failed (-expected +got)\n %s", diff)
+				}
+			} else {
+				t.Errorf("Failed to find row in infoRows")
+			}
+		})
+	}
+}

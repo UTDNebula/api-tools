@@ -192,7 +192,6 @@ func TestParseTimeOrPanic(t *testing.T) {
 	}
 
 	for name, tc := range testCases {
-		tc := tc // capture loop variable
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
