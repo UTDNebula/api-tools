@@ -35,7 +35,7 @@ var (
 	meetingTimesRegexp = regexp.MustCompile(utils.R_TIME_AM_PM)
 )
 
-// parseSection creates a schema.Section from rowInfo and classInfo,
+// parseSection creates a schema.Section from rowInfo and ClassInfo,
 // adds it to Sections, and updates the associated Course and Professors.
 // Internally calls parseCourse and parseProfessors, which modify global maps.
 func parseSection(rowInfo map[string]*goquery.Selection, classInfo map[string]string) {
@@ -71,7 +71,7 @@ func parseSection(rowInfo map[string]*goquery.Selection, classInfo map[string]st
 
 // getInternalClassAndCourseNum returns a sections internal course and class number,
 // both 0-padded, 5-digit numbers as strings.
-// It expects classInfo to contain "Class/Course Number:" key.
+// It expects ClassInfo to contain "Class/Course Number:" key.
 // If the key is not found or the value is not in the expected "classNum / courseNum" format,
 // it returns empty strings.
 func getInternalClassAndCourseNum(classInfo map[string]string) (string, string) {
@@ -80,9 +80,9 @@ func getInternalClassAndCourseNum(classInfo map[string]string) (string, string) 
 		if len(classAndCourseNum) == 2 {
 			return classAndCourseNum[0], classAndCourseNum[1]
 		}
+		panic("failed to parse internal class number and course number")
 	}
-
-	return "", ""
+	panic("could not find 'Class/Course Number:' in ClassInfo")
 }
 
 // getAcademicSession returns the schema.AcademicSession parsed from the provided rowInfo.
@@ -107,21 +107,27 @@ func getAcademicSession(rowInfo map[string]*goquery.Selection) schema.AcademicSe
 			}
 		}
 	}
+
+	if session.Name == "" {
+		panic("failed to find academic session, session name can not be empty")
+	}
+
 	return session
 }
 
 // getSectionNumber returns the matched value from a sectionPrefixRegexp on
-// `classInfo["Class Section:"]`. It expects classInfo to contain "Class Section:" key.
-// If there are no matches, an empty string returned.
+// `ClassInfo["Class Section:"]`. It expects ClassInfo to contain "Class Section:" key.
+// If there is no matches, getSectionNumber will panic as sectionNumber is a required
+// field.
 func getSectionNumber(classInfo map[string]string) string {
 	if syllabus, ok := classInfo["Class Section:"]; ok {
 		matches := sectionPrefixRegexp.FindStringSubmatch(syllabus)
-		// make sure it matches the correct format but only kep the section number
 		if len(matches) == 2 {
 			return matches[1]
 		}
+		panic("failed to parse section number")
 	}
-	return ""
+	panic("could not find 'Class Section:' in ClassInfo")
 }
 
 // getTeachingAssistants parses TA/RA information from rowInfo and returns a list of schema.Assistant.
@@ -149,8 +155,8 @@ func getTeachingAssistants(rowInfo map[string]*goquery.Selection) []schema.Assis
 	return assistants
 }
 
-// getInstructionMode returns the instruction mode (e.g., in-person, online) from classInfo.
-// It expects classInfo to contain "Instruction Mode:" key.
+// getInstructionMode returns the instruction mode (e.g., in-person, online) from ClassInfo.
+// It expects ClassInfo to contain "Instruction Mode:" key.
 // If the key is not present, it returns an empty string.
 func getInstructionMode(classInfo map[string]string) string {
 	if mode, ok := classInfo["Instruction Mode:"]; ok {

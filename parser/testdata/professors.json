@@ -1,70 +1,6 @@
 [
 	{
-		"_id": "67cf4366a47508701e598b59",
-		"first_name": "Jieying",
-		"last_name": "Zhang",
-		"titles": [
-			"Primary Instructor (50%)"
-		],
-		"email": "jxz146230@utdallas.edu",
-		"phone_number": "",
-		"office": {
-			"building": "",
-			"room": "",
-			"map_uri": ""
-		},
-		"profile_uri": "",
-		"image_uri": "",
-		"office_hours": null,
-		"sections": [
-			"67cf4366a47508701e598b57",
-			"67cf4366a47508701e598b5a"
-		]
-	},
-	{
-		"_id": "67cf4366a47508701e598b5d",
-		"first_name": "Peter",
-		"last_name": "Lewin",
-		"titles": [
-			"Primary Instructor"
-		],
-		"email": "plewin@utdallas.edu",
-		"phone_number": "",
-		"office": {
-			"building": "",
-			"room": "",
-			"map_uri": ""
-		},
-		"profile_uri": "",
-		"image_uri": "",
-		"office_hours": null,
-		"sections": [
-			"67cf4366a47508701e598b5c"
-		]
-	},
-	{
-		"_id": "67cf4366a47508701e598b60",
-		"first_name": "Tian",
-		"last_name": "Hong",
-		"titles": [
-			"Primary Instructor"
-		],
-		"email": "txh240018@utdallas.edu",
-		"phone_number": "",
-		"office": {
-			"building": "",
-			"room": "",
-			"map_uri": ""
-		},
-		"profile_uri": "",
-		"image_uri": "",
-		"office_hours": null,
-		"sections": [
-			"67cf4366a47508701e598b5f"
-		]
-	},
-	{
-		"_id": "67cf4366a47508701e598b58",
+		"_id": "67d07ee0c972c18731e23beb",
 		"first_name": "Naim Bugra",
 		"last_name": "Ozel",
 		"titles": [
@@ -81,8 +17,72 @@
 		"image_uri": "",
 		"office_hours": null,
 		"sections": [
-			"67cf4366a47508701e598b57",
-			"67cf4366a47508701e598b5a"
+			"67d07ee0c972c18731e23bea",
+			"67d07ee0c972c18731e23bed"
+		]
+	},
+	{
+		"_id": "67d07ee0c972c18731e23bec",
+		"first_name": "Jieying",
+		"last_name": "Zhang",
+		"titles": [
+			"Primary Instructor (50%)"
+		],
+		"email": "jxz146230@utdallas.edu",
+		"phone_number": "",
+		"office": {
+			"building": "",
+			"room": "",
+			"map_uri": ""
+		},
+		"profile_uri": "",
+		"image_uri": "",
+		"office_hours": null,
+		"sections": [
+			"67d07ee0c972c18731e23bea",
+			"67d07ee0c972c18731e23bed"
+		]
+	},
+	{
+		"_id": "67d07ee0c972c18731e23bf0",
+		"first_name": "Peter",
+		"last_name": "Lewin",
+		"titles": [
+			"Primary Instructor"
+		],
+		"email": "plewin@utdallas.edu",
+		"phone_number": "",
+		"office": {
+			"building": "",
+			"room": "",
+			"map_uri": ""
+		},
+		"profile_uri": "",
+		"image_uri": "",
+		"office_hours": null,
+		"sections": [
+			"67d07ee0c972c18731e23bef"
+		]
+	},
+	{
+		"_id": "67d07ee0c972c18731e23bf3",
+		"first_name": "Tian",
+		"last_name": "Hong",
+		"titles": [
+			"Primary Instructor"
+		],
+		"email": "txh240018@utdallas.edu",
+		"phone_number": "",
+		"office": {
+			"building": "",
+			"room": "",
+			"map_uri": ""
+		},
+		"profile_uri": "",
+		"image_uri": "",
+		"office_hours": null,
+		"sections": [
+			"67d07ee0c972c18731e23bf2"
 		]
 	}
 ]

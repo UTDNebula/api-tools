@@ -100,7 +100,7 @@ func getCatalogYear(session schema.AcademicSession) string {
 }
 
 // getPrefixAndNumber returns the 2nd and 3rd matched values from a coursePrefixRegexp on
-// `classInfo["Class Section:"]`. It expects classInfo to contain "Class Section:" key.
+// `ClassInfo["Class Section:"]`. It expects ClassInfo to contain "Class Section:" key.
 // If there are no matches, empty strings are returned.
 func getPrefixAndNumber(classInfo map[string]string) (string, string) {
 	if sectionId, ok := classInfo["Class Section:"]; ok {
@@ -109,6 +109,7 @@ func getPrefixAndNumber(classInfo map[string]string) (string, string) {
 		if len(matches) == 3 {
 			return matches[1], matches[2]
 		}
+		panic("failed to course prefix and number")
 	}
-	return "", ""
+	panic("could not find 'Class Section:' in ClassInfo")
 }

@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -25,6 +26,34 @@ func TestGetInternalClassAndCourseNum(t *testing.T) {
 			if courseNum != expectedCourseNumber {
 				t.Errorf("Class Number: expected %s got %s", expectedCourseNumber, courseNum)
 			}
+
+		})
+	}
+
+	fails := []map[string]string{
+		{
+			"Class Section:": "ENTP33S",
+		},
+		{
+			"Class Section:": "",
+		},
+		{
+			"Class Section:": "Garbage In, Garbage out",
+		},
+	}
+
+	for i, fail := range fails {
+		name := fmt.Sprintf("case_%03d", i+len(testData))
+
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			defer func() {
+				if r := recover(); r == nil {
+					t.Errorf("expected panic for input %s but none occurred", fail)
+				}
+			}()
+			getInternalClassAndCourseNum(fail)
 
 		})
 	}
@@ -62,6 +91,34 @@ func TestGetSectionNumber(t *testing.T) {
 			if output != expected {
 				t.Errorf("expected %s got %s", expected, output)
 			}
+		})
+	}
+
+	fails := []map[string]string{
+		{
+			"Class Section:": "ENTP33S",
+		},
+		{
+			"Class Section:": "",
+		},
+		{
+			"Class Section:": "Garbage In, Garbage out",
+		},
+	}
+
+	for i, fail := range fails {
+		name := fmt.Sprintf("case_%03d", i+len(testData))
+
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			defer func() {
+				if r := recover(); r == nil {
+					t.Errorf("expected panic for input %s but none occurred", fail)
+				}
+			}()
+			getSectionNumber(fail)
+
 		})
 
 	}
@@ -191,25 +248,25 @@ func TestParseTimeOrPanic(t *testing.T) {
 		},
 	}
 
-	for name, tc := range testCases {
+	for name, testCase := range testCases {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
 			defer func() {
 				if r := recover(); r != nil {
-					if !tc.Panic {
-						t.Errorf("unexpected panic for input %q: %v", tc.Input, r)
+					if !testCase.Panic {
+						t.Errorf("unexpected panic for input %q: %v", testCase.Input, r)
 					}
 				} else {
-					if tc.Panic {
-						t.Errorf("expected panic for input %q but none occurred", tc.Input)
+					if testCase.Panic {
+						t.Errorf("expected panic for input %q but none occurred", testCase.Input)
 					}
 				}
 			}()
 
-			got := parseTimeOrPanic(tc.Input)
-			if !tc.Panic && !got.Equal(tc.Expected) {
-				t.Errorf("expected %v, got %v", tc.Expected, got)
+			got := parseTimeOrPanic(testCase.Input)
+			if !testCase.Panic && !got.Equal(testCase.Expected) {
+				t.Errorf("expected %v, got %v", testCase.Expected, got)
 			}
 		})
 	}

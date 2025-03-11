@@ -1,7 +1,7 @@
 {
-	"_id": "67cf4366a47508701e598b4d",
+	"_id": "67d07ee0c972c18731e23be0",
 	"section_number": "501",
-	"course_reference": "67cf4366a47508701e598b4c",
+	"course_reference": "67d07ee0c972c18731e23bdf",
 	"section_corequisites": null,
 	"academic_session": {
 		"name": "25S",
@@ -9,7 +9,7 @@
 		"end_date": "2025-05-16T00:00:00-05:00"
 	},
 	"professors": [
-		"67cf4366a47508701e598b4e"
+		"67d07ee0c972c18731e23be1"
 	],
 	"teaching_assistants": [
 		{

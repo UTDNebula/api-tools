@@ -61,28 +61,27 @@ func TestGetCatalogYear(t *testing.T) {
 		},
 	}
 
-	for name, tc := range testCases {
-		tc := tc // capture range variable
+	for name, testCase := range testCases {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
 			defer func() {
 				// Test fails if we panic when we didn't want to or didn't when we did
 				if rec := recover(); rec != nil {
-					if !tc.Panic {
-						t.Errorf("unexpected panic for session %s: %v", tc.Session.Name, rec)
+					if !testCase.Panic {
+						t.Errorf("unexpected panic for session %q: %v", testCase.Session.Name, rec)
 					}
 				} else {
-					if tc.Panic {
-						t.Errorf("expected panic for session %s but got none", tc.Session.Name)
+					if testCase.Panic {
+						t.Errorf("expected panic for session %q but got none", testCase.Session.Name)
 					}
 				}
 			}()
 
 			// only call if we *expect* it to succeed
-			output := getCatalogYear(tc.Session)
-			if !tc.Panic && output != tc.Expected {
-				t.Errorf("expected %s, got %s", tc.Expected, output)
+			output := getCatalogYear(testCase.Session)
+			if !testCase.Panic && output != testCase.Expected {
+				t.Errorf("expected %q, got %q", testCase.Expected, output)
 			}
 		})
 	}
@@ -92,56 +91,68 @@ func TestGetPrefixAndCourseNum(t *testing.T) {
 	t.Parallel()
 
 	testCases := map[string]struct {
-		classInfo map[string]string
-		prefix    string
-		number    string
+		ClassInfo map[string]string
+		Prefix    string
+		Number    string
+		Panic     bool
 	}{
 		"Case_001": {
-			classInfo: map[string]string{
+			ClassInfo: map[string]string{
 				"Class Section:": "ACCT2301.001.25S",
 			},
-			prefix: "ACCT",
-			number: "2301",
+			Prefix: "ACCT",
+			Number: "2301",
 		},
 		"Case_002": {
-			classInfo: map[string]string{
+			ClassInfo: map[string]string{
 				"Class Section:": "ENTP3301.002.24S",
 			},
-			prefix: "ENTP",
-			number: "3301",
+			Prefix: "ENTP",
+			Number: "3301",
 		},
 		"Case_003": {
-			classInfo: map[string]string{
+			ClassInfo: map[string]string{
 				"Class Section:": "Garbage In, Garbage out",
 			},
-			prefix: "",
-			number: "",
+			Panic: true,
 		},
 		"Case_004": {
-			classInfo: map[string]string{
+			ClassInfo: map[string]string{
 				"Class Section:": "ENTP33S",
 			},
-			prefix: "",
-			number: "",
+			Panic: true,
 		},
 		"Case_005": {
-			classInfo: map[string]string{
+			ClassInfo: map[string]string{
 				"Class Section:": "",
 			},
-			prefix: "",
-			number: "",
+			Panic: true,
 		},
 	}
 
 	for name, testCase := range testCases {
 		t.Run(name, func(t *testing.T) {
-			prefix, number := getPrefixAndNumber(testCase.classInfo)
+			defer func() {
+				if r := recover(); r != nil {
+					if !testCase.Panic {
+						t.Errorf("unexpected panic for input %q: %v", name, r)
+					}
+				} else {
+					if testCase.Panic {
+						t.Errorf("expected panic for input %q but none occurred", name)
+					}
+				}
+			}()
 
-			if prefix != testCase.prefix {
-				t.Errorf("expected %s got %s", testCase.prefix, prefix)
-			}
-			if number != testCase.number {
-				t.Errorf("expected %s got %s", testCase.number, number)
+			prefix, number := getPrefixAndNumber(testCase.ClassInfo)
+
+			if !testCase.Panic {
+				if prefix != testCase.Prefix {
+					t.Errorf("expected %q got %q", testCase.Prefix, prefix)
+				}
+				if number != testCase.Number {
+					t.Errorf("expected %q got %q", testCase.Number, number)
+				}
 			}
 		})
 	}

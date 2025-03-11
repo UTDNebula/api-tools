@@ -42,6 +42,7 @@ deploy_log.sh
 .vscode/
 .firebase/
 /api-tools
+/qodana.yaml
 
 # output data and logs
 data/

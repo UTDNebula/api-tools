@@ -119,12 +119,6 @@ func parse(path string) {
 		panic(err)
 	}
 
-	//recover from failing to parse a section
-	defer func() {
-		if r := recover(); r != nil {
-			utils.VPrintf("Recovered from panic, skipping section %s: %v", path, r)
-		}
-	}()
 	parseSection(getRowInfo(doc), getClassInfo(doc))
 
 	utils.VPrint("Parsed!")

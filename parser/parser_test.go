@@ -202,7 +202,7 @@ func updateTestData() error {
 			return fmt.Errorf("failed to write course %v: %v", course.Id, err)
 		}
 
-		if err = utils.WriteJSON(filepath.Join(caseDir, "classInfo.json"), classInfo); err != nil {
+		if err = utils.WriteJSON(filepath.Join(caseDir, "ClassInfo.json"), classInfo); err != nil {
 			return fmt.Errorf("failed to write class info %v", err)
 		}
 
@@ -250,7 +250,7 @@ func clearGlobals() {
 func TestParse(t *testing.T) {
 	tempDir := t.TempDir()
 	// todo fix grade data, csvPath = ./grade-data panics
-	Parse("testdata", tempDir, "", true)
+	Parse("testdata", tempDir, "", false)
 
 	OutputCourses, err := unmarshallFile[[]schema.Course](filepath.Join(tempDir, "courses.json"))
 	if err != nil {
