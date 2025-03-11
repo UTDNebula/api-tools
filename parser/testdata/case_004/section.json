@@ -1,36 +1,36 @@
 {
-  "_id": "67bd26ea53d4e338e52a4e35",
-  "section_number": "201",
-  "course_reference": "67bd26ea53d4e338e52a4e34",
-  "section_corequisites": null,
-  "academic_session": {
-    "name": "25S",
-    "start_date": "2025-01-21T00:00:00-06:00",
-    "end_date": "2025-05-16T00:00:00-05:00"
-  },
-  "professors": [],
-  "teaching_assistants": [],
-  "internal_class_number": "28551",
-  "instruction_mode": "Face-to-Face",
-  "meetings": [
-    {
-      "start_date": "2025-01-21T00:00:00-06:00",
-      "end_date": "2025-05-09T00:00:00-05:00",
-      "meeting_days": [
-        "Thursday"
-      ],
-      "start_time": "2:00pm",
-      "end_time": "3:00pm",
-      "modality": "",
-      "location": {
-        "building": "",
-        "room": "",
-        "map_uri": ""
-      }
-    }
-  ],
-  "core_flags": [],
-  "syllabus_uri": "",
-  "grade_distribution": [],
-  "attributes": null
+	"_id": "67d07ee0c972c18731e23be6",
+	"section_number": "201",
+	"course_reference": "67d07ee0c972c18731e23be5",
+	"section_corequisites": null,
+	"academic_session": {
+		"name": "25S",
+		"start_date": "2025-01-21T00:00:00-06:00",
+		"end_date": "2025-05-16T00:00:00-05:00"
+	},
+	"professors": [],
+	"teaching_assistants": [],
+	"internal_class_number": "28551",
+	"instruction_mode": "Face-to-Face",
+	"meetings": [
+		{
+			"start_date": "2025-01-21T00:00:00-06:00",
+			"end_date": "2025-05-09T00:00:00-05:00",
+			"meeting_days": [
+				"Thursday"
+			],
+			"start_time": "2:00pm",
+			"end_time": "3:00pm",
+			"modality": "",
+			"location": {
+				"building": "",
+				"room": "",
+				"map_uri": ""
+			}
+		}
+	],
+	"core_flags": [],
+	"syllabus_uri": "",
+	"grade_distribution": [],
+	"attributes": null
 }
