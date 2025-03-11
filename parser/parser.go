@@ -99,7 +99,9 @@ func Parse(inDir string, outDir string, csvPath string, skipValidation bool) {
 	utils.WriteJSON(fmt.Sprintf("%s/professors.json", outDir), utils.GetMapValues(Professors))
 }
 
-// Internal parse function
+// parse is an internal helper function that parses a single HTML file.
+// It opens the file, creates a goquery document, and calls parseSection to
+// extract section data.
 func parse(path string) {
 
 	utils.VPrintf("Parsing %s...", path)
