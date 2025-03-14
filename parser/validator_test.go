@@ -21,8 +21,7 @@ var testProfessors []*schema.Professor
 // Map used to map index of test sections to test courses
 var indexMap map[int]int
 
-// Main to upload the test data
-func TestMain(m *testing.M) {
+func init() {
 	// parse the test courses
 	data, err := os.ReadFile("./testdata/courses.json")
 	if err != nil {
@@ -53,11 +52,7 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 
-	// map
 	indexMap = map[int]int{0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 4}
-
-	testRun := m.Run()
-	os.Exit(testRun)
 }
 
 // Test duplicate courses. Designed for fail cases
