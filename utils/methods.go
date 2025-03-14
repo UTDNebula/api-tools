@@ -38,13 +38,13 @@ func GetEnv(name string) (string, error) {
 func InitChromeDp() (chromedpCtx context.Context, cancelFnc context.CancelFunc) {
 	log.Printf("Initializing chromedp...")
 	if Headless {
-		chromedpCtx, cancelFnc = chromedp.NewContext(context.Background())
+		chromedpCtx, cancelFnc = chromedp.NewContext(context.Background(), chromedp.WithDebugf(log.Printf))
 	} else {
 		allocCtx, _ := chromedp.NewExecAllocator(context.Background())
 		chromedpCtx, cancelFnc = chromedp.NewContext(allocCtx)
 	}
 	log.Printf("Initialized chromedp!")
-	return
+	return chromedpCtx, cancelFnc
 }
 
 // This function generates a fresh auth token and returns the new headers
@@ -262,6 +262,7 @@ func RetryHTTP(requestCreator func() *http.Request, client *http.Client, retryCa
 	return res, err
 }
 
+// Get all the available course prefixes
 func GetCoursePrefixes(chromedpCtx context.Context) []string {
 	// Refresh the token
 	// refreshToken(chromedpCtx)
