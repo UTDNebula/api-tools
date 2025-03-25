@@ -4,7 +4,7 @@ _A CLI to scrape some really useful UTD data, parse it, and upload it to the [Ne
 
 Project maintained by [Nebula Labs](https://about.utdnebula.com).
 
-## Design
+### Design
 
 #### - The `grade-data` directory contains .csv files of UTD grade data. 
   - Files are named by year and semester, with a suffix of `S`, `U`, or `F` denoting Spring, Summer, and Fall semesters, respectively.
@@ -18,7 +18,7 @@ Project maintained by [Nebula Labs](https://about.utdnebula.com).
 #### - The `uploader` directory contains the uploader that sends the parsed data to the Nebula API MongoDB database. This is the final stage of the data pipeline.
   - The uploader(s) are concerned solely with pushing parsed data to the database. Data, at this point, is assumed to be valid and ready for use.
 
-## Contributing
+### Contributing
 
 Please visit our [Discord](https://discord.utdnebula.com) and talk to us if you'd like to contribute!
 
