@@ -1,10 +1,8 @@
 # API Tools
 
-[![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
+_A CLI to scrape some really useful UTD data, parse it, and upload it to the [Nebula API](https://github.com/utdnebula/nebula-api) for community use._
 
-_A CLI to scrape some really useful UTD data, parse it, and upload it to the Nebula API database for community use._
-
-Part of [Project Nebula](https://about.utdnebula.com).
+Project maintained by [Nebula Labs](https://about.utdnebula.com).
 
 ## Design
 
@@ -22,6 +20,8 @@ Part of [Project Nebula](https://about.utdnebula.com).
 
 ## Contributing
 
+Please visit our [Discord](https://discord.utdnebula.com) and talk to us if you'd like to contribute!
+
 ### Prerequisites
 
 - Golang 1.23 (or higher)
@@ -35,13 +35,3 @@ To build the project, simply clone the repository and then either:
   - Run `build.bat` on Windows systems (unless you want to deal with getting `make` to work on Windows :P)
 
 The build process will output an executable file named `api-tools`; this executable is the CLI and can be ran in your terminal!
-
-### Deployment
-
-[TBD]
-
-## Questions or Feedback
-
-If you have any questions about this project, reach out to the Project Nebula
-maintainers at core-maintainers@utdnebula.com or open an issue or discussion on
-this repository.
