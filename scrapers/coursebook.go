@@ -38,12 +38,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 	}
 
 	// Init http client
-	tr := &http.Transport{
-		MaxIdleConns:       10,
-		IdleConnTimeout:    30 * time.Second,
-		DisableCompression: true,
-	}
-	cli := &http.Client{Transport: tr}
+	cli := &http.Client{}
 
 	// Make the output directory for this term
 	termDir := fmt.Sprintf("%s/%s", outDir, term)
@@ -118,6 +113,11 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 			sectionIDs = append(sectionIDs, matchSet[1])
 		}
 		log.Printf("Found %d sections for course prefix %s", len(sectionIDs), coursePrefix)
+
+		// Get a new token before starting the section lookup
+		coursebookHeaders = utils.RefreshToken(chromedpCtx)
+		// Give coursebook some time to recognize the new token
+		time.Sleep(500 * time.Millisecond)
 
 		// Get HTML data for all section IDs
 		sectionsInCoursePrefix := 0

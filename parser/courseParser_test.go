@@ -1,9 +1,10 @@
 package parser
 
 import (
+	"testing"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"testing"
 
 	"github.com/UTDNebula/nebula-api/api/schema"
 )

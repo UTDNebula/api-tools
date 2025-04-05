@@ -15,6 +15,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"time"
 
 	"strings"
 
@@ -75,6 +76,8 @@ func RefreshToken(chromedpCtx context.Context) map[string][]string {
 	if err != nil {
 		panic(err)
 	}
+
+	time.Sleep(250 * time.Millisecond)
 
 	var cookieStrs []string
 	_, err = chromedp.RunResponse(chromedpCtx,
@@ -141,6 +144,8 @@ func RefreshAstraToken(chromedpCtx context.Context) map[string][]string {
 	if err != nil {
 		panic(err)
 	}
+
+	time.Sleep(250 * time.Millisecond)
 
 	// Save all cookies to string
 	cookieStr := ""
