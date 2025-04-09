@@ -169,14 +169,18 @@ func UploadData[T any](client *mongo.Client, ctx context.Context, fptr *os.File,
 	defer fptr.Close()
 }
 
+// MongoDB aggregation run only when sections changes, instead of as a view where it's run for each query
 func buildEvents(client *mongo.Client, ctx context.Context) {
 	sections := getCollection(client, "sections")
 
 	pipeline := mongo.Pipeline{
+		//separate each meeting
 		{{Key: "$unwind", Value: "$meetings"}},
+		//remove bad data
 		{{Key: "$match", Value: bson.D{
 			{Key: "meetings.location.building", Value: bson.D{{Key: "$ne", Value: "No"}}},
 		}}},
+		//remove time from meeting start date
 		{{Key: "$addFields", Value: bson.D{
 			{Key: "meetings.start_date", Value: bson.D{
 				{Key: "$dateTrunc", Value: bson.D{
@@ -185,6 +189,8 @@ func buildEvents(client *mongo.Client, ctx context.Context) {
 				}},
 			}},
 		}}},
+		//add a field thats a list of all days the class occurs
+		//by generating all days in semester and removing those that don't match MW for example
 		{{Key: "$addFields", Value: bson.D{
 			{Key: "meeting_dates", Value: bson.D{
 				{Key: "$filter", Value: bson.D{
@@ -238,7 +244,9 @@ func buildEvents(client *mongo.Client, ctx context.Context) {
 				}},
 			}},
 		}}},
+		//separate for each meeting data
 		{{Key: "$unwind", Value: "$meeting_dates"}},
+		//remove data before today
 		{{Key: "$match", Value: bson.D{
 			{Key: "$expr", Value: bson.D{
 				{Key: "$gte", Value: bson.A{
@@ -254,6 +262,7 @@ func buildEvents(client *mongo.Client, ctx context.Context) {
 				}},
 			}},
 		}}},
+		//group into building > room hierarchy format
 		{{Key: "$group", Value: bson.D{
 			{Key: "_id", Value: bson.D{
 				{Key: "date", Value: "$meeting_dates"},
@@ -291,6 +300,7 @@ func buildEvents(client *mongo.Client, ctx context.Context) {
 				}},
 			}},
 		}}},
+		//format date
 		{{Key: "$project", Value: bson.D{
 			{Key: "_id", Value: 0},
 			{Key: "date", Value: bson.D{
@@ -301,6 +311,7 @@ func buildEvents(client *mongo.Client, ctx context.Context) {
 			}},
 			{Key: "buildings", Value: 1},
 		}}},
+		//set as events collection
 		{{Key: "$out", Value: "events"}},
 	}
 
