@@ -171,8 +171,6 @@ func UploadData[T any](client *mongo.Client, ctx context.Context, fptr *os.File,
 
 // MongoDB aggregation run only when sections changes, instead of as a view where it's run for each query
 func buildEvents(client *mongo.Client, ctx context.Context) {
-	sections := getCollection(client, "sections")
-
 	pipeline := mongo.Pipeline{
 		//separate each meeting
 		{{Key: "$unwind", Value: "$meetings"}},
@@ -311,15 +309,28 @@ func buildEvents(client *mongo.Client, ctx context.Context) {
 			}},
 			{Key: "buildings", Value: 1},
 		}}},
-		//set as events collection
-		{{Key: "$out", Value: "events"}},
 	}
 
+	sections := getCollection(client, "sections")
 	cursor, err := sections.Aggregate(ctx, pipeline)
 	if err != nil {
 		log.Panic(err)
 	}
 	defer cursor.Close(ctx)
+
+	events := getCollection(client, "events")
+	var results []interface{}
+	if err := cursor.All(ctx, &results); err != nil {
+		log.Panic(err)
+	}
+
+	if len(results) > 0 {
+		events.DeleteMany(ctx, bson.D{})
+		_, err = events.InsertMany(ctx, results)
+		if err != nil {
+			log.Panic(err)
+		}
+	}
 
 	log.Println("Done aggregating events!")
 }
