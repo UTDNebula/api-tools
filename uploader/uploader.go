@@ -59,6 +59,7 @@ func Upload(inDir string, replace bool) {
 		}
 	}
 
+	buildEvents(client, ctx)
 }
 
 // Generic upload function to upload parsed JSON data to the Mongo database
@@ -166,4 +167,148 @@ func UploadData[T any](client *mongo.Client, ctx context.Context, fptr *os.File,
 	log.Println("Done uploading " + fileName + ".json!")
 
 	defer fptr.Close()
+}
+
+func buildEvents(client *mongo.Client, ctx context.Context) {
+	sections := getCollection(client, "sections")
+
+	pipeline := mongo.Pipeline{
+		{{Key: "$unwind", Value: "$meetings"}},
+		{{Key: "$match", Value: bson.D{
+			{Key: "meetings.location.building", Value: bson.D{{Key: "$ne", Value: "No"}}},
+		}}},
+		{{Key: "$addFields", Value: bson.D{
+			{Key: "meetings.start_date", Value: bson.D{
+				{Key: "$dateTrunc", Value: bson.D{
+					{Key: "date", Value: "$meetings.start_date"},
+					{Key: "unit", Value: "day"},
+				}},
+			}},
+		}}},
+		{{Key: "$addFields", Value: bson.D{
+			{Key: "meeting_dates", Value: bson.D{
+				{Key: "$filter", Value: bson.D{
+					{Key: "input", Value: bson.D{
+						{Key: "$map", Value: bson.D{
+							{Key: "input", Value: bson.D{
+								{Key: "$range", Value: bson.A{
+									0,
+									bson.D{{Key: "$dateDiff", Value: bson.D{
+										{Key: "startDate", Value: bson.D{{Key: "$toDate", Value: "$meetings.start_date"}}},
+										{Key: "endDate", Value: bson.D{{Key: "$toDate", Value: "$meetings.end_date"}}},
+										{Key: "unit", Value: "day"},
+									}}},
+									1,
+								}},
+							}},
+							{Key: "as", Value: "offset"},
+							{Key: "in", Value: bson.D{
+								{Key: "$dateAdd", Value: bson.D{
+									{Key: "startDate", Value: bson.D{{Key: "$toDate", Value: "$meetings.start_date"}}},
+									{Key: "unit", Value: "day"},
+									{Key: "amount", Value: "$$offset"},
+								}},
+							}},
+						}},
+					}},
+					{Key: "as", Value: "date"},
+					{Key: "cond", Value: bson.D{
+						{Key: "$in", Value: bson.A{
+							bson.D{{Key: "$dayOfWeek", Value: "$$date"}},
+							bson.D{{Key: "$map", Value: bson.D{
+								{Key: "input", Value: "$meetings.meeting_days"},
+								{Key: "as", Value: "day"},
+								{Key: "in", Value: bson.D{
+									{Key: "$switch", Value: bson.D{
+										{Key: "branches", Value: bson.A{
+											bson.D{{Key: "case", Value: bson.D{{Key: "$eq", Value: bson.A{"$$day", "Sunday"}}}}, {Key: "then", Value: 1}},
+											bson.D{{Key: "case", Value: bson.D{{Key: "$eq", Value: bson.A{"$$day", "Monday"}}}}, {Key: "then", Value: 2}},
+											bson.D{{Key: "case", Value: bson.D{{Key: "$eq", Value: bson.A{"$$day", "Tuesday"}}}}, {Key: "then", Value: 3}},
+											bson.D{{Key: "case", Value: bson.D{{Key: "$eq", Value: bson.A{"$$day", "Wednesday"}}}}, {Key: "then", Value: 4}},
+											bson.D{{Key: "case", Value: bson.D{{Key: "$eq", Value: bson.A{"$$day", "Thursday"}}}}, {Key: "then", Value: 5}},
+											bson.D{{Key: "case", Value: bson.D{{Key: "$eq", Value: bson.A{"$$day", "Friday"}}}}, {Key: "then", Value: 6}},
+											bson.D{{Key: "case", Value: bson.D{{Key: "$eq", Value: bson.A{"$$day", "Saturday"}}}}, {Key: "then", Value: 7}},
+										}},
+										{Key: "default", Value: nil},
+									}},
+								}},
+							}}},
+						}},
+					}},
+				}},
+			}},
+		}}},
+		{{Key: "$unwind", Value: "$meeting_dates"}},
+		{{Key: "$match", Value: bson.D{
+			{Key: "$expr", Value: bson.D{
+				{Key: "$gte", Value: bson.A{
+					"$meeting_dates",
+					bson.D{{Key: "$dateSubtract", Value: bson.D{
+						{Key: "startDate", Value: bson.D{{Key: "$dateTrunc", Value: bson.D{
+							{Key: "date", Value: "$$NOW"},
+							{Key: "unit", Value: "day"},
+						}}}},
+						{Key: "unit", Value: "day"},
+						{Key: "amount", Value: 7},
+					}}},
+				}},
+			}},
+		}}},
+		{{Key: "$group", Value: bson.D{
+			{Key: "_id", Value: bson.D{
+				{Key: "date", Value: "$meeting_dates"},
+				{Key: "building", Value: "$meetings.location.building"},
+				{Key: "room", Value: "$meetings.location.room"},
+			}},
+			{Key: "events", Value: bson.D{
+				{Key: "$push", Value: bson.D{
+					{Key: "section", Value: "$_id"},
+					{Key: "start_time", Value: "$meetings.start_time"},
+					{Key: "end_time", Value: "$meetings.end_time"},
+				}},
+			}},
+		}}},
+		{{Key: "$group", Value: bson.D{
+			{Key: "_id", Value: bson.D{
+				{Key: "date", Value: "$_id.date"},
+				{Key: "building", Value: "$_id.building"},
+			}},
+			{Key: "rooms", Value: bson.D{
+				{Key: "$push", Value: bson.D{
+					{Key: "room", Value: "$_id.room"},
+					{Key: "events", Value: "$events"},
+				}},
+			}},
+		}}},
+		{{Key: "$group", Value: bson.D{
+			{Key: "_id", Value: bson.D{
+				{Key: "date", Value: "$_id.date"},
+			}},
+			{Key: "buildings", Value: bson.D{
+				{Key: "$push", Value: bson.D{
+					{Key: "building", Value: "$_id.building"},
+					{Key: "rooms", Value: "$rooms"},
+				}},
+			}},
+		}}},
+		{{Key: "$project", Value: bson.D{
+			{Key: "_id", Value: 0},
+			{Key: "date", Value: bson.D{
+				{Key: "$dateToString", Value: bson.D{
+					{Key: "format", Value: "%Y-%m-%d"},
+					{Key: "date", Value: "$_id.date"},
+				}},
+			}},
+			{Key: "buildings", Value: 1},
+		}}},
+		{{Key: "$out", Value: "events"}},
+	}
+
+	cursor, err := sections.Aggregate(ctx, pipeline)
+	if err != nil {
+		log.Panic(err)
+	}
+	defer cursor.Close(ctx)
+
+	log.Println("Done aggregating events!")
 }
