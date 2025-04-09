@@ -38,7 +38,7 @@ func GetEnv(name string) (string, error) {
 func InitChromeDp() (chromedpCtx context.Context, cancelFnc context.CancelFunc) {
 	log.Printf("Initializing chromedp...")
 	if Headless {
-		chromedpCtx, cancelFnc = chromedp.NewContext(context.Background(), chromedp.WithDebugf(log.Printf))
+		chromedpCtx, cancelFnc = chromedp.NewContext(context.Background())
 	} else {
 		allocCtx, _ := chromedp.NewExecAllocator(context.Background())
 		chromedpCtx, cancelFnc = chromedp.NewContext(allocCtx)
