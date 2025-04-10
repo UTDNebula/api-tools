@@ -76,14 +76,16 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 			queryStr := fmt.Sprintf("action=search&s%%5B%%5D=term_%s&s%%5B%%5D=%s&s%%5B%%5D=%s", term, coursePrefix, clevel)
 
 			// Try HTTP request, retrying if necessary
-			res, err := utils.RetryHTTP(func() *http.Request {
+			var res *http.Response
+			err := utils.Retry(func() error {
 				req, err := http.NewRequest("POST", "https://coursebook.utdallas.edu/clips/clip-cb11-hat.zog", strings.NewReader(queryStr))
 				if err != nil {
 					panic(err)
 				}
 				req.Header = coursebookHeaders
-				return req
-			}, cli, func(res *http.Response, numRetries int) {
+				res, err = cli.Do(req)
+				return err
+			}, 10, func(numRetries int) {
 				log.Printf("ERROR: Section find for course prefix %s failed! Response code was: %s", coursePrefix, res.Status)
 				// Wait longer if 3 retries fail; we've probably been IP ratelimited...
 				if numRetries >= 3 {
@@ -97,6 +99,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 				// Give coursebook some time to recognize the new token
 				time.Sleep(500 * time.Millisecond)
 			})
+
 			if err != nil {
 				panic(err)
 			}
@@ -128,14 +131,16 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 			queryStr := fmt.Sprintf("id=%s&req=0bd73666091d3d1da057c5eeb6ef20a7df3CTp0iTMYFuu9paDeUptMzLYUiW4BIk9i8LIFcBahX2E2b18WWXkUUJ1Y7Xq6j3WZAKPbREfGX7lZY96lI7btfpVS95YAprdJHX9dc5wM=&action=section&div=r-62childcontent", id)
 
 			// Try HTTP request, retrying if necessary
-			res, err := utils.RetryHTTP(func() *http.Request {
+			var res *http.Response
+			err := utils.Retry(func() error {
 				req, err := http.NewRequest("POST", "https://coursebook.utdallas.edu/clips/clip-cb11-hat.zog", strings.NewReader(queryStr))
 				if err != nil {
 					panic(err)
 				}
 				req.Header = coursebookHeaders
-				return req
-			}, cli, func(res *http.Response, numRetries int) {
+				res, err = cli.Do(req)
+				return err
+			}, 10, func(numRetries int) {
 				log.Printf("ERROR: Section id lookup for id %s failed! Response code was: %s", id, res.Status)
 				// Wait longer if 3 retries fail; we've probably been IP ratelimited...
 				if numRetries >= 3 {
@@ -149,6 +154,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 				// Give coursebook some time to recognize the new token
 				time.Sleep(500 * time.Millisecond)
 			})
+
 			if err != nil {
 				panic(err)
 			}
