@@ -1,12 +1,10 @@
 # API Tools
 
-[![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
+_A CLI to scrape some really useful UTD data, parse it, and upload it to the [Nebula API](https://github.com/utdnebula/nebula-api) for community use._
 
-_A CLI to scrape some really useful UTD data, parse it, and upload it to the Nebula API database for community use._
+Project maintained by [Nebula Labs](https://about.utdnebula.com).
 
-Part of [Project Nebula](https://about.utdnebula.com).
-
-## Design
+### Design
 
 #### - The `grade-data` directory contains .csv files of UTD grade data. 
   - Files are named by year and semester, with a suffix of `S`, `U`, or `F` denoting Spring, Summer, and Fall semesters, respectively.
@@ -20,7 +18,9 @@ Part of [Project Nebula](https://about.utdnebula.com).
 #### - The `uploader` directory contains the uploader that sends the parsed data to the Nebula API MongoDB database. This is the final stage of the data pipeline.
   - The uploader(s) are concerned solely with pushing parsed data to the database. Data, at this point, is assumed to be valid and ready for use.
 
-## Contributing
+### Contributing
+
+Please visit our [Discord](https://discord.utdnebula.com) and talk to us if you'd like to contribute!
 
 ### Prerequisites
 
@@ -35,13 +35,3 @@ To build the project, simply clone the repository and then either:
   - Run `build.bat` on Windows systems (unless you want to deal with getting `make` to work on Windows :P)
 
 The build process will output an executable file named `api-tools`; this executable is the CLI and can be ran in your terminal!
-
-### Deployment
-
-[TBD]
-
-## Questions or Feedback
-
-If you have any questions about this project, reach out to the Project Nebula
-maintainers at core-maintainers@utdnebula.com or open an issue or discussion on
-this repository.
