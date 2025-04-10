@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"io/fs"
 	"log"
-	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -59,20 +58,28 @@ func RefreshToken(chromedpCtx context.Context) map[string][]string {
 		panic(err)
 	}
 
+	delayedRetryCallback := func(numRetries int) {
+		time.Sleep(250 * time.Millisecond * time.Duration(numRetries))
+	}
+
 	VPrintf("Getting new token...")
-	_, err = chromedp.RunResponse(chromedpCtx,
-		chromedp.ActionFunc(func(ctx context.Context) error {
-			err := network.ClearBrowserCookies().Do(ctx)
-			return err
-		}),
-		chromedp.Navigate(`https://wat.utdallas.edu/login`),
-		chromedp.WaitVisible(`form#login-form`),
-		chromedp.SendKeys(`input#netid`, netID),
-		chromedp.SendKeys(`input#password`, password),
-		chromedp.WaitVisible(`button#login-button`),
-		chromedp.Click(`button#login-button`),
-		chromedp.WaitVisible(`body`),
-	)
+	err = Retry(func() error {
+		_, err = chromedp.RunResponse(chromedpCtx,
+			chromedp.ActionFunc(func(ctx context.Context) error {
+				err := network.ClearBrowserCookies().Do(ctx)
+				return err
+			}),
+			chromedp.Navigate(`https://wat.utdallas.edu/login`),
+			chromedp.WaitVisible(`form#login-form`),
+			chromedp.SendKeys(`input#netid`, netID),
+			chromedp.SendKeys(`input#password`, password),
+			chromedp.WaitVisible(`button#login-button`),
+			chromedp.Click(`button#login-button`),
+			chromedp.WaitVisible(`body`),
+		)
+		return err
+	}, 3, delayedRetryCallback)
+
 	if err != nil {
 		panic(err)
 	}
@@ -80,25 +87,30 @@ func RefreshToken(chromedpCtx context.Context) map[string][]string {
 	time.Sleep(250 * time.Millisecond)
 
 	var cookieStrs []string
-	_, err = chromedp.RunResponse(chromedpCtx,
-		chromedp.Navigate(`https://coursebook.utdallas.edu/`),
-		chromedp.ActionFunc(func(ctx context.Context) error {
-			cookies, err := network.GetCookies().Do(ctx)
-			cookieStrs = make([]string, len(cookies))
-			gotToken := false
-			for i, cookie := range cookies {
-				cookieStrs[i] = fmt.Sprintf("%s=%s", cookie.Name, cookie.Value)
-				if cookie.Name == "PTGSESSID" {
-					VPrintf("Got new token: PTGSESSID = %s", cookie.Value)
-					gotToken = true
+
+	err = Retry(func() error {
+		_, err = chromedp.RunResponse(chromedpCtx,
+			chromedp.Navigate(`https://coursebook.utdallas.edu/`),
+			chromedp.ActionFunc(func(ctx context.Context) error {
+				cookies, err := network.GetCookies().Do(ctx)
+				cookieStrs = make([]string, len(cookies))
+				gotToken := false
+				for i, cookie := range cookies {
+					cookieStrs[i] = fmt.Sprintf("%s=%s", cookie.Name, cookie.Value)
+					if cookie.Name == "PTGSESSID" {
+						VPrintf("Got new token: PTGSESSID = %s", cookie.Value)
+						gotToken = true
+					}
 				}
-			}
-			if !gotToken {
-				return errors.New("failed to get a new token")
-			}
-			return err
-		}),
-	)
+				if !gotToken {
+					return errors.New("failed to get a new token")
+				}
+				return err
+			}),
+		)
+		return err
+	}, 3, delayedRetryCallback)
+
 	if err != nil {
 		panic(err)
 	}
@@ -249,22 +261,16 @@ func Regexpf(format string, vars ...interface{}) *regexp.Regexp {
 	return regexp.MustCompile(fmt.Sprintf(format, vars...))
 }
 
-// Attempts to run the given HTTP request with the given HTTP client, wrapping the request with a retry callback
-func RetryHTTP(requestCreator func() *http.Request, client *http.Client, retryCallback func(res *http.Response, numRetries int)) (res *http.Response, err error) {
-	// Retry loop for requests
-	numRetries := 0
-	for {
-		// Perform HTTP request, retrying if we get a non-200 response code
-		res, err = client.Do(requestCreator())
-		// Retry handling
-		if res.StatusCode != 200 {
-			retryCallback(res, numRetries)
-			numRetries++
-			continue
+// Attempts to retry running the given error-returning function up to a maximum number of retries, at which point the last error is returned. A callback is called between each retry.
+func Retry(action func() error, maxRetries int, retryCallback func(numRetries int)) error {
+	for retries := 1; ; retries++ {
+		// Perform the action
+		err := action()
+		if err == nil || retries > maxRetries {
+			return err
 		}
-		break
+		retryCallback(retries)
 	}
-	return res, err
 }
 
 // Get all the available course prefixes
