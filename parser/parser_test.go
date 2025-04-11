@@ -98,7 +98,7 @@ func loadTest(dir string) (result TestData, err error) {
 	if err != nil {
 		return
 	}
-	result.ClassInfo, err = unmarshallFile[map[string]string](fmt.Sprintf("testdata/%s/classinfo.json", dir))
+	result.ClassInfo, err = unmarshallFile[map[string]string](fmt.Sprintf("testdata/%s/classInfo.json", dir))
 	if err != nil {
 		return
 	}
@@ -202,7 +202,7 @@ func updateTestData() error {
 			return fmt.Errorf("failed to write course %v: %v", course.Id, err)
 		}
 
-		if err = utils.WriteJSON(filepath.Join(caseDir, "ClassInfo.json"), classInfo); err != nil {
+		if err = utils.WriteJSON(filepath.Join(caseDir, "classInfo.json"), classInfo); err != nil {
 			return fmt.Errorf("failed to write class info %v", err)
 		}
 
