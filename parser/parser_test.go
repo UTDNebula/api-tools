@@ -158,7 +158,7 @@ func updateTestData() error {
 		hash := sha256.Sum256(htmlBytes)
 		hashStr := hex.EncodeToString(hash[:])
 		if duplicate := duplicates[hashStr]; duplicate {
-			log.Printf("Duplicate test found %s, slipping\n", input)
+			log.Printf("Duplicate test found %s, skipping\n", input)
 			continue
 		} else {
 			duplicates[hashStr] = true
