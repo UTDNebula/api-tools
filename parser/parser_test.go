@@ -98,7 +98,7 @@ func loadTest(dir string) (result TestData, err error) {
 	if err != nil {
 		return
 	}
-	result.ClassInfo, err = unmarshallFile[map[string]string](fmt.Sprintf("testdata/%s/classinfo.json", dir))
+	result.ClassInfo, err = unmarshallFile[map[string]string](fmt.Sprintf("testdata/%s/classInfo.json", dir))
 	if err != nil {
 		return
 	}
@@ -158,7 +158,7 @@ func updateTestData() error {
 		hash := sha256.Sum256(htmlBytes)
 		hashStr := hex.EncodeToString(hash[:])
 		if duplicate := duplicates[hashStr]; duplicate {
-			log.Printf("Duplicate test found %s, slipping\n", input)
+			log.Printf("Duplicate test found %s, skipping\n", input)
 			continue
 		} else {
 			duplicates[hashStr] = true
@@ -202,7 +202,7 @@ func updateTestData() error {
 			return fmt.Errorf("failed to write course %v: %v", course.Id, err)
 		}
 
-		if err = utils.WriteJSON(filepath.Join(caseDir, "ClassInfo.json"), classInfo); err != nil {
+		if err = utils.WriteJSON(filepath.Join(caseDir, "classInfo.json"), classInfo); err != nil {
 			return fmt.Errorf("failed to write class info %v", err)
 		}
 
