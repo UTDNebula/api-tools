@@ -90,7 +90,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 				}
 				return err
 			}, 10, func(numRetries int) {
-				log.Printf("WARN: Section find for course prefix %s failed! Response code was: %s", coursePrefix, res.Status)
+				log.Printf("WARN: Section find for course prefix %s failed! Performing retry #%d...", coursePrefix, numRetries)
 				coursebookHeaders = utils.RefreshToken(chromedpCtx)
 				// Wait proportionally long to how many times we've retried; generally works pretty well
 				time.Sleep(500 * time.Millisecond * time.Duration(numRetries))
@@ -140,7 +140,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 				}
 				return err
 			}, 10, func(numRetries int) {
-				log.Printf("WARN: Section id lookup for id %s failed! Response code was: %s", id, res.Status)
+				log.Printf("WARN: Section id lookup for id %s failed! Performing retry #%d...", id, numRetries)
 				coursebookHeaders = utils.RefreshToken(chromedpCtx)
 				// Wait proportionally long to how many times we've retried; generally works pretty well
 				time.Sleep(500 * time.Millisecond * time.Duration(numRetries))
@@ -171,7 +171,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 			}
 			sectionsInCoursePrefix++
 		}
-		log.Printf("\nFinished scraping course prefix %s. Got %d sections.", coursePrefix, sectionsInCoursePrefix)
+		log.Printf("Finished scraping course prefix %s. Got %d sections.\n----------------------------------------------------", coursePrefix, sectionsInCoursePrefix)
 		// Panic if we got fewer sections than we should've
 		if sectionsInCoursePrefix != len(sectionIDs) {
 			log.Panicf("Section count mismatch! Coursebook has %d sections for course prefix %s but we only got %d", sectionsInCoursePrefix, coursePrefix, sectionsInCoursePrefix)
