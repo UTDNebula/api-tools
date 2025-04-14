@@ -133,6 +133,7 @@ func UploadData[T any](client *mongo.Client, ctx context.Context, fptr *os.File,
 			if err != nil {
 				log.Panic(err)
 			}
+			log.Println("Done sorting courses!")
 		}
 
 	} else {

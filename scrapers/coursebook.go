@@ -70,7 +70,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 		// String builder to store accumulated course HTML data for both class levels
 		courseBuilder := strings.Builder{}
 
-		log.Printf("Finding sections for course prefix %s...", coursePrefix)
+		log.Printf("Finding sections for %s...", coursePrefix)
 
 		// Get courses for term and prefix, split by grad and undergrad to avoid 300 section cap
 		for _, clevel := range []string{"clevel_u", "clevel_g"} {
@@ -90,7 +90,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 				}
 				return err
 			}, 10, func(numRetries int) {
-				log.Printf("WARN: Section find for course prefix %s failed! Performing retry #%d...", coursePrefix, numRetries)
+				log.Printf("WARN: Section find for  %s failed! Performing retry #%d...", coursePrefix, numRetries)
 				coursebookHeaders = utils.RefreshToken(chromedpCtx)
 				// Wait proportionally long to how many times we've retried; generally works pretty well
 				time.Sleep(500 * time.Millisecond * time.Duration(numRetries))
@@ -111,7 +111,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 		for _, matchSet := range smatches {
 			sectionIDs = append(sectionIDs, matchSet[1])
 		}
-		log.Printf("Found %d sections for course prefix %s", len(sectionIDs), coursePrefix)
+		log.Printf("Found %d sections for %s", len(sectionIDs), coursePrefix)
 
 		// Get a new token before starting the section lookup
 		coursebookHeaders = utils.RefreshToken(chromedpCtx)
@@ -140,7 +140,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 				}
 				return err
 			}, 10, func(numRetries int) {
-				log.Printf("WARN: Section id lookup for id %s failed! Performing retry #%d...", id, numRetries)
+				log.Printf("WARN: Section id lookup for %s failed! Performing retry #%d...", id, numRetries)
 				coursebookHeaders = utils.RefreshToken(chromedpCtx)
 				// Wait proportionally long to how many times we've retried; generally works pretty well
 				time.Sleep(500 * time.Millisecond * time.Duration(numRetries))
@@ -171,10 +171,10 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 			}
 			sectionsInCoursePrefix++
 		}
-		log.Printf("Finished scraping course prefix %s. Got %d sections.\n----------------------------------------------------", coursePrefix, sectionsInCoursePrefix)
+		log.Printf("Finished scraping %s. Got %d sections.\n----------------------------------------------------", coursePrefix, sectionsInCoursePrefix)
 		// Panic if we got fewer sections than we should've
 		if sectionsInCoursePrefix != len(sectionIDs) {
-			log.Panicf("Section count mismatch! Expected sections %d for %s, got %d", sectionsInCoursePrefix, coursePrefix, sectionsInCoursePrefix)
+			log.Panicf("Section count mismatch! Expected %d sections for %s, got %d", sectionsInCoursePrefix, coursePrefix, sectionsInCoursePrefix)
 		}
 		totalSections += sectionsInCoursePrefix
 	}
