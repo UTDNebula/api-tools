@@ -123,7 +123,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 		for sectionIndex, id := range sectionIDs {
 
 			// Get section info
-			// Worth noting that the "req" and "div" params in the request below don't actually seem to matter... consider them filler to make sure the request goes through
+			// Worth noting that the "req" param in the request below doesn't actually seem to matter... consider it filler to make sure the request goes through
 			queryStr := fmt.Sprintf("id=%s&req=b30da8ab21637dbef35fd7682f48e1c1W0ypMhaj%%2FdsnYn3Wa03BrxSNgCeyvLfvucSTobcSXRf38SWaUaNfMjJQn%%2BdcabF%%2F7ZuG%%2BdKqHAqmrxEKyg8AdB0FqVGcz4rkff3%%2B3SIUIt8%%3D&action=info", id)
 
 			// Try HTTP request, retrying if necessary
@@ -174,10 +174,10 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 		log.Printf("Finished scraping course prefix %s. Got %d sections.\n----------------------------------------------------", coursePrefix, sectionsInCoursePrefix)
 		// Panic if we got fewer sections than we should've
 		if sectionsInCoursePrefix != len(sectionIDs) {
-			log.Panicf("Section count mismatch! Coursebook has %d sections for course prefix %s but we only got %d", sectionsInCoursePrefix, coursePrefix, sectionsInCoursePrefix)
+			log.Panicf("Section count mismatch! Expected sections %d for %s, got %d", sectionsInCoursePrefix, coursePrefix, sectionsInCoursePrefix)
 		}
 		totalSections += sectionsInCoursePrefix
 	}
-	log.Printf("\nDone scraping term! Scraped a total of %d sections.", totalSections)
+	log.Printf("Done scraping term! Scraped %d sections.", totalSections)
 
 }
