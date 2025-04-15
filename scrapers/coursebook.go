@@ -85,7 +85,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 				}
 				req.Header = coursebookHeaders
 				res, err = cli.Do(req)
-				if res.StatusCode != 200 {
+				if res != nil && res.StatusCode != 200 {
 					return errors.New("Non-200 response status code")
 				}
 				return err
@@ -135,7 +135,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 				}
 				req.Header = coursebookHeaders
 				res, err = cli.Do(req)
-				if res.StatusCode != 200 {
+				if res != nil && res.StatusCode != 200 {
 					return errors.New("Non-200 response status code")
 				}
 				return err
