@@ -25,6 +25,7 @@ import (
 const CALENDAR_LINK string = "https://calendar.utdallas.edu/calendar"
 
 var trailingSpaceRegex *regexp.Regexp = regexp.MustCompile(`(\s{2,}?\s{2,})|(\n)`)
+var leadingSpaceRegex *regexp.Regexp = regexp.MustCompile(`^\s+`)
 
 func ScrapeCalendar(outDir string) {
 
@@ -61,7 +62,7 @@ func ScrapeCalendar(outDir string) {
 	}
 	log.Printf("Scraped event page links!")
 	for _, page := range pageLinks {
-		// Print the links of the page
+		// Print the links of the page to check
 		log.Println(page)
 	}
 
@@ -139,7 +140,8 @@ func ScrapeCalendar(outDir string) {
 			chromedp.QueryAfter("p.location > a",
 				func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
 					if len(nodes) != 0 {
-						location = getNodeText(nodes[0]) + "\n "
+						// Location's name somehow contains leading space, trim it
+						location = leadingSpaceRegex.ReplaceAllString(getNodeText(nodes[0]), "")
 					}
 					return nil
 				}, chromedp.AtLeast(0),
@@ -148,7 +150,10 @@ func ScrapeCalendar(outDir string) {
 			chromedp.QueryAfter("p.location > span",
 				func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
 					if len(nodes) != 0 {
-						location += getNodeText(nodes[0])
+						// There are cases where it doesn't show the address
+						if getNodeText(nodes[0]) != "" {
+							location += "\n" + getNodeText(nodes[0])
+						}
 					}
 					return nil
 				}, chromedp.AtLeast(0),
@@ -164,8 +169,9 @@ func ScrapeCalendar(outDir string) {
 		err = chromedp.Run(chromedpCtx,
 			chromedp.QueryAfter(".em-about_description > p",
 				func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
+					// Concatenate all the sentences in the description together
 					for _, node := range nodes {
-						if getNodeText(node) != "" {
+						if getNodeText(node) != "" && getNodeText(node) != "\u00A0" {
 							description += getNodeText(node) + "\n\n"
 						}
 					}
