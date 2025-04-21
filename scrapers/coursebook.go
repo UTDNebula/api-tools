@@ -6,6 +6,7 @@ package scrapers
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -69,7 +70,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 		// String builder to store accumulated course HTML data for both class levels
 		courseBuilder := strings.Builder{}
 
-		log.Printf("Finding sections for course prefix %s...", coursePrefix)
+		log.Printf("Finding sections for %s...", coursePrefix)
 
 		// Get courses for term and prefix, split by grad and undergrad to avoid 300 section cap
 		for _, clevel := range []string{"clevel_u", "clevel_g"} {
@@ -84,20 +85,15 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 				}
 				req.Header = coursebookHeaders
 				res, err = cli.Do(req)
+				if res != nil && res.StatusCode != 200 {
+					return errors.New("Non-200 response status code")
+				}
 				return err
 			}, 10, func(numRetries int) {
-				log.Printf("ERROR: Section find for course prefix %s failed! Response code was: %s", coursePrefix, res.Status)
-				// Wait longer if 3 retries fail; we've probably been IP ratelimited...
-				if numRetries >= 3 {
-					log.Printf("WARNING: More than 3 retries have failed. Waiting for 5 minutes before attempting further retries.")
-					time.Sleep(5 * time.Minute)
-				} else {
-					log.Printf("Getting new token and retrying in 3 seconds...")
-					time.Sleep(3 * time.Second)
-				}
+				log.Printf("WARN: Section find for  %s failed! Performing retry #%d...", coursePrefix, numRetries)
 				coursebookHeaders = utils.RefreshToken(chromedpCtx)
-				// Give coursebook some time to recognize the new token
-				time.Sleep(500 * time.Millisecond)
+				// Wait proportionally long to how many times we've retried; generally works pretty well
+				time.Sleep(500 * time.Millisecond * time.Duration(numRetries))
 			})
 
 			if err != nil {
@@ -115,7 +111,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 		for _, matchSet := range smatches {
 			sectionIDs = append(sectionIDs, matchSet[1])
 		}
-		log.Printf("Found %d sections for course prefix %s", len(sectionIDs), coursePrefix)
+		log.Printf("Found %d sections for %s", len(sectionIDs), coursePrefix)
 
 		// Get a new token before starting the section lookup
 		coursebookHeaders = utils.RefreshToken(chromedpCtx)
@@ -127,8 +123,8 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 		for sectionIndex, id := range sectionIDs {
 
 			// Get section info
-			// Worth noting that the "req" and "div" params in the request below don't actually seem to matter... consider them filler to make sure the request goes through
-			queryStr := fmt.Sprintf("id=%s&req=0bd73666091d3d1da057c5eeb6ef20a7df3CTp0iTMYFuu9paDeUptMzLYUiW4BIk9i8LIFcBahX2E2b18WWXkUUJ1Y7Xq6j3WZAKPbREfGX7lZY96lI7btfpVS95YAprdJHX9dc5wM=&action=section&div=r-62childcontent", id)
+			// Worth noting that the "req" param in the request below doesn't actually seem to matter... consider it filler to make sure the request goes through
+			queryStr := fmt.Sprintf("id=%s&req=b30da8ab21637dbef35fd7682f48e1c1W0ypMhaj%%2FdsnYn3Wa03BrxSNgCeyvLfvucSTobcSXRf38SWaUaNfMjJQn%%2BdcabF%%2F7ZuG%%2BdKqHAqmrxEKyg8AdB0FqVGcz4rkff3%%2B3SIUIt8%%3D&action=info", id)
 
 			// Try HTTP request, retrying if necessary
 			var res *http.Response
@@ -139,20 +135,15 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 				}
 				req.Header = coursebookHeaders
 				res, err = cli.Do(req)
+				if res != nil && res.StatusCode != 200 {
+					return errors.New("Non-200 response status code")
+				}
 				return err
 			}, 10, func(numRetries int) {
-				log.Printf("ERROR: Section id lookup for id %s failed! Response code was: %s", id, res.Status)
-				// Wait longer if 3 retries fail; we've probably been IP ratelimited...
-				if numRetries >= 3 {
-					log.Printf("WARNING: More than 3 retries have failed. Waiting for 5 minutes before attempting further retries.")
-					time.Sleep(5 * time.Minute)
-				} else {
-					log.Printf("Getting new token and retrying in 3 seconds...")
-					time.Sleep(3 * time.Second)
-				}
+				log.Printf("WARN: Section id lookup for %s failed! Performing retry #%d...", id, numRetries)
 				coursebookHeaders = utils.RefreshToken(chromedpCtx)
-				// Give coursebook some time to recognize the new token
-				time.Sleep(500 * time.Millisecond)
+				// Wait proportionally long to how many times we've retried; generally works pretty well
+				time.Sleep(500 * time.Millisecond * time.Duration(numRetries))
 			})
 
 			if err != nil {
@@ -180,9 +171,13 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 			}
 			sectionsInCoursePrefix++
 		}
-		log.Printf("\nFinished scraping course prefix %s. Got %d sections.", coursePrefix, sectionsInCoursePrefix)
+		log.Printf("Finished scraping %s. Got %d sections.\n----------------------------------------------------", coursePrefix, sectionsInCoursePrefix)
+		// Panic if we got fewer sections than we should've
+		if sectionsInCoursePrefix != len(sectionIDs) {
+			log.Panicf("Section count mismatch! Expected %d sections for %s, got %d", sectionsInCoursePrefix, coursePrefix, sectionsInCoursePrefix)
+		}
 		totalSections += sectionsInCoursePrefix
 	}
-	log.Printf("\nDone scraping term! Scraped a total of %d sections.", totalSections)
+	log.Printf("Done scraping term! Scraped %d sections.", totalSections)
 
 }

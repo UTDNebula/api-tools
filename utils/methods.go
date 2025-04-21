@@ -64,19 +64,19 @@ func RefreshToken(chromedpCtx context.Context) map[string][]string {
 
 	VPrintf("Getting new token...")
 	err = Retry(func() error {
-		_, err = chromedp.RunResponse(chromedpCtx,
+		r, err := chromedp.RunResponse(chromedpCtx,
 			chromedp.ActionFunc(func(ctx context.Context) error {
 				err := network.ClearBrowserCookies().Do(ctx)
 				return err
 			}),
 			chromedp.Navigate(`https://wat.utdallas.edu/login`),
-			chromedp.WaitVisible(`form#login-form`),
 			chromedp.SendKeys(`input#netid`, netID),
 			chromedp.SendKeys(`input#password`, password),
-			chromedp.WaitVisible(`button#login-button`),
 			chromedp.Click(`button#login-button`),
-			chromedp.WaitVisible(`body`),
 		)
+		if r != nil && r.Status != 200 {
+			return errors.New("Non-200 response status code")
+		}
 		return err
 	}, 3, delayedRetryCallback)
 
@@ -89,7 +89,7 @@ func RefreshToken(chromedpCtx context.Context) map[string][]string {
 	var cookieStrs []string
 
 	err = Retry(func() error {
-		_, err = chromedp.RunResponse(chromedpCtx,
+		r, err := chromedp.RunResponse(chromedpCtx,
 			chromedp.Navigate(`https://coursebook.utdallas.edu/`),
 			chromedp.ActionFunc(func(ctx context.Context) error {
 				cookies, err := network.GetCookies().Do(ctx)
@@ -108,6 +108,9 @@ func RefreshToken(chromedpCtx context.Context) map[string][]string {
 				return err
 			}),
 		)
+		if r != nil && r.Status != 200 {
+			return errors.New("Non-200 response status code")
+		}
 		return err
 	}, 3, delayedRetryCallback)
 
