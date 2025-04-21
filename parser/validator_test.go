@@ -18,11 +18,11 @@ var testCourses []*schema.Course
 var testSections []*schema.Section
 var testProfessors []*schema.Professor
 
-// Map used to map index of test sections to test courses
+// Map index of test sections to test courses
 var indexMap map[int]int
 
 func init() {
-	// parse the test courses
+	// Parse the test courses
 	data, err := os.ReadFile("./testdata/courses.json")
 	if err != nil {
 		panic(err)
@@ -32,7 +32,7 @@ func init() {
 		panic(err)
 	}
 
-	// parse the test sections
+	// Parse the test sections
 	data, err = os.ReadFile("./testdata/sections.json")
 	if err != nil {
 		panic(err)
@@ -42,7 +42,7 @@ func init() {
 		panic(err)
 	}
 
-	// parse the test professors
+	// Parse the test professors
 	data, err = os.ReadFile("./testdata/professors.json")
 	if err != nil {
 		panic(err)
@@ -52,6 +52,7 @@ func init() {
 		panic(err)
 	}
 
+	// The correct mapping
 	indexMap = map[int]int{0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 4}
 }
 
@@ -142,20 +143,20 @@ func TestCourseReferencePass(t *testing.T) {
 //   - Course references non-existent section
 //   - Section doesn't reference back to same course
 //
-// This is fail type 1
+// This is fail: missing
 func TestCourseReferenceFail1(t *testing.T) {
 	for key, value := range indexMap {
 		t.Run(fmt.Sprintf("Section %v & course %v", key, value), func(t *testing.T) {
-			testCourseReferenceFail(1, value, key, t)
+			testCourseReferenceFail("missing", value, key, t)
 		})
 	}
 }
 
-// This is fail type 2
+// This is fail: modified
 func TestCourseReferenceFail2(t *testing.T) {
 	for key, value := range indexMap {
 		t.Run(fmt.Sprintf("Section %v & course %v", key, value), func(t *testing.T) {
-			testCourseReferenceFail(2, value, key, t)
+			testCourseReferenceFail("modified", value, key, t)
 		})
 	}
 }
@@ -192,6 +193,7 @@ func TestSectionReferenceProfPass(t *testing.T) {
 
 // Test section reference to professors, designed for fail case
 func TestSectionReferenceProfFail(t *testing.T) {
+
 	profIDMap := make(map[primitive.ObjectID]string)
 	profs := make(map[string]*schema.Professor)
 
@@ -257,23 +259,22 @@ func TestSectionReferenceCourse(t *testing.T) {
 	}
 }
 
-/* BELOW HERE ARE HELPER FUNCTION FOR TESTS ABOVE */
+/******** BELOW HERE ARE HELPER FUNCTION FOR TESTS ABOVE ********/
 
-// Helper function
 // Test if validate() throws erros when encountering duplicate
 // Design for fail cases
-func testDuplicateFail(objType string, index int, t *testing.T) {
+func testDuplicateFail(objType string, ix int, t *testing.T) {
 	// the buffer used to capture the log output
 	var logBuffer bytes.Buffer
 	log.SetOutput(&logBuffer)
 
-	// determine the expected msgs and panic msgs based on object type
+	// Determine the expected messages and panic messages based on object type
 	var expectedMsgs []string
 	var panicMsg string
 
 	switch objType {
 	case "course":
-		failCourse := testCourses[index]
+		failCourse := testCourses[ix]
 
 		// list of msgs it must print
 		expectedMsgs = []string{
@@ -282,7 +283,7 @@ func testDuplicateFail(objType string, index int, t *testing.T) {
 		}
 		panicMsg = "Courses failed to validate!"
 	case "section":
-		failSection := testSections[index]
+		failSection := testSections[ix]
 
 		expectedMsgs = []string{
 			"Duplicate section found!",
@@ -290,7 +291,7 @@ func testDuplicateFail(objType string, index int, t *testing.T) {
 		}
 		panicMsg = "Sections failed to validate!"
 	case "professor":
-		failProf := testProfessors[index]
+		failProf := testProfessors[ix]
 
 		expectedMsgs = []string{
 			"Duplicate professor found!",
@@ -302,14 +303,14 @@ func testDuplicateFail(objType string, index int, t *testing.T) {
 	defer func() {
 		logOutput := logBuffer.String() // log output after running the function
 
-		// log output needs to contain lines in the list
+		// Log output needs to contain lines in the list
 		for _, msg := range expectedMsgs {
 			if !strings.Contains(logOutput, msg) {
 				t.Errorf("Exptected the message for %v: %v", objType, msg)
 			}
 		}
 
-		// test whether func panics and sends the correct panic msg
+		// Test whether func panics and sends the correct panic msg
 		if r := recover(); r == nil {
 			t.Errorf("The function didn't panic for %v", objType)
 		} else {
@@ -323,18 +324,17 @@ func testDuplicateFail(objType string, index int, t *testing.T) {
 	// Run func
 	switch objType {
 	case "course":
-		valDuplicateCourses(testCourses[index], testCourses[index])
+		valDuplicateCourses(testCourses[ix], testCourses[ix])
 	case "section":
-		valDuplicateSections(testSections[index], testSections[index])
+		valDuplicateSections(testSections[ix], testSections[ix])
 	case "professor":
-		valDuplicateProfs(testProfessors[index], testProfessors[index])
+		valDuplicateProfs(testProfessors[ix], testProfessors[ix])
 	}
 }
 
-// Helper function
 // Test if func doesn't log anything and doesn't panic.
 // Design for pass cases
-func testDuplicatePass(objType string, index1 int, index2 int, t *testing.T) {
+func testDuplicatePass(objType string, ix1 int, ix2 int, t *testing.T) {
 	// Buffer to capture the output
 	var logBuffer bytes.Buffer
 	log.SetOutput(&logBuffer)
@@ -349,45 +349,45 @@ func testDuplicatePass(objType string, index1 int, index2 int, t *testing.T) {
 		}
 	}()
 
-	// Run func according to the object type. Choose pair of objects which are not duplicate
+	// Run func according to the object type.
+	// Choose pair of objects which are not duplicate
 	switch objType {
 	case "course":
-		valDuplicateCourses(testCourses[index1], testCourses[index2])
+		valDuplicateCourses(testCourses[ix1], testCourses[ix2])
 	case "section":
-		valDuplicateSections(testSections[index1], testSections[index2])
+		valDuplicateSections(testSections[ix1], testSections[ix2])
 	case "professor":
-		valDuplicateProfs(testProfessors[index1], testProfessors[index2])
+		valDuplicateProfs(testProfessors[ix1], testProfessors[ix2])
 	}
 }
 
-// Helper function for the case of course reference that fails
-// failType: 1 means it lacks one sections
-// failType: 2 means one section's course reference has been modified
-func testCourseReferenceFail(failType int, courseIndex int, sectionIndex int, t *testing.T) {
+// fail = "missing" means it lacks one sections
+// fail = "modified" means one section's course reference has been modified
+func testCourseReferenceFail(fail string, courseIx int, sectionIx int, t *testing.T) {
 	sectionMap := make(map[primitive.ObjectID]*schema.Section)
 
 	var sectionID, originalID primitive.ObjectID // used to store IDs of modified sections
 
 	// Build the failed section map based on fail type
-	if failType == 1 {
-		// misses a section
+	if fail == "missing" {
+		// Misses a section
 		for i, section := range testSections {
-			if sectionIndex != i {
+			if sectionIx != i {
 				sectionMap[section.Id] = section
 			} else {
 				sectionID = section.Id // Nonexistent ID referenced by course
 			}
 		}
-	} else {
-		// one section doesn't reference to correct courses
+	} else if fail == "modified" {
+		// One section doesn't reference to correct courses
 		for i, section := range testSections {
 			sectionMap[section.Id] = section
-			if sectionIndex == i {
-				// save the section ID and original course reference to be restored later on
+			if sectionIx == i {
+				// Save the section ID and original course reference to be restored later on
 				sectionID = section.Id
 				originalID = section.Course_reference
 
-				// modify part
+				// Modified part
 				sectionMap[section.Id].Course_reference = primitive.NewObjectID()
 			}
 		}
@@ -399,16 +399,16 @@ func testCourseReferenceFail(failType int, courseIndex int, sectionIndex int, t 
 	// The course that references nonexistent stuff
 	var failCourse *schema.Course
 
-	if failType == 1 {
-		failCourse = testCourses[courseIndex]
+	if fail == "missing" {
+		failCourse = testCourses[courseIx]
 
 		expectedMsgs = []string{
 			fmt.Sprintf("Nonexistent section reference found for %v%v!", failCourse.Subject_prefix, failCourse.Course_number),
 			fmt.Sprintf("Referenced section ID: %s\nCourse ID: %s", sectionID, failCourse.Id),
 		}
 	} else {
-		failCourse = testCourses[courseIndex]
-		failSection := testSections[sectionIndex]
+		failCourse = testCourses[courseIx]
+		failSection := testSections[sectionIx]
 
 		expectedMsgs = []string{
 			fmt.Sprintf("Inconsistent section reference found for %v%v! The course references the section, but not vice-versa!",
@@ -431,8 +431,8 @@ func testCourseReferenceFail(failType int, courseIndex int, sectionIndex int, t 
 			}
 		}
 
-		// restore to original course reference of modified section (if needed)
-		if failType == 2 {
+		// Restore to original course reference of modified section (if needed)
+		if fail == "modified" {
 			sectionMap[sectionID].Course_reference = originalID
 		}
 
