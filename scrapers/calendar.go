@@ -39,18 +39,17 @@ func ScrapeCalendar(outDir string) {
 	events := []schema.Event{}
 
 	log.Printf("Scraping event page links")
-	//Grab all links to event pages
+	// Grab all links to event pages
 	var pageLinks []string = []string{}
 	_, err = chromedp.RunResponse(chromedpCtx,
 		chromedp.Navigate(CALENDAR_LINK),
-		chromedp.QueryAfter(".item.event_item.vevent > a",
+		chromedp.QueryAfter(".em-card_image > a",
 			func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
 				for _, node := range nodes {
 					href, hasHref := node.Attribute("href")
 					if !hasHref {
 						return errors.New("event card was missing an href")
 					}
-
 					pageLinks = append(pageLinks, href)
 				}
 				return nil
@@ -61,13 +60,17 @@ func ScrapeCalendar(outDir string) {
 		panic(err)
 	}
 	log.Printf("Scraped event page links!")
+	for _, page := range pageLinks {
+		// Print the links of the page
+		log.Println(page)
+	}
 
 	for _, page := range pageLinks {
-		//Navigate to page and get page summary
+		// Navigate to page and get page summary
 		summary := ""
 		_, err := chromedp.RunResponse(chromedpCtx,
 			chromedp.Navigate(page),
-			chromedp.QueryAfter(".summary",
+			chromedp.QueryAfter(".em-card_title",
 				func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
 					if len(nodes) != 0 {
 						summary = trailingSpaceRegex.ReplaceAllString(getNodeText(nodes[0]), "")
@@ -126,13 +129,26 @@ func ScrapeCalendar(outDir string) {
 		}
 		utils.VPrintf("Scraped time: %s to %s ", dateTimeStart, dateTimeEnd)
 
-		//Grab Location of Event
-		var location string = ""
+		// Grab Location of Event
+
+		// If .location doesn't have children, then it's an virtual event
+		var location string = "Virtual Event" // Default
+
 		err = chromedp.Run(chromedpCtx,
+			// Grab the name of the location
+			chromedp.QueryAfter("p.location > a",
+				func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
+					if len(nodes) != 0 {
+						location = getNodeText(nodes[0]) + "\n "
+					}
+					return nil
+				}, chromedp.AtLeast(0),
+			),
+			// Grab the address of the location (concatenated with the name)
 			chromedp.QueryAfter("p.location > span",
 				func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
 					if len(nodes) != 0 {
-						location = getNodeText(nodes[0])
+						location += getNodeText(nodes[0])
 					}
 					return nil
 				}, chromedp.AtLeast(0),
@@ -143,13 +159,15 @@ func ScrapeCalendar(outDir string) {
 		}
 		utils.VPrintf("Scraped location: %s, ", location)
 
-		//Get description of event
+		// Get description of event
 		var description string = ""
 		err = chromedp.Run(chromedpCtx,
-			chromedp.QueryAfter(".description > p",
+			chromedp.QueryAfter(".em-about_description > p",
 				func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
-					if len(nodes) != 0 {
-						description = getNodeText(nodes[0])
+					for _, node := range nodes {
+						if getNodeText(node) != "" {
+							description += getNodeText(node) + "\n\n"
+						}
 					}
 					return nil
 				}, chromedp.AtLeast(0),
@@ -160,7 +178,7 @@ func ScrapeCalendar(outDir string) {
 		}
 		utils.VPrintf("Scraped description: %s, ", description)
 
-		//Grab Event Type
+		// Grab Event Type
 		var eventType []string = []string{}
 		err = chromedp.Run(chromedpCtx,
 			chromedp.QueryAfter(".filter-event_types > p > a",
@@ -177,7 +195,7 @@ func ScrapeCalendar(outDir string) {
 		}
 		utils.VPrintf("Scraped event type: %s", eventType)
 
-		//Grab Target Audience
+		// Grab Target Audience
 		targetAudience := []string{}
 		err = chromedp.Run(chromedpCtx,
 			chromedp.QueryAfter(".filter-event_target_audience > p > a",
@@ -194,7 +212,7 @@ func ScrapeCalendar(outDir string) {
 		}
 		utils.VPrintf("Scraped target audience: %s, ", targetAudience)
 
-		//Grab Topic
+		// Grab Topic
 		topic := []string{}
 		err = chromedp.Run(chromedpCtx,
 			chromedp.QueryAfter(".filter-event_topic > p > a",
@@ -211,7 +229,7 @@ func ScrapeCalendar(outDir string) {
 		}
 		utils.VPrintf("Scraped topic: %s, ", topic)
 
-		//Grab Event Tags
+		// Grab Event Tags
 		tags := []string{}
 		err = chromedp.Run(chromedpCtx,
 			chromedp.QueryAfter(".event-tags > p > a",
@@ -228,7 +246,7 @@ func ScrapeCalendar(outDir string) {
 		}
 		utils.VPrintf("Scraped tags: %s, ", tags)
 
-		//Grab Website
+		// Grab Website
 		var eventWebsite string = ""
 		err = chromedp.Run(chromedpCtx,
 			chromedp.QueryAfter(".event-website > p > a",
@@ -249,7 +267,7 @@ func ScrapeCalendar(outDir string) {
 		}
 		utils.VPrintf("Scraped website: %s, ", eventWebsite)
 
-		//Grab Department
+		// Grab Department
 		var eventDepartment []string = []string{}
 		err = chromedp.Run(chromedpCtx,
 			chromedp.QueryAfter(".event-group > a",
@@ -266,7 +284,7 @@ func ScrapeCalendar(outDir string) {
 		}
 		utils.VPrintf("Scraped department: %s, ", eventDepartment)
 
-		//Grab Contact information
+		// Grab Contact information
 		var contactInformationName string = ""
 		var contactInformationEmail string = ""
 		var contactInformationPhone string = ""
@@ -279,10 +297,14 @@ func ScrapeCalendar(outDir string) {
 					return nil
 				}, chromedp.AtLeast(0),
 			),
-			chromedp.QueryAfter(".custom-field-contact_information_email",
+			chromedp.QueryAfter(".custom-field-contact_information_email > a",
 				func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
 					if len(nodes) != 0 {
-						contactInformationEmail = getNodeText(nodes[0])
+						emailHref, hasEmailHref := nodes[0].Attribute("href")
+						if !hasEmailHref {
+							return errors.New("event contact doesn't have email")
+						}
+						contactInformationEmail = emailHref[7:]
 					}
 					return nil
 				}, chromedp.AtLeast(0),
