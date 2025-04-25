@@ -90,7 +90,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 				}
 				return err
 			}, 10, func(numRetries int) {
-				log.Printf("WARN: Section find for  %s failed! Performing retry #%d...", coursePrefix, numRetries)
+				log.Printf("WARN: Section find for %s failed! Performing retry #%d...", coursePrefix, numRetries)
 				coursebookHeaders = utils.RefreshToken(chromedpCtx)
 				// Wait proportionally long to how many times we've retried; generally works pretty well
 				time.Sleep(500 * time.Millisecond * time.Duration(numRetries))

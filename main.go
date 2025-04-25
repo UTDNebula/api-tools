@@ -52,6 +52,7 @@ func main() {
 	// Flags for uploading data
 	upload := flag.Bool("upload", false, "Puts the tool into upload mode.")
 	replace := flag.Bool("replace", false, "Alongside -upload, specifies that uploaded data should replace existing data rather than being merged.")
+	staticOnly := flag.Bool("static", false, "Alongside -upload, specifies that we should only build and upload the static aggregations.")
 	events := flag.Bool("events", false, "Alongside -upload, signifies that Astra and Mazevo should be uploaded.")
 
 	// Flags for logging
@@ -125,7 +126,7 @@ func main() {
 		case *events:
 			uploader.UploadEvents(*inDir)
 		default:
-			uploader.Upload(*inDir, *replace)
+			uploader.Upload(*inDir, *replace, *staticOnly)
 		}
 	default:
 		flag.PrintDefaults()
