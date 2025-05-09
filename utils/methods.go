@@ -312,3 +312,10 @@ func GetCoursePrefixes(chromedpCtx context.Context) []string {
 
 	return coursePrefixes
 }
+
+func ConvertFromInterface[T string | float64](value interface{}) *T {
+	if parsed, ok := value.(T); ok {
+		return &parsed
+	}
+	return nil
+}
