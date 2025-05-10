@@ -11,6 +11,11 @@ import (
 	"github.com/UTDNebula/nebula-api/api/schema"
 )
 
+var buildingRenames = map[string]string{
+	"Student Union":                   "SU",
+	"Student Services Addition (SSA)": "SSA",
+}
+
 type SourceData struct {
 	Bookings []map[string]interface{} `json:"bookings"`
 }
@@ -54,6 +59,14 @@ func ParseMazevo(inDir string, outDir string) {
 			continue
 		}
 		*building = strings.TrimSpace(*building)
+		for key, value := range buildingRenames {
+			if *building == key {
+				*building = value
+			}
+			if strings.HasPrefix(*room, value+" ") {
+				*room = strings.TrimPrefix(*room, value+" ")
+			}
+		}
 
 		if _, exists := multiBuildingMap[date]; !exists {
 			multiBuildingMap[date] = make(map[string]map[string][]schema.MazevoEvent)
