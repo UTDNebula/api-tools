@@ -5,11 +5,13 @@
 package scrapers
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"regexp"
 	"time"
@@ -132,15 +134,15 @@ func ScrapeCalendar(outDir string) {
 
 		// Grab Location of Event
 
-		// If .location doesn't have children, then it's an virtual event
-		var location string = "Virtual Event" // Default
+		// If p.location doesn't have children, then it's an virtual event
+		var location string = "Virtual Event"
 
 		err = chromedp.Run(chromedpCtx,
 			// Grab the name of the location
 			chromedp.QueryAfter("p.location > a",
 				func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
 					if len(nodes) != 0 {
-						// Location's name somehow contains leading space, trim it
+						// Location's name somehow contains leading space, so trim it
 						location = leadingSpaceRegex.ReplaceAllString(getNodeText(nodes[0]), "")
 					}
 					return nil
@@ -310,6 +312,7 @@ func ScrapeCalendar(outDir string) {
 						if !hasEmailHref {
 							return errors.New("event contact doesn't have email")
 						}
+						// Slicing the text to exclude "mailto:"
 						contactInformationEmail = emailHref[7:]
 					}
 					return nil
@@ -362,4 +365,115 @@ func ScrapeCalendar(outDir string) {
 	encoder.SetIndent("", "\t")
 	encoder.Encode(events)
 	fptr.Close()
+}
+
+// Get the calendar data through API instead of scraping from website
+func ScrapeAPICalendar(outDir string) {
+	err := os.MkdirAll(outDir, 0777)
+	if err != nil {
+		panic(err)
+	}
+	client := http.Client{Timeout: 30 * time.Second}
+	var events []schema.Event
+
+	for i := range 1 {
+		// Set up the API Request
+		calendarUrl := fmt.Sprintf("https://calendar.utdallas.edu/api/2/events?days=365&pp=100&page=%d", i)
+		req, err := http.NewRequest("GET", calendarUrl, nil)
+		if err != nil {
+			panic(err)
+		}
+
+		// Call API to get the response
+		res, err := client.Do(req)
+		if err != nil {
+			panic(err)
+		}
+		if res != nil && res.StatusCode != 200 {
+			log.Panicf("ERROR: Status was %s", res.Status)
+		}
+
+		buffer := bytes.Buffer{}
+		buffer.ReadFrom(res.Body)
+		res.Body.Close()
+
+		// Structure of the API response
+		type RawEvent struct {
+			Event map[string]any `json:"event"`
+		}
+
+		type APICalendarResponse struct {
+			Events []RawEvent        `json:"events"`
+			Page   map[string]int    `json:"page"`
+			Date   map[string]string `json:"date"`
+		}
+
+		var responseData APICalendarResponse
+		if err := json.Unmarshal(buffer.Bytes(), &responseData); err != nil {
+			panic(err)
+		}
+
+		for _, rawEvent := range responseData.Events {
+			filters := pullMap(rawEvent.Event["filters"])
+			eventType := []string{}
+			eventTopic := []string{}
+			eventAudience := []string{}
+
+			// Parse the event types, event topic, and event target audience
+			rawTypes := pullSlice(filters["event_types"])
+			for _, rawType := range rawTypes {
+				eventType = append(eventType, pullMap(rawType)["name"].(string))
+			}
+
+			rawTopic := pullSlice(filters["event_topic"])
+			for _, topic := range rawTopic {
+				eventTopic = append(eventTopic, pullMap(topic)["name"].(string))
+			}
+
+			rawAudience := pullSlice(filters["event_target_audience"])
+			for _, audience := range rawAudience {
+				eventAudience = append(eventAudience, pullMap(audience)["name"].(string))
+			}
+
+			// Parse the event departments
+			departments := []string{}
+			rawDeparments := pullSlice(rawEvent.Event["departments"])
+			for _, deparment := range rawDeparments {
+				departments = append(departments, pullMap(deparment)["name"].(string))
+			}
+
+			events = append(events, schema.Event{
+				Id:             primitive.NewObjectID(),
+				EventType:      eventType,
+				TargetAudience: eventAudience,
+				Topic:          eventTopic,
+				Department:     departments,
+			})
+		}
+	}
+
+	fptr, err := os.Create(fmt.Sprintf("%s/events1.json", outDir))
+	if err != nil {
+		panic(err)
+	}
+	encoder := json.NewEncoder(fptr)
+	encoder.SetIndent("", "\t")
+	encoder.Encode(events)
+	fptr.Close()
+}
+
+// Casting an any to an slice of any
+func pullSlice(data any) []any {
+	if array, ok := data.([]any); ok {
+		return array
+	}
+	return nil
+}
+
+// Casting an any to map from string to any
+func pullMap(data any) map[string]any {
+	if dataMap, ok := data.(map[string]any); ok {
+		return dataMap
+	}
+	return nil
 }
