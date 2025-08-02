@@ -39,6 +39,8 @@ func main() {
 	scrapeOrganizations := flag.Bool("organizations", false, "Alongside -scrape, signifies that SOC organizations should be scraped.")
 	// Flag for calendar scraping
 	scrapeCalendar := flag.Bool("calendar", false, "Alongside -scrape, signifies that calendar should be scraped.")
+	// Flag for api calendar scraping
+	scrapeAPICalendar := flag.Bool("apiCalendar", false, "Alongside -scrape, signifies that calendar should be scraped.")
 	// Flag for astra scraping and parsing
 	astra := flag.Bool("astra", false, "Alongside -scrape or -parse, signifies that Astra should be scraped/parsed.")
 	// Flag for mazevo scraping and parsing
@@ -104,6 +106,8 @@ func main() {
 			scrapers.ScrapeOrganizations(*outDir)
 		case *scrapeCalendar:
 			scrapers.ScrapeCalendar(*outDir)
+		case *scrapeAPICalendar:
+			scrapers.ScrapeAPICalendar(*outDir)
 		case *astra:
 			scrapers.ScrapeAstra(*outDir)
 		case *mazevo:
