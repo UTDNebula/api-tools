@@ -3,6 +3,7 @@
 name: Deploy
 
 on:
+  workflow_dispatch:
   push:
     branches: develop
 
@@ -38,18 +39,18 @@ jobs:
       uses: docker/build-push-action@v6
       with:
         push: true 
-        tags: us-central1-docker.pkg.dev/api-tools-451421/runners/daily-update-events
+        tags: us-central1-docker.pkg.dev/api-tools-451421/runners/runner
 
-    - name: Upload to dev job
+    - name: Upload to daily dev job
       uses: google-github-actions/deploy-cloudrun@v2
       with:
-        job: 'daily-update-events-dev'
-        image: 'us-central1-docker.pkg.dev/api-tools-451421/runners/daily-update-events'
+        job: 'daily-dev'
+        image: 'us-central1-docker.pkg.dev/api-tools-451421/runners/runner'
         region: us-central1
 
-    - name: Upload to prod job
+    - name: Upload to daily prod job
       uses: google-github-actions/deploy-cloudrun@v2
       with:
-        job: 'daily-update-events-prod'
-        image: 'us-central1-docker.pkg.dev/api-tools-451421/runners/daily-update-events'
+        job: 'daily-prod'
+        image: 'us-central1-docker.pkg.dev/api-tools-451421/runners/runner'
         region: us-central1
