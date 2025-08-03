@@ -45,6 +45,8 @@ func main() {
 	astra := flag.Bool("astra", false, "Alongside -scrape or -parse, signifies that Astra should be scraped/parsed.")
 	// Flag for mazevo scraping and parsing
 	mazevo := flag.Bool("mazevo", false, "Alongside -scrape or -parse, signifies that Mazevo should be scraped/parsed.")
+	// Flag for map scraping, parsing, and uploading
+	mapFlag := flag.Bool("map", false, "Alongside -scrape, -parse, or -upload, signifies that the UTD map should be scraped/parsed/uploaded.")
 
 	// Flags for parsing
 	parse := flag.Bool("parse", false, "Puts the tool into parsing mode.")
@@ -54,6 +56,7 @@ func main() {
 	// Flags for uploading data
 	upload := flag.Bool("upload", false, "Puts the tool into upload mode.")
 	replace := flag.Bool("replace", false, "Alongside -upload, specifies that uploaded data should replace existing data rather than being merged.")
+	staticOnly := flag.Bool("static", false, "Alongside -upload, specifies that we should only build and upload the static aggregations.")
 	events := flag.Bool("events", false, "Alongside -upload, signifies that Astra and Mazevo should be uploaded.")
 
 	// Flags for logging
@@ -112,6 +115,8 @@ func main() {
 			scrapers.ScrapeAstra(*outDir)
 		case *mazevo:
 			scrapers.ScrapeMazevo(*outDir)
+		case *mapFlag:
+			scrapers.ScrapeMapLocations(*outDir)
 		default:
 			log.Panic("You must specify which type of scraping you would like to perform with one of the scraping flags!")
 		}
@@ -121,6 +126,8 @@ func main() {
 			parser.ParseAstra(*inDir, *outDir)
 		case *mazevo:
 			parser.ParseMazevo(*inDir, *outDir)
+		case *mapFlag:
+			parser.ParseMapLocations(*inDir, *outDir)
 		default:
 			parser.Parse(*inDir, *outDir, *csvDir, *skipValidation)
 		}
@@ -128,8 +135,10 @@ func main() {
 		switch {
 		case *events:
 			uploader.UploadEvents(*inDir)
+		case *mapFlag:
+			uploader.UploadMapLocations(*inDir)
 		default:
-			uploader.Upload(*inDir, *replace)
+			uploader.Upload(*inDir, *replace, *staticOnly)
 		}
 	default:
 		flag.PrintDefaults()
