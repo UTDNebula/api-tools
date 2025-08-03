@@ -1,9 +1,8 @@
 #!/bin/sh
 
-# other daily activites
-# ...
+# for daily tasks to run
 
-# Scrape, parse, and upload events
+# scrape, parse, and upload events
 ./api-tools -scrape -mazevo -verbose
 ./api-tools -parse -mazevo -verbose
 ./api-tools -scrape -astra -verbose
