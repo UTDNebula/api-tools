@@ -1,7 +1,5 @@
 FROM golang:1.23 AS builder
 
-ARG RUN_SCRIPT_PATH
-
 WORKDIR /app
 COPY . .
 
@@ -27,7 +25,7 @@ ENV GOOGLE_CHROME_BIN /usr/bin/chromium # Also set this for compatibility
 
 # Copy build file from builder
 COPY --from=builder /app/api-tools /app/api-tools
-COPY $RUN_SCRIPT_PATH /app/$RUN_SCRIPT_PATH
+COPY runners /app/runners
 
-RUN chmod +x /app/$RUN_SCRIPT_PATH
-ENTRYPOINT ["/app/$RUN_SCRIPT_PATH"]
+RUN chmod +x /app/runners/setup.sh
+ENTRYPOINT ["/app/runners/setup.sh"]

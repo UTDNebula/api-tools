@@ -39,19 +39,18 @@ jobs:
       uses: docker/build-push-action@v6
       with:
         push: true 
-        tags: us-central1-docker.pkg.dev/api-tools-451421/runners/daily
-        build-args: RUN_SCRIPT_PATH=runners/daily.sh
+        tags: us-central1-docker.pkg.dev/api-tools-451421/runners/runner
 
     - name: Upload to dev job
       uses: google-github-actions/deploy-cloudrun@v2
       with:
         job: 'daily-dev'
-        image: 'us-central1-docker.pkg.dev/api-tools-451421/runners/daily'
+        image: 'us-central1-docker.pkg.dev/api-tools-451421/runners/runner'
         region: us-central1
 
     - name: Upload to prod job
       uses: google-github-actions/deploy-cloudrun@v2
       with:
         job: 'daily-prod'
-        image: 'us-central1-docker.pkg.dev/api-tools-451421/runners/daily'
+        image: 'us-central1-docker.pkg.dev/api-tools-451421/runners/runner'
         region: us-central1
