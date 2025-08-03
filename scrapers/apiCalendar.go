@@ -126,7 +126,7 @@ func ScrapeAPICalendar(outDir string) {
 		log.Printf("Parsed the events of page %d successfully!\n\n", page+1)
 	}
 
-	if err := utils.WriteJSON(fmt.Sprintf("%s/api_events.json", outDir), events); err != nil {
+	if err := utils.WriteJSON(fmt.Sprintf("%s/events.json", outDir), events); err != nil {
 		panic(err)
 	}
 	log.Printf("Finished parsing %d events successfully!\n\n", len(events))
