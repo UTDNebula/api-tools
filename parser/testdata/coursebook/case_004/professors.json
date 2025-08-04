@@ -1,12 +1,12 @@
 [
 	{
-		"_id": "68903692769f7bf3a0a64c81",
-		"first_name": "Botir",
-		"last_name": "Kobilov",
+		"_id": "68911bed54c7e89bce3d42cc",
+		"first_name": "Tian",
+		"last_name": "Hong",
 		"titles": [
 			"Primary Instructor"
 		],
-		"email": "bxk240018@utdallas.edu",
+		"email": "txh240018@utdallas.edu",
 		"phone_number": "",
 		"office": {
 			"building": "",
@@ -17,7 +17,7 @@
 		"image_uri": "",
 		"office_hours": null,
 		"sections": [
-			"68903692769f7bf3a0a64c80"
+			"68911bed54c7e89bce3d42cb"
 		]
 	}
 ]

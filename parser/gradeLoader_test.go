@@ -10,51 +10,82 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-var csvHeader = []string{
+var csvGradeHeader = []string{
 	"Instructor 1", "Instructor 2", "Instructor 3", "Instructor 4", "Instructor 5", "Instructor 6", "Subject",
 	"Catalog Nbr", "Section", "A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "F", "NF",
 	"CR", "I", "NC", "P", "W",
+}
+
+var gradeLoaderCases = map[string]struct {
+	subject       string
+	catalogNumber string
+	sectionNumber string
+	key           string
+	gradesInput   []string
+	grades        []int
+}{
+	"case_001": {
+		subject:       "ECS",
+		catalogNumber: "2301",
+		sectionNumber: "001",
+		key:           "ECS23011",
+		gradesInput:   []string{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13"},
+		grades:        []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13},
+	},
+	"case_002": {
+		subject:       "CS",
+		catalogNumber: "1337",
+		sectionNumber: "001",
+		key:           "CS13371", // Test empty grade fields
+		gradesInput:   []string{"", "", "", "", "", "", "", "", "", "", "", "", "", ""},
+		grades:        []int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	},
+	"case_003": {
+		subject:       "MTHE",
+		catalogNumber: "5V06",
+		sectionNumber: "5H2", // Test non integer section
+		key:           "MTHE5V065H2",
+		gradesInput:   []string{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13"},
+		grades:        []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13},
+	},
+}
+
+func TestLoadGrades(t *testing.T) {
+	tempDir := t.TempDir()
+
+	GradeMap = make(map[string]map[string][]int)
+	expectedMap := make(map[string]map[string][]int)
+
+	for name, testCase := range gradeLoaderCases {
+		fileName := filepath.Join(tempDir, fmt.Sprintf("%s.csv", name))
+		err := buildCsv(t, fileName, testCase.subject, testCase.catalogNumber, testCase.sectionNumber, testCase.gradesInput)
+		if err != nil {
+			t.Errorf("failed to build csv file %v", err)
+		}
+
+		//build expected map
+		expectedMap[name] = map[string][]int{
+			testCase.key: testCase.grades,
+		}
+	}
+
+	err := loadGrades(tempDir)
+	if err != nil {
+		t.Errorf("failed to load grades: %v", err)
+	}
+
+	diff := cmp.Diff(expectedMap, GradeMap)
+
+	if diff != "" {
+		t.Errorf("Failed (-expected +got)\n %s", diff)
+	}
 }
 
 func TestCsvToMap(t *testing.T) {
 	t.Parallel()
 	tempDir := t.TempDir()
 
-	cases := map[string]struct {
-		subject       string
-		catalogNumber string
-		sectionNumber string
-		key           string
-		gradesInput   []string
-		grades        []int
-	}{
-		"case_001": {
-			subject:       "ECS",
-			catalogNumber: "2301",
-			sectionNumber: "001",
-			key:           "ECS23011",
-			gradesInput:   []string{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13"},
-			grades:        []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13},
-		},
-		"case_002": {
-			subject:       "CS",
-			catalogNumber: "1337",
-			sectionNumber: "001",
-			key:           "CS13371", // Test empty grade fields
-			gradesInput:   []string{"", "", "", "", "", "", "", "", "", "", "", "", "", ""},
-			grades:        []int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		},
-		"case_003": {
-			subject:       "MTHE",
-			catalogNumber: "5V06",
-			sectionNumber: "5H2", // Test non integer section
-			key:           "MTHE5V065H2",
-			gradesInput:   []string{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13"},
-			grades:        []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13},
-		},
-	}
-
-	for name, testCase := range cases {
+	for name, testCase := range gradeLoaderCases {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			fileName := filepath.Join(tempDir, fmt.Sprintf("%s.csv", name))
@@ -83,7 +114,6 @@ func TestCsvToMap(t *testing.T) {
 
 		})
 	}
-
 }
 
 func buildCsv(t *testing.T, fileName string, subject string, catalogNumber string, sectionNumber string, gradesInput []string) error {
@@ -92,9 +122,11 @@ func buildCsv(t *testing.T, fileName string, subject string, catalogNumber strin
 	if err != nil {
 		return fmt.Errorf("cannot create test file %s: %v", fileName, err)
 	}
+	defer file.Close()
+
 	writer := csv.NewWriter(file)
 
-	if err = writer.Write(csvHeader); err != nil {
+	if err = writer.Write(csvGradeHeader); err != nil {
 		return fmt.Errorf("cannot write to file %s : %v", fileName, err)
 	}
 
@@ -108,8 +140,5 @@ func buildCsv(t *testing.T, fileName string, subject string, catalogNumber strin
 	}
 
 	writer.Flush()
-	if err := writer.Error(); err != nil {
-		return fmt.Errorf("error flushing writer: %w", err)
-	}
-	return file.Close()
+	return writer.Error()
 }

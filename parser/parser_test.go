@@ -30,39 +30,50 @@ type TestData struct {
 	Professors []schema.Professor
 }
 
-// testData global dictionary containing the data from /testdata/coursebook by folder name
 var (
-	testData       map[string]TestData
-	testCourses    []schema.Course
-	testSections   []schema.Section
+	// testData global map containing the data from /testdata/coursebook by folder name
+	testData map[string]TestData
+
+	// testCourses is the unmarshalled /testdata/coursebook/courses.json
+	// created by running Parse on the /testdata/coursebook
+	testCourses []schema.Course
+	// testSections is the unmarshalled /testdata/coursebook/sections.json
+	testSections []schema.Section
+	// testProfessors is the unmarshalled /testdata/coursebook/professors.json
 	testProfessors []schema.Professor
 )
 
 // TestMain entry point for all tests in the parser package.
-// The function will load `/testdata/coursebook` into memory before running
-// the tests so that test can run in parallel.
+// This function will load all the test data in /testdata
+//
+//   - testData: Map of individual coursebook html files and there corresponding schema representations.
+//     Used to test courseParser, sectionParser and professorParser
+//
+//   - testCourses, testSections and testProfessors: List of containing the schema respective representations of running
+//     Parse on the /testdata/coursebook. User to test Parse and validator.
 //
 // You can optionally provide the flag `update`, which will run
 // updateTestData. Example usage
 //
 // `go test -v ./parser -args -update`
 func TestMain(m *testing.M) {
-	update := flag.Bool("update", false, "Regenerates the expected output for the provided test inputs. Should only be used when you are 100% sure your code is correct! It will make all test pass :)")
+	update := flag.Bool("update", true, "Regenerates the expected output for the provided test inputs. Should only be used when you are 100% sure your code is correct! It will make all test pass :)")
 
 	if !flag.Parsed() {
 		flag.Parse()
 	}
 
 	if *update {
+		log.Printf("Updating test data...")
 		if err := updateTestData(); err != nil {
 			log.Fatalf("Error updating test data: %v", err)
 		}
-		log.Println("Successfully updated test data")
+		log.Println("Test data updated successfully!")
 		os.Exit(0)
 	}
 
 	testData = make(map[string]TestData)
-	dir, err := os.ReadDir("testdata/")
+	dir, err := os.ReadDir("testdata/coursebook/")
 	if err != nil {
 		log.Fatalf("Failed to load testdata: %v", err)
 	}
@@ -71,20 +82,22 @@ func TestMain(m *testing.M) {
 		if !file.IsDir() {
 			continue
 		}
-		if testData[file.Name()], err = loadTest(file.Name()); err != nil {
+		filePath := filepath.Join("testdata/coursebook/", file.Name())
+
+		if testData[file.Name()], err = loadTest(filePath); err != nil {
 			log.Fatalf("Failed to load %s: %v", file.Name(), err)
 		}
 	}
 
-	testCourses, err = utils.UnmarshallFile[[]schema.Course]("./testdata/courses.json")
+	testCourses, err = utils.UnmarshallFile[[]schema.Course]("./testdata/coursebook/courses.json")
 	if err != nil {
 		log.Fatalf("Failed to load courses: %v", err)
 	}
-	testSections, err = utils.UnmarshallFile[[]schema.Section]("./testdata/sections.json")
+	testSections, err = utils.UnmarshallFile[[]schema.Section]("./testdata/coursebook/sections.json")
 	if err != nil {
 		log.Fatalf("Failed to load sections: %v", err)
 	}
-	testProfessors, err = utils.UnmarshallFile[[]schema.Professor]("./testdata/professors.json")
+	testProfessors, err = utils.UnmarshallFile[[]schema.Professor]("./testdata/coursebook/professors.json")
 	if err != nil {
 		log.Fatalf("Failed to load professors: %v", err)
 	}
@@ -92,8 +105,11 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
+// loadTest utility function for creating a TestData from a given directory.
+// requires the passed directory to match the structure outlined in updateTestData
 func loadTest(dir string) (result TestData, err error) {
-	htmlBytes, err := os.ReadFile(fmt.Sprintf("testdata/%s/input.html", dir))
+
+	htmlBytes, err := os.ReadFile(filepath.Join(dir, "input.html"))
 	if err != nil {
 		return
 	}
@@ -104,19 +120,19 @@ func loadTest(dir string) (result TestData, err error) {
 	}
 	result.Input = string(htmlBytes)
 	result.RowInfo = getRowInfo(doc)
-	result.Section, err = utils.UnmarshallFile[schema.Section](fmt.Sprintf("testdata/%s/section.json", dir))
+	result.Section, err = utils.UnmarshallFile[schema.Section](filepath.Join(dir, "section.json"))
 	if err != nil {
 		return
 	}
-	result.Course, err = utils.UnmarshallFile[schema.Course](fmt.Sprintf("testdata/%s/course.json", dir))
+	result.Course, err = utils.UnmarshallFile[schema.Course](filepath.Join(dir, "course.json"))
 	if err != nil {
 		return
 	}
-	result.Professors, err = utils.UnmarshallFile[[]schema.Professor](fmt.Sprintf("testdata/%s/professors.json", dir))
+	result.Professors, err = utils.UnmarshallFile[[]schema.Professor](filepath.Join(dir, "professors.json"))
 	if err != nil {
 		return
 	}
-	result.ClassInfo, err = utils.UnmarshallFile[map[string]string](fmt.Sprintf("testdata/%s/classInfo.json", dir))
+	result.ClassInfo, err = utils.UnmarshallFile[map[string]string](filepath.Join(dir, "classInfo.json"))
 	if err != nil {
 		return
 	}
@@ -124,7 +140,7 @@ func loadTest(dir string) (result TestData, err error) {
 	return
 }
 
-// updateTestData regenerates /testdata by parsing all `.html` files under it
+// updateTestData regenerates /testdata/coursebook/ by parsing all `.html` files under it
 // (recursively via utils.GetAllFilesWithExtension) and saving the current
 // output as the new expected output.
 //
@@ -132,13 +148,16 @@ func loadTest(dir string) (result TestData, err error) {
 //
 //	/case_XXX/
 //	  - input.html
-//	  - classinfo.json
+//	  - classInfo.json
 //	  - course.json
 //	  - section.json
 //	  - professors.json
 //
 // It also regenerates the cumulative JSONs (e.g., Courses.json) by running
-// Parse on the /testdata/.
+// Parse on the /testdata/coursebook.
+//
+// Creates a sample profiles.json by copying professors.json as there is not a good
+// why to create it since scrape profiles does not output any intermediate data.
 //
 // The function creates the new testdata in a temp dir, then replaces the
 // existing one atomically to avoid corruption. Duplicate inputs (based on
@@ -146,15 +165,9 @@ func loadTest(dir string) (result TestData, err error) {
 //
 // Errors may still occur while copying or deleting the testdata directory.
 func updateTestData() error {
-	log.Printf("Updating test data for the given inputs")
-
-	if err := loadGrades("../grade-data"); err != nil {
-		return fmt.Errorf("error loading grades: %v", err)
-	}
-
-	if err := loadProfiles(""); err != nil {
-		//return fmt.Errorf("error loading profiles: %v", err)
-	}
+	//ignore logging
+	log.SetOutput(&bytes.Buffer{})
+	defer log.SetOutput(os.Stdout)
 
 	tempDir, err := os.MkdirTemp("", "testdata-*")
 	if err != nil {
@@ -165,7 +178,11 @@ func updateTestData() error {
 	//Fill temp dir with all the test cases and expected values
 	duplicates := make(map[string]bool)
 
-	for i, input := range utils.GetAllFilesWithExtension("testdata/", ".html") {
+	for i, input := range utils.GetAllFilesWithExtension("testdata/coursebook/", ".html") {
+
+		//manually load grades and profiles since it is usually called in Parse
+		_ = loadGrades("testdata/grade-data/")
+
 		parse(input)
 
 		for _, course := range Courses {
@@ -242,19 +259,34 @@ func updateTestData() error {
 	}
 
 	//rerun parser to get Courses.json, Sections.json, Professors.json
-	Parse(tempDir, tempDir, "../grade-data", false)
+	Parse(tempDir, tempDir, "testdata/grade-data/", true)
 
 	//overwrite the current test data with the new data
-	if err := os.RemoveAll("testdata/"); err != nil {
+	if err := os.RemoveAll("testdata/coursebook/"); err != nil {
 		return fmt.Errorf("failed to remove testdata: %v", err)
 	}
 
-	if err := os.CopyFS("testdata/", os.DirFS(tempDir)); err != nil {
+	if err := os.CopyFS("testdata/coursebook/", os.DirFS(tempDir)); err != nil {
 		return fmt.Errorf("failed to copy testdata: %v", err)
 	}
 
-	//reset maps to avoid side effects. maybe parser should be an object?
-	clearGlobals()
+	// since profiles.json is just a list of professor we can just use a list we already have
+	// could be better but the profiles scraper also does the parsing for some reason so there
+	// is no way to load html like we do for coursebook
+	professors, err := utils.UnmarshallFile[[]schema.Professor]("testdata/coursebook/professors.json")
+	if err != nil {
+		return fmt.Errorf("failed to load professors: %v", err)
+	}
+	// we need to remove meetings and sections since they are always empty when scrapped
+	for i, _ := range professors {
+		professors[i].Sections = []primitive.ObjectID{}
+		professors[i].Office_hours = []schema.Meeting{}
+	}
+
+	if err = utils.WriteJSON("testdata/coursebook/profiles.json", professors); err != nil {
+		return fmt.Errorf("failed to create profiles.json: %v", err)
+	}
+
 	return nil
 }
 
@@ -271,7 +303,8 @@ func TestParse(t *testing.T) {
 	// make sure we are starting from a clean state
 	clearGlobals()
 	tempDir := t.TempDir()
-	Parse("testdata/", tempDir, "../grade-data", false)
+
+	Parse("testdata/coursebook/", tempDir, "testdata/grade-data/", false)
 
 	OutputCourses, err := utils.UnmarshallFile[[]schema.Course](filepath.Join(tempDir, "courses.json"))
 	if err != nil {
@@ -288,27 +321,12 @@ func TestParse(t *testing.T) {
 		t.Errorf("failded to load output sections.json %v", err)
 	}
 
-	ExpectedCourses, err := utils.UnmarshallFile[[]schema.Course](filepath.Join("testdata", "courses.json"))
-	if err != nil {
-		t.Errorf("failded to load expected courses.json %v", err)
-	}
-
-	ExpectedProfessors, err := utils.UnmarshallFile[[]schema.Professor](filepath.Join("testdata", "professors.json"))
-	if err != nil {
-		t.Errorf("failded to load expected professors.json %v", err)
-	}
-
-	ExpectedSections, err := utils.UnmarshallFile[[]schema.Section](filepath.Join("testdata", "sections.json"))
-	if err != nil {
-		t.Errorf("failded to load expected sections.json %v", err)
-	}
-
 	//Build the ValueByID maps, this is used to for comparing because we cant directly compare ids
 	CoursesById := make(map[primitive.ObjectID]schema.Course)
 	for _, course := range OutputCourses {
 		CoursesById[course.Id] = course
 	}
-	for _, course := range ExpectedCourses {
+	for _, course := range testCourses {
 		CoursesById[course.Id] = course
 	}
 
@@ -316,7 +334,7 @@ func TestParse(t *testing.T) {
 	for _, prof := range OutputProfessors {
 		ProfessorsByID[prof.Id] = prof
 	}
-	for _, prof := range ExpectedProfessors {
+	for _, prof := range testProfessors {
 		ProfessorsByID[prof.Id] = prof
 	}
 
@@ -324,7 +342,7 @@ func TestParse(t *testing.T) {
 	for _, section := range OutputSections {
 		SectionsByID[section.Id] = section
 	}
-	for _, section := range ExpectedSections {
+	for _, section := range testSections {
 		SectionsByID[section.Id] = section
 	}
 
@@ -337,7 +355,7 @@ func TestParse(t *testing.T) {
 		CoursesByKey[key] = course
 	}
 
-	for _, expectedCourse := range ExpectedCourses {
+	for _, expectedCourse := range testCourses {
 		key := expectedCourse.Course_number + expectedCourse.Catalog_year
 		t.Run(key, func(t *testing.T) {
 			if outputCourse, ok := CoursesByKey[key]; ok {
@@ -349,8 +367,6 @@ func TestParse(t *testing.T) {
 							if section, ok := SectionsByID[id]; ok {
 								//We don't need to check sections for correctness, just check that the reference is correct
 								result = append(result, section.Section_number)
-							} else {
-								result = append(result, "")
 							}
 						}
 						return result
@@ -358,7 +374,7 @@ func TestParse(t *testing.T) {
 				)
 
 				if diff != "" {
-					t.Errorf("Failed (-expected +got)\n %s", diff)
+					t.Errorf("Course %s mismatch (-expected +got):\n%s", key, diff)
 				}
 
 				//remove found course from map, this will allow us to see if there are extra courses in output
@@ -392,7 +408,7 @@ func TestParse(t *testing.T) {
 		ProfessorsByKey[key] = professor
 	}
 
-	for _, expectedProfessor := range ExpectedProfessors {
+	for _, expectedProfessor := range testProfessors {
 		key := expectedProfessor.First_name + expectedProfessor.Last_name
 		t.Run(key, func(t *testing.T) {
 
@@ -406,8 +422,6 @@ func TestParse(t *testing.T) {
 							if section, ok := SectionsByID[id]; ok {
 								//We don't need to check sections for correctness, just check that the reference is correct
 								result = append(result, section.Section_number)
-							} else {
-								result = append(result, "")
 							}
 						}
 						return result
@@ -415,7 +429,7 @@ func TestParse(t *testing.T) {
 				)
 
 				if diff != "" {
-					t.Errorf("Failed (-expected +got)\n %s", diff)
+					t.Errorf("Professor %s mismatch (-expected +got):\n%s", key, diff)
 				}
 				delete(ProfessorsByKey, key)
 
@@ -448,7 +462,7 @@ func TestParse(t *testing.T) {
 		SectionsByKey[key] = section
 	}
 
-	for _, expectedSection := range ExpectedSections {
+	for _, expectedSection := range testSections {
 
 		course := CoursesById[expectedSection.Course_reference]
 		key := course.Course_number + expectedSection.Section_number + expectedSection.Academic_session.Name
@@ -469,8 +483,6 @@ func TestParse(t *testing.T) {
 							if professor, ok := ProfessorsByID[id]; ok {
 								//We don't need to check sections for correctness, just check that the reference is correct
 								result = append(result, professor.First_name+professor.Last_name)
-							} else {
-								result = append(result, "")
 							}
 						}
 						return result
@@ -478,7 +490,7 @@ func TestParse(t *testing.T) {
 				)
 
 				if diff != "" {
-					t.Errorf("Failed (-expected +got)\n %s", diff)
+					t.Errorf("Section %s mismatch (-expected +got):\n%s", key, diff)
 				}
 
 				delete(SectionsByKey, key)

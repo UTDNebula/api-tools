@@ -1,7 +1,7 @@
 {
-	"_id": "68903692769f7bf3a0a64c80",
+	"_id": "68911bed54c7e89bce3d42bd",
 	"section_number": "001",
-	"course_reference": "68903692769f7bf3a0a64c7f",
+	"course_reference": "68911bed54c7e89bce3d42bc",
 	"section_corequisites": null,
 	"academic_session": {
 		"name": "24F",
@@ -9,7 +9,7 @@
 		"end_date": "2024-12-13T00:00:00-06:00"
 	},
 	"professors": [
-		"68903692769f7bf3a0a64c81"
+		"68911bed54c7e89bce3d42be"
 	],
 	"teaching_assistants": [
 		{

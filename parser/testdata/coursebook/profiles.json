@@ -1,27 +1,6 @@
 [
 	{
-		"_id": "68903692769f7bf3a0a64c96",
-		"first_name": "Botir",
-		"last_name": "Kobilov",
-		"titles": [
-			"Primary Instructor"
-		],
-		"email": "bxk240018@utdallas.edu",
-		"phone_number": "",
-		"office": {
-			"building": "",
-			"room": "",
-			"map_uri": ""
-		},
-		"profile_uri": "",
-		"image_uri": "",
-		"office_hours": null,
-		"sections": [
-			"68903692769f7bf3a0a64c95"
-		]
-	},
-	{
-		"_id": "68903692769f7bf3a0a64c98",
+		"_id": "68911bed54c7e89bce3d42d5",
 		"first_name": "Naim Bugra",
 		"last_name": "Ozel",
 		"titles": [
@@ -36,14 +15,11 @@
 		},
 		"profile_uri": "",
 		"image_uri": "",
-		"office_hours": null,
-		"sections": [
-			"68903692769f7bf3a0a64c97",
-			"68903692769f7bf3a0a64c9a"
-		]
+		"office_hours": [],
+		"sections": []
 	},
 	{
-		"_id": "68903692769f7bf3a0a64c99",
+		"_id": "68911bed54c7e89bce3d42d6",
 		"first_name": "Jieying",
 		"last_name": "Zhang",
 		"titles": [
@@ -58,14 +34,11 @@
 		},
 		"profile_uri": "",
 		"image_uri": "",
-		"office_hours": null,
-		"sections": [
-			"68903692769f7bf3a0a64c97",
-			"68903692769f7bf3a0a64c9a"
-		]
+		"office_hours": [],
+		"sections": []
 	},
 	{
-		"_id": "68903692769f7bf3a0a64c9d",
+		"_id": "68911bed54c7e89bce3d42da",
 		"first_name": "Peter",
 		"last_name": "Lewin",
 		"titles": [
@@ -80,13 +53,11 @@
 		},
 		"profile_uri": "",
 		"image_uri": "",
-		"office_hours": null,
-		"sections": [
-			"68903692769f7bf3a0a64c9c"
-		]
+		"office_hours": [],
+		"sections": []
 	},
 	{
-		"_id": "68903692769f7bf3a0a64ca0",
+		"_id": "68911bed54c7e89bce3d42dd",
 		"first_name": "Tian",
 		"last_name": "Hong",
 		"titles": [
@@ -101,9 +72,26 @@
 		},
 		"profile_uri": "",
 		"image_uri": "",
-		"office_hours": null,
-		"sections": [
-			"68903692769f7bf3a0a64c9f"
-		]
+		"office_hours": [],
+		"sections": []
+	},
+	{
+		"_id": "68911bed54c7e89bce3d42d3",
+		"first_name": "Botir",
+		"last_name": "Kobilov",
+		"titles": [
+			"Primary Instructor"
+		],
+		"email": "bxk240018@utdallas.edu",
+		"phone_number": "",
+		"office": {
+			"building": "",
+			"room": "",
+			"map_uri": ""
+		},
+		"profile_uri": "",
+		"image_uri": "",
+		"office_hours": [],
+		"sections": []
 	}
 ]

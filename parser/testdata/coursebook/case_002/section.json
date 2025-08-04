@@ -1,7 +1,7 @@
 {
-	"_id": "68903692769f7bf3a0a64c83",
-	"section_number": "003",
-	"course_reference": "68903692769f7bf3a0a64c82",
+	"_id": "68911bed54c7e89bce3d42c4",
+	"section_number": "001",
+	"course_reference": "68911bed54c7e89bce3d42c3",
 	"section_corequisites": null,
 	"academic_session": {
 		"name": "25S",
@@ -9,8 +9,8 @@
 		"end_date": "2025-05-16T00:00:00-05:00"
 	},
 	"professors": [
-		"68903692769f7bf3a0a64c84",
-		"68903692769f7bf3a0a64c85"
+		"68911bed54c7e89bce3d42c5",
+		"68911bed54c7e89bce3d42c6"
 	],
 	"teaching_assistants": [
 		{
@@ -26,7 +26,7 @@
 			"email": "dxb220047@utdallas.edu"
 		}
 	],
-	"internal_class_number": "27706",
+	"internal_class_number": "26595",
 	"instruction_mode": "Face-to-Face",
 	"meetings": [
 		{
@@ -36,8 +36,8 @@
 				"Tuesday",
 				"Thursday"
 			],
-			"start_time": "10:00am",
-			"end_time": "11:15am",
+			"start_time": "8:30am",
+			"end_time": "9:45am",
 			"modality": "",
 			"location": {
 				"building": "JSOM",
@@ -47,7 +47,7 @@
 		}
 	],
 	"core_flags": [],
-	"syllabus_uri": "https://dox.utdallas.edu/syl152555",
+	"syllabus_uri": "https://dox.utdallas.edu/syl152552",
 	"grade_distribution": [],
 	"attributes": null
 }

@@ -1,5 +1,5 @@
 {
-	"_id": "68903692769f7bf3a0a64c8d",
+	"_id": "68911bed54c7e89bce3d42ca",
 	"subject_prefix": "BIOL",
 	"course_number": "6111",
 	"title": "Graduate Research Presentation",
@@ -15,7 +15,7 @@
 	"corequisites": null,
 	"co_or_pre_requisites": null,
 	"sections": [
-		"68903692769f7bf3a0a64c8e"
+		"68911bed54c7e89bce3d42cb"
 	],
 	"lecture_contact_hours": "1",
 	"laboratory_contact_hours": "0",

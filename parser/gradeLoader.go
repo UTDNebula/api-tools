@@ -97,7 +97,7 @@ func csvToMap(csvFilePath string) (map[string][]int, error) {
 		return map[string][]int{}, fmt.Errorf("could not find A+ column")
 	}
 
-	for _, record := range records {
+	for _, record := range records[1:] {
 		// convert grade distribution from string to int
 		intSlice := [14]int{}
 

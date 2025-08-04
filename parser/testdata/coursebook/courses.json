@@ -1,6 +1,6 @@
 [
 	{
-		"_id": "68903692769f7bf3a0a64c94",
+		"_id": "68911bed54c7e89bce3d42d1",
 		"subject_prefix": "ACCT",
 		"course_number": "2301",
 		"title": "Introductory Financial Accounting",
@@ -16,9 +16,9 @@
 		"corequisites": null,
 		"co_or_pre_requisites": null,
 		"sections": [
-			"68903692769f7bf3a0a64c95",
-			"68903692769f7bf3a0a64c97",
-			"68903692769f7bf3a0a64c9a"
+			"68911bed54c7e89bce3d42d2",
+			"68911bed54c7e89bce3d42d4",
+			"68911bed54c7e89bce3d42d7"
 		],
 		"lecture_contact_hours": "3",
 		"laboratory_contact_hours": "0",
@@ -27,7 +27,7 @@
 		"attributes": null
 	},
 	{
-		"_id": "68903692769f7bf3a0a64c9b",
+		"_id": "68911bed54c7e89bce3d42d8",
 		"subject_prefix": "BA",
 		"course_number": "1320",
 		"title": "Business in a Global World",
@@ -43,7 +43,7 @@
 		"corequisites": null,
 		"co_or_pre_requisites": null,
 		"sections": [
-			"68903692769f7bf3a0a64c9c"
+			"68911bed54c7e89bce3d42d9"
 		],
 		"lecture_contact_hours": "3",
 		"laboratory_contact_hours": "0",
@@ -52,7 +52,7 @@
 		"attributes": null
 	},
 	{
-		"_id": "68903692769f7bf3a0a64c9e",
+		"_id": "68911bed54c7e89bce3d42db",
 		"subject_prefix": "BIOL",
 		"course_number": "6111",
 		"title": "Graduate Research Presentation",
@@ -68,7 +68,7 @@
 		"corequisites": null,
 		"co_or_pre_requisites": null,
 		"sections": [
-			"68903692769f7bf3a0a64c9f"
+			"68911bed54c7e89bce3d42dc"
 		],
 		"lecture_contact_hours": "1",
 		"laboratory_contact_hours": "0",
@@ -77,7 +77,7 @@
 		"attributes": null
 	},
 	{
-		"_id": "68903692769f7bf3a0a64ca1",
+		"_id": "68911bed54c7e89bce3d42de",
 		"subject_prefix": "AERO",
 		"course_number": "3320",
 		"title": "- Recitation",
@@ -93,7 +93,7 @@
 		"corequisites": null,
 		"co_or_pre_requisites": null,
 		"sections": [
-			"68903692769f7bf3a0a64ca2"
+			"68911bed54c7e89bce3d42df"
 		],
 		"lecture_contact_hours": "",
 		"laboratory_contact_hours": "",
@@ -102,7 +102,7 @@
 		"attributes": null
 	},
 	{
-		"_id": "68903692769f7bf3a0a64ca3",
+		"_id": "68911bed54c7e89bce3d42e0",
 		"subject_prefix": "AERO",
 		"course_number": "4320",
 		"title": "- Laboratory",
@@ -118,7 +118,7 @@
 		"corequisites": null,
 		"co_or_pre_requisites": null,
 		"sections": [
-			"68903692769f7bf3a0a64ca4"
+			"68911bed54c7e89bce3d42e1"
 		],
 		"lecture_contact_hours": "",
 		"laboratory_contact_hours": "",

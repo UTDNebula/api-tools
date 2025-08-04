@@ -1,82 +1,8 @@
 [
 	{
-		"_id": "68903692769f7bf3a0a64c9f",
-		"section_number": "016",
-		"course_reference": "68903692769f7bf3a0a64c9e",
-		"section_corequisites": null,
-		"academic_session": {
-			"name": "25S",
-			"start_date": "2025-01-21T00:00:00-06:00",
-			"end_date": "2025-05-16T00:00:00-05:00"
-		},
-		"professors": [
-			"68903692769f7bf3a0a64ca0"
-		],
-		"teaching_assistants": [],
-		"internal_class_number": "29611",
-		"instruction_mode": "Face-to-Face",
-		"meetings": [
-			{
-				"start_date": "2025-01-21T00:00:00-06:00",
-				"end_date": "2025-05-09T00:00:00-05:00",
-				"meeting_days": [
-					"Thursday"
-				],
-				"start_time": "9:30am",
-				"end_time": "10:20am",
-				"modality": "",
-				"location": {
-					"building": "",
-					"room": "",
-					"map_uri": ""
-				}
-			}
-		],
-		"core_flags": [],
-		"syllabus_uri": "https://dox.utdallas.edu/syl153921",
-		"grade_distribution": [],
-		"attributes": null
-	},
-	{
-		"_id": "68903692769f7bf3a0a64ca2",
-		"section_number": "201",
-		"course_reference": "68903692769f7bf3a0a64ca1",
-		"section_corequisites": null,
-		"academic_session": {
-			"name": "25S",
-			"start_date": "2025-01-21T00:00:00-06:00",
-			"end_date": "2025-05-16T00:00:00-05:00"
-		},
-		"professors": [],
-		"teaching_assistants": [],
-		"internal_class_number": "28551",
-		"instruction_mode": "Face-to-Face",
-		"meetings": [
-			{
-				"start_date": "2025-01-21T00:00:00-06:00",
-				"end_date": "2025-05-09T00:00:00-05:00",
-				"meeting_days": [
-					"Thursday"
-				],
-				"start_time": "2:00pm",
-				"end_time": "3:00pm",
-				"modality": "",
-				"location": {
-					"building": "",
-					"room": "",
-					"map_uri": ""
-				}
-			}
-		],
-		"core_flags": [],
-		"syllabus_uri": "",
-		"grade_distribution": [],
-		"attributes": null
-	},
-	{
-		"_id": "68903692769f7bf3a0a64ca4",
+		"_id": "68911bed54c7e89bce3d42e1",
 		"section_number": "002",
-		"course_reference": "68903692769f7bf3a0a64ca3",
+		"course_reference": "68911bed54c7e89bce3d42e0",
 		"section_corequisites": null,
 		"academic_session": {
 			"name": "25S",
@@ -125,9 +51,9 @@
 		"attributes": null
 	},
 	{
-		"_id": "68903692769f7bf3a0a64c95",
+		"_id": "68911bed54c7e89bce3d42d2",
 		"section_number": "001",
-		"course_reference": "68903692769f7bf3a0a64c94",
+		"course_reference": "68911bed54c7e89bce3d42d1",
 		"section_corequisites": null,
 		"academic_session": {
 			"name": "24F",
@@ -135,7 +61,7 @@
 			"end_date": "2024-12-13T00:00:00-06:00"
 		},
 		"professors": [
-			"68903692769f7bf3a0a64c96"
+			"68911bed54c7e89bce3d42d3"
 		],
 		"teaching_assistants": [
 			{
@@ -186,9 +112,9 @@
 		"attributes": null
 	},
 	{
-		"_id": "68903692769f7bf3a0a64c97",
+		"_id": "68911bed54c7e89bce3d42d4",
 		"section_number": "003",
-		"course_reference": "68903692769f7bf3a0a64c94",
+		"course_reference": "68911bed54c7e89bce3d42d1",
 		"section_corequisites": null,
 		"academic_session": {
 			"name": "25S",
@@ -196,8 +122,8 @@
 			"end_date": "2025-05-16T00:00:00-05:00"
 		},
 		"professors": [
-			"68903692769f7bf3a0a64c98",
-			"68903692769f7bf3a0a64c99"
+			"68911bed54c7e89bce3d42d5",
+			"68911bed54c7e89bce3d42d6"
 		],
 		"teaching_assistants": [
 			{
@@ -239,9 +165,9 @@
 		"attributes": null
 	},
 	{
-		"_id": "68903692769f7bf3a0a64c9a",
+		"_id": "68911bed54c7e89bce3d42d7",
 		"section_number": "001",
-		"course_reference": "68903692769f7bf3a0a64c94",
+		"course_reference": "68911bed54c7e89bce3d42d1",
 		"section_corequisites": null,
 		"academic_session": {
 			"name": "25S",
@@ -249,8 +175,8 @@
 			"end_date": "2025-05-16T00:00:00-05:00"
 		},
 		"professors": [
-			"68903692769f7bf3a0a64c99",
-			"68903692769f7bf3a0a64c98"
+			"68911bed54c7e89bce3d42d6",
+			"68911bed54c7e89bce3d42d5"
 		],
 		"teaching_assistants": [
 			{
@@ -292,9 +218,9 @@
 		"attributes": null
 	},
 	{
-		"_id": "68903692769f7bf3a0a64c9c",
+		"_id": "68911bed54c7e89bce3d42d9",
 		"section_number": "501",
-		"course_reference": "68903692769f7bf3a0a64c9b",
+		"course_reference": "68911bed54c7e89bce3d42d8",
 		"section_corequisites": null,
 		"academic_session": {
 			"name": "25S",
@@ -302,7 +228,7 @@
 			"end_date": "2025-05-16T00:00:00-05:00"
 		},
 		"professors": [
-			"68903692769f7bf3a0a64c9d"
+			"68911bed54c7e89bce3d42da"
 		],
 		"teaching_assistants": [
 			{
@@ -337,6 +263,80 @@
 			"090"
 		],
 		"syllabus_uri": "https://dox.utdallas.edu/syl153033",
+		"grade_distribution": [],
+		"attributes": null
+	},
+	{
+		"_id": "68911bed54c7e89bce3d42dc",
+		"section_number": "016",
+		"course_reference": "68911bed54c7e89bce3d42db",
+		"section_corequisites": null,
+		"academic_session": {
+			"name": "25S",
+			"start_date": "2025-01-21T00:00:00-06:00",
+			"end_date": "2025-05-16T00:00:00-05:00"
+		},
+		"professors": [
+			"68911bed54c7e89bce3d42dd"
+		],
+		"teaching_assistants": [],
+		"internal_class_number": "29611",
+		"instruction_mode": "Face-to-Face",
+		"meetings": [
+			{
+				"start_date": "2025-01-21T00:00:00-06:00",
+				"end_date": "2025-05-09T00:00:00-05:00",
+				"meeting_days": [
+					"Thursday"
+				],
+				"start_time": "9:30am",
+				"end_time": "10:20am",
+				"modality": "",
+				"location": {
+					"building": "",
+					"room": "",
+					"map_uri": ""
+				}
+			}
+		],
+		"core_flags": [],
+		"syllabus_uri": "https://dox.utdallas.edu/syl153921",
+		"grade_distribution": [],
+		"attributes": null
+	},
+	{
+		"_id": "68911bed54c7e89bce3d42df",
+		"section_number": "201",
+		"course_reference": "68911bed54c7e89bce3d42de",
+		"section_corequisites": null,
+		"academic_session": {
+			"name": "25S",
+			"start_date": "2025-01-21T00:00:00-06:00",
+			"end_date": "2025-05-16T00:00:00-05:00"
+		},
+		"professors": [],
+		"teaching_assistants": [],
+		"internal_class_number": "28551",
+		"instruction_mode": "Face-to-Face",
+		"meetings": [
+			{
+				"start_date": "2025-01-21T00:00:00-06:00",
+				"end_date": "2025-05-09T00:00:00-05:00",
+				"meeting_days": [
+					"Thursday"
+				],
+				"start_time": "2:00pm",
+				"end_time": "3:00pm",
+				"modality": "",
+				"location": {
+					"building": "",
+					"room": "",
+					"map_uri": ""
+				}
+			}
+		],
+		"core_flags": [],
+		"syllabus_uri": "",
 		"grade_distribution": [],
 		"attributes": null
 	}
