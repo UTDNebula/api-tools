@@ -180,8 +180,10 @@ func updateTestData() error {
 
 	for i, input := range utils.GetAllFilesWithExtension("testdata/coursebook/", ".html") {
 
-		//manually load grades and profiles since it is usually called in Parse
-		_ = loadGrades("testdata/grade-data/")
+		//manually load grades and profiles since it is usually called in Parse()
+		if err := loadGrades("testdata/grade-data/"); err != nil {
+			return fmt.Errorf("faild to load grade data: %v", err)
+		}
 
 		parse(input)
 
@@ -278,7 +280,7 @@ func updateTestData() error {
 		return fmt.Errorf("failed to load professors: %v", err)
 	}
 	// we need to remove meetings and sections since they are always empty when scrapped
-	for i, _ := range professors {
+	for i := range professors {
 		professors[i].Sections = []primitive.ObjectID{}
 		professors[i].Office_hours = []schema.Meeting{}
 	}
