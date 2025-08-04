@@ -1,53 +1,61 @@
 {
-	"_id": "67d07ee0c972c18731e23bd8",
-	"section_number": "003",
-	"course_reference": "67d07ee0c972c18731e23bd7",
+	"_id": "68903692769f7bf3a0a64c80",
+	"section_number": "001",
+	"course_reference": "68903692769f7bf3a0a64c7f",
 	"section_corequisites": null,
 	"academic_session": {
-		"name": "25S",
-		"start_date": "2025-01-21T00:00:00-06:00",
-		"end_date": "2025-05-16T00:00:00-05:00"
+		"name": "24F",
+		"start_date": "2024-08-19T00:00:00-05:00",
+		"end_date": "2024-12-13T00:00:00-06:00"
 	},
 	"professors": [
-		"67d07ee0c972c18731e23bd9",
-		"67d07ee0c972c18731e23bda"
+		"68903692769f7bf3a0a64c81"
 	],
 	"teaching_assistants": [
 		{
-			"first_name": "Galymzhan",
-			"last_name": "Tazhibayev",
+			"first_name": "Ye",
+			"last_name": "Zhang",
 			"role": "Teaching Assistant",
-			"email": "gxt230023@utdallas.edu"
-		},
-		{
-			"first_name": "Dipta",
-			"last_name": "Banik",
-			"role": "Teaching Assistant",
-			"email": "dxb220047@utdallas.edu"
+			"email": "yxz210025@utdallas.edu"
 		}
 	],
-	"internal_class_number": "27706",
+	"internal_class_number": "86942",
 	"instruction_mode": "Face-to-Face",
 	"meetings": [
 		{
-			"start_date": "2025-01-21T00:00:00-06:00",
-			"end_date": "2025-05-09T00:00:00-05:00",
+			"start_date": "2024-08-19T00:00:00-05:00",
+			"end_date": "2024-12-05T00:00:00-06:00",
 			"meeting_days": [
-				"Tuesday",
-				"Thursday"
+				"Monday",
+				"Wednesday"
 			],
-			"start_time": "10:00am",
-			"end_time": "11:15am",
+			"start_time": "2:30pm",
+			"end_time": "3:45pm",
 			"modality": "",
 			"location": {
 				"building": "JSOM",
-				"room": "2.717",
-				"map_uri": "https://locator.utdallas.edu/SOM_2.717"
+				"room": "2.803",
+				"map_uri": "https://locator.utdallas.edu/SOM_2.803"
 			}
 		}
 	],
 	"core_flags": [],
-	"syllabus_uri": "https://dox.utdallas.edu/syl152555",
-	"grade_distribution": [],
+	"syllabus_uri": "https://dox.utdallas.edu/syl147809",
+	"grade_distribution": [
+		12,
+		6,
+		1,
+		7,
+		3,
+		2,
+		5,
+		2,
+		0,
+		4,
+		1,
+		0,
+		2,
+		1
+	],
 	"attributes": null
 }

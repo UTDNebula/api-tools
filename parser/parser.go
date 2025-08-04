@@ -39,22 +39,24 @@ var (
 	timeLocation, timeError = time.LoadLocation("America/Chicago")
 )
 
+func init() {
+	// Check that timeLocation loaded properly
+	if timeError != nil {
+		log.Fatalf("Time Location failed with error: %v", timeError)
+	}
+}
+
 // Parse Externally exposed parse function
 func Parse(inDir string, outDir string, csvPath string, skipValidation bool) {
-
-	// Panic if timeLocation didn't load properly
-	if timeError != nil {
-		panic(timeError)
+	if err := loadGrades(csvPath); err != nil {
+		log.Printf("Grade loading failed: %v", err)
+		log.Print("Couldn't find/open grade data. Skipping grade load.")
 	}
 
-	// Load grade data from csv in advance
-	GradeMap = loadGrades(csvPath)
-	if len(GradeMap) != 0 {
-		log.Printf("Loaded grade distributions for %d semesters.", len(GradeMap))
+	if err := loadProfiles(inDir); err != nil {
+		log.Printf("Profile loading failed: %v", err)
+		log.Print("Couldn't find/open profiles.json in the input directory. Skipping profile load.")
 	}
-
-	// Try to load any existing profile data
-	loadProfiles(inDir)
 
 	// Find paths of all scraped data
 	paths := utils.GetAllFilesWithExtension(inDir, ".html")
@@ -69,9 +71,9 @@ func Parse(inDir string, outDir string, csvPath string, skipValidation bool) {
 		parse(path)
 	}
 
-	log.Printf("\nParsing complete. Created %d courses, %d sections, and %d professors.", len(Courses), len(Sections), len(Professors))
+	log.Printf("Parsing complete. Created %d courses, %d sections, and %d professors.", len(Courses), len(Sections), len(Professors))
 
-	log.Print("\nParsing course requisites...")
+	log.Print("Parsing course requisites...")
 
 	// Initialize matchers at runtime for requisite parsing; this is necessary to avoid circular reference errors with compile-time initialization
 	initMatchers()
@@ -82,15 +84,14 @@ func Parse(inDir string, outDir string, csvPath string, skipValidation bool) {
 	log.Print("Finished parsing course requisites!")
 
 	if !skipValidation {
-		log.Print("\nStarting validation stage...")
+		log.Print("Starting validation stage...")
 		validate()
-		log.Print("\nValidation complete!")
+		log.Print("Validation complete!")
 	}
 
 	// Make outDir if it doesn't already exist
-	err := os.MkdirAll(outDir, 0777)
-	if err != nil {
-		panic(err)
+	if err := os.MkdirAll(outDir, 0777); err != nil {
+		log.Fatalf("Error creating output directory: %v", err)
 	}
 
 	// Write validated data to output files

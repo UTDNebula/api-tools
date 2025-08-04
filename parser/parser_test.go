@@ -30,11 +30,16 @@ type TestData struct {
 	Professors []schema.Professor
 }
 
-// testData global dictionary containing the data from /testdata by folder name
-var testData map[string]TestData
+// testData global dictionary containing the data from /testdata/coursebook by folder name
+var (
+	testData       map[string]TestData
+	testCourses    []schema.Course
+	testSections   []schema.Section
+	testProfessors []schema.Professor
+)
 
 // TestMain entry point for all tests in the parser package.
-// The function will load `./testdata` into memory before running
+// The function will load `/testdata/coursebook` into memory before running
 // the tests so that test can run in parallel.
 //
 // You can optionally provide the flag `update`, which will run
@@ -57,7 +62,7 @@ func TestMain(m *testing.M) {
 	}
 
 	testData = make(map[string]TestData)
-	dir, err := os.ReadDir("testdata")
+	dir, err := os.ReadDir("testdata/")
 	if err != nil {
 		log.Fatalf("Failed to load testdata: %v", err)
 	}
@@ -69,6 +74,19 @@ func TestMain(m *testing.M) {
 		if testData[file.Name()], err = loadTest(file.Name()); err != nil {
 			log.Fatalf("Failed to load %s: %v", file.Name(), err)
 		}
+	}
+
+	testCourses, err = utils.UnmarshallFile[[]schema.Course]("./testdata/courses.json")
+	if err != nil {
+		log.Fatalf("Failed to load courses: %v", err)
+	}
+	testSections, err = utils.UnmarshallFile[[]schema.Section]("./testdata/sections.json")
+	if err != nil {
+		log.Fatalf("Failed to load sections: %v", err)
+	}
+	testProfessors, err = utils.UnmarshallFile[[]schema.Professor]("./testdata/professors.json")
+	if err != nil {
+		log.Fatalf("Failed to load professors: %v", err)
 	}
 
 	os.Exit(m.Run())
@@ -86,19 +104,19 @@ func loadTest(dir string) (result TestData, err error) {
 	}
 	result.Input = string(htmlBytes)
 	result.RowInfo = getRowInfo(doc)
-	result.Section, err = unmarshallFile[schema.Section](fmt.Sprintf("testdata/%s/section.json", dir))
+	result.Section, err = utils.UnmarshallFile[schema.Section](fmt.Sprintf("testdata/%s/section.json", dir))
 	if err != nil {
 		return
 	}
-	result.Course, err = unmarshallFile[schema.Course](fmt.Sprintf("testdata/%s/course.json", dir))
+	result.Course, err = utils.UnmarshallFile[schema.Course](fmt.Sprintf("testdata/%s/course.json", dir))
 	if err != nil {
 		return
 	}
-	result.Professors, err = unmarshallFile[[]schema.Professor](fmt.Sprintf("testdata/%s/professors.json", dir))
+	result.Professors, err = utils.UnmarshallFile[[]schema.Professor](fmt.Sprintf("testdata/%s/professors.json", dir))
 	if err != nil {
 		return
 	}
-	result.ClassInfo, err = unmarshallFile[map[string]string](fmt.Sprintf("testdata/%s/classInfo.json", dir))
+	result.ClassInfo, err = utils.UnmarshallFile[map[string]string](fmt.Sprintf("testdata/%s/classInfo.json", dir))
 	if err != nil {
 		return
 	}
@@ -120,7 +138,7 @@ func loadTest(dir string) (result TestData, err error) {
 //	  - professors.json
 //
 // It also regenerates the cumulative JSONs (e.g., Courses.json) by running
-// Parse on the /testdata.
+// Parse on the /testdata/.
 //
 // The function creates the new testdata in a temp dir, then replaces the
 // existing one atomically to avoid corruption. Duplicate inputs (based on
@@ -129,8 +147,14 @@ func loadTest(dir string) (result TestData, err error) {
 // Errors may still occur while copying or deleting the testdata directory.
 func updateTestData() error {
 	log.Printf("Updating test data for the given inputs")
-	//doesn't do anything since there is no profile data
-	loadProfiles("")
+
+	if err := loadGrades("../grade-data"); err != nil {
+		return fmt.Errorf("error loading grades: %v", err)
+	}
+
+	if err := loadProfiles(""); err != nil {
+		//return fmt.Errorf("error loading profiles: %v", err)
+	}
 
 	tempDir, err := os.MkdirTemp("", "testdata-*")
 	if err != nil {
@@ -139,10 +163,9 @@ func updateTestData() error {
 	defer os.RemoveAll(tempDir)
 
 	//Fill temp dir with all the test cases and expected values
-
 	duplicates := make(map[string]bool)
 
-	for i, input := range utils.GetAllFilesWithExtension("testdata", ".html") {
+	for i, input := range utils.GetAllFilesWithExtension("testdata/", ".html") {
 		parse(input)
 
 		for _, course := range Courses {
@@ -158,7 +181,7 @@ func updateTestData() error {
 		hash := sha256.Sum256(htmlBytes)
 		hashStr := hex.EncodeToString(hash[:])
 		if duplicate := duplicates[hashStr]; duplicate {
-			log.Printf("Duplicate test found %s, skipping\n", input)
+			log.Printf("Duplicate test found %s, skipping", input)
 			continue
 		} else {
 			duplicates[hashStr] = true
@@ -214,22 +237,19 @@ func updateTestData() error {
 			return fmt.Errorf("failed to write professors %v", err)
 		}
 
-		//reset all the maps, this is important since we are depending on them to only contain the current set
+		//reset all the maps, this is important since we are depend on them to only contain the current set
 		clearGlobals()
 	}
 
 	//rerun parser to get Courses.json, Sections.json, Professors.json
-
-	//Parse(tempDir, tempDir, "../grade-data", false)
-	//Grade data isn't work with tests currently
-	Parse(tempDir, tempDir, "", false)
+	Parse(tempDir, tempDir, "../grade-data", false)
 
 	//overwrite the current test data with the new data
-	if err := os.RemoveAll("testdata"); err != nil {
+	if err := os.RemoveAll("testdata/"); err != nil {
 		return fmt.Errorf("failed to remove testdata: %v", err)
 	}
 
-	if err := os.CopyFS("testdata", os.DirFS(tempDir)); err != nil {
+	if err := os.CopyFS("testdata/", os.DirFS(tempDir)); err != nil {
 		return fmt.Errorf("failed to copy testdata: %v", err)
 	}
 
@@ -248,36 +268,37 @@ func clearGlobals() {
 }
 
 func TestParse(t *testing.T) {
+	// make sure we are starting from a clean state
+	clearGlobals()
 	tempDir := t.TempDir()
-	// todo fix grade data, csvPath = ./grade-data panics
-	Parse("testdata", tempDir, "", false)
+	Parse("testdata/", tempDir, "../grade-data", false)
 
-	OutputCourses, err := unmarshallFile[[]schema.Course](filepath.Join(tempDir, "courses.json"))
+	OutputCourses, err := utils.UnmarshallFile[[]schema.Course](filepath.Join(tempDir, "courses.json"))
 	if err != nil {
 		t.Errorf("failded to load output courses.json %v", err)
 	}
 
-	OutputProfessors, err := unmarshallFile[[]schema.Professor](filepath.Join(tempDir, "professors.json"))
+	OutputProfessors, err := utils.UnmarshallFile[[]schema.Professor](filepath.Join(tempDir, "professors.json"))
 	if err != nil {
 		t.Errorf("failded to load output professors.json %v", err)
 	}
 
-	OutputSections, err := unmarshallFile[[]schema.Section](filepath.Join(tempDir, "sections.json"))
+	OutputSections, err := utils.UnmarshallFile[[]schema.Section](filepath.Join(tempDir, "sections.json"))
 	if err != nil {
 		t.Errorf("failded to load output sections.json %v", err)
 	}
 
-	ExpectedCourses, err := unmarshallFile[[]schema.Course](filepath.Join("testdata", "courses.json"))
+	ExpectedCourses, err := utils.UnmarshallFile[[]schema.Course](filepath.Join("testdata", "courses.json"))
 	if err != nil {
 		t.Errorf("failded to load expected courses.json %v", err)
 	}
 
-	ExpectedProfessors, err := unmarshallFile[[]schema.Professor](filepath.Join("testdata", "professors.json"))
+	ExpectedProfessors, err := utils.UnmarshallFile[[]schema.Professor](filepath.Join("testdata", "professors.json"))
 	if err != nil {
 		t.Errorf("failded to load expected professors.json %v", err)
 	}
 
-	ExpectedSections, err := unmarshallFile[[]schema.Section](filepath.Join("testdata", "sections.json"))
+	ExpectedSections, err := utils.UnmarshallFile[[]schema.Section](filepath.Join("testdata", "sections.json"))
 	if err != nil {
 		t.Errorf("failded to load expected sections.json %v", err)
 	}
@@ -423,14 +444,14 @@ func TestParse(t *testing.T) {
 	for _, section := range OutputSections {
 		//the ok shouldn't fail since this is after we checked all the courses
 		course := CoursesById[section.Course_reference]
-		key := course.Course_number + course.Catalog_year + section.Section_number
+		key := course.Course_number + section.Section_number + section.Academic_session.Name
 		SectionsByKey[key] = section
 	}
 
 	for _, expectedSection := range ExpectedSections {
 
 		course := CoursesById[expectedSection.Course_reference]
-		key := course.Course_number + course.Catalog_year + expectedSection.Section_number
+		key := course.Course_number + expectedSection.Section_number + expectedSection.Academic_session.Name
 		t.Run(key, func(t *testing.T) {
 			if outputSection, ok := SectionsByKey[key]; ok {
 
@@ -479,21 +500,6 @@ func TestParse(t *testing.T) {
 		}
 		t.Error(builder.String())
 	}
-}
-
-// unmarshallFile reads a JSON file from the given path and unmarshals it into type T.
-func unmarshallFile[T any](path string) (T, error) {
-	var result T
-
-	file, err := os.ReadFile(path)
-	if err != nil {
-		return result, fmt.Errorf("error reading file '%s': %w", path, err) // Wrap original error
-	}
-	if err = json.Unmarshal(file, &result); err != nil {
-		return result, fmt.Errorf("error unmarshalling JSON from file '%s': %w", path, err) // Wrap original error
-	}
-
-	return result, nil
 }
 
 func TestGetClassInfo(t *testing.T) {
@@ -585,5 +591,18 @@ func TestGetRowInfo(t *testing.T) {
 				t.Errorf("Failed to find row in infoRows")
 			}
 		})
+	}
+}
+
+// utils
+func FailTestIfNoPanic(t *testing.T, name string) {
+	if r := recover(); r == nil {
+		t.Errorf("expected %s to panic but it did not", name)
+	}
+}
+
+func FailTestIfPanic(t *testing.T, name string) {
+	if r := recover(); r != nil {
+		t.Errorf("%s failed with error %v", name, r)
 	}
 }

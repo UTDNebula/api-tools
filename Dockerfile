@@ -25,7 +25,7 @@ ENV GOOGLE_CHROME_BIN /usr/bin/chromium # Also set this for compatibility
 
 # Copy build file from builder
 COPY --from=builder /app/api-tools /app/api-tools
-COPY deploy.sh /app/deploy.sh
+COPY runners /app/runners
 
-RUN chmod +x /app/deploy.sh
-ENTRYPOINT ["/app/deploy.sh"]
+RUN chmod +x /app/runners/setup.sh
+ENTRYPOINT ["/app/runners/setup.sh"]

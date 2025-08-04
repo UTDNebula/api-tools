@@ -48,11 +48,7 @@ func TestGetInternalClassAndCourseNum(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			defer func() {
-				if r := recover(); r == nil {
-					t.Errorf("expected panic for input %s but none occurred", fail)
-				}
-			}()
+			defer FailTestIfNoPanic(t, name)
 			getInternalClassAndCourseNum(fail)
 
 		})
@@ -112,11 +108,7 @@ func TestGetSectionNumber(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			defer func() {
-				if r := recover(); r == nil {
-					t.Errorf("expected panic for input %s but none occurred", fail)
-				}
-			}()
+			defer FailTestIfNoPanic(t, name)
 			getSectionNumber(fail)
 
 		})
@@ -252,17 +244,11 @@ func TestParseTimeOrPanic(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			defer func() {
-				if r := recover(); r != nil {
-					if !testCase.Panic {
-						t.Errorf("unexpected panic for input %q: %v", testCase.Input, r)
-					}
-				} else {
-					if testCase.Panic {
-						t.Errorf("expected panic for input %q but none occurred", testCase.Input)
-					}
-				}
-			}()
+			if testCase.Panic {
+				defer FailTestIfNoPanic(t, name)
+			} else {
+				defer FailTestIfPanic(t, name)
+			}
 
 			got := parseTimeOrPanic(testCase.Input)
 			if !testCase.Panic && !got.Equal(testCase.Expected) {

@@ -66,18 +66,11 @@ func TestGetCatalogYear(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			defer func() {
-				// Test fails if we panic when we didn't want to or didn't when we did
-				if rec := recover(); rec != nil {
-					if !testCase.Panic {
-						t.Errorf("unexpected panic for session %q: %v", testCase.Session.Name, rec)
-					}
-				} else {
-					if testCase.Panic {
-						t.Errorf("expected panic for session %q but got none", testCase.Session.Name)
-					}
-				}
-			}()
+			if testCase.Panic {
+				defer FailTestIfNoPanic(t, name)
+			} else {
+				defer FailTestIfPanic(t, name)
+			}
 
 			// only call if we *expect* it to succeed
 			output := getCatalogYear(testCase.Session)
@@ -133,17 +126,11 @@ func TestGetPrefixAndCourseNum(t *testing.T) {
 
 	for name, testCase := range testCases {
 		t.Run(name, func(t *testing.T) {
-			defer func() {
-				if r := recover(); r != nil {
-					if !testCase.Panic {
-						t.Errorf("unexpected panic for input %q: %v", name, r)
-					}
-				} else {
-					if testCase.Panic {
-						t.Errorf("expected panic for input %q but none occurred", name)
-					}
-				}
-			}()
+			if testCase.Panic {
+				defer FailTestIfNoPanic(t, name)
+			} else {
+				defer FailTestIfPanic(t, name)
+			}
 
 			prefix, number := getPrefixAndNumber(testCase.ClassInfo)
 

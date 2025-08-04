@@ -1,12 +1,12 @@
 [
 	{
-		"_id": "67d07ee0c972c18731e23be4",
-		"first_name": "Tian",
-		"last_name": "Hong",
+		"_id": "68903692769f7bf3a0a64c8c",
+		"first_name": "Peter",
+		"last_name": "Lewin",
 		"titles": [
 			"Primary Instructor"
 		],
-		"email": "txh240018@utdallas.edu",
+		"email": "plewin@utdallas.edu",
 		"phone_number": "",
 		"office": {
 			"building": "",
@@ -17,7 +17,7 @@
 		"image_uri": "",
 		"office_hours": null,
 		"sections": [
-			"67d07ee0c972c18731e23be3"
+			"68903692769f7bf3a0a64c8b"
 		]
 	}
 ]

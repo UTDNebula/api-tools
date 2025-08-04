@@ -319,3 +319,23 @@ func ConvertFromInterface[T string | float64](value interface{}) *T {
 	}
 	return nil
 }
+
+// UnmarshallFile reads a JSON file from the given path and unmarshalls it into type T.
+// With rethrow `os.ErrNotExist` if it occurs otherwise errors will be wrapped
+func UnmarshallFile[T any](path string) (T, error) {
+	var result T
+
+	file, err := os.ReadFile(path)
+	if err != nil {
+		//rethrow errors for missing files
+		if errors.Is(err, os.ErrNotExist) {
+			return result, err
+		}
+		return result, fmt.Errorf("error reading file '%s': %w", path, err)
+	}
+	if err = json.Unmarshal(file, &result); err != nil {
+		return result, fmt.Errorf("error unmarshalling JSON from file '%s': %w", path, err)
+	}
+
+	return result, nil
+}
