@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/UTDNebula/api-tools/utils"
@@ -64,7 +65,8 @@ func ScrapeCalendar(outDir string) {
 				endTime = parseTime(toString(eventInstance["end"]))
 			}
 
-			location := utils.TrimWhitespace(fmt.Sprintf("%s, %s", toString(rawEvent.Event["location_name"]), toString(rawEvent.Event["room_number"])))
+			// Parse location
+			location := strings.Trim(fmt.Sprintf("%s, %s", toString(rawEvent.Event["location_name"]), toString(rawEvent.Event["room_number"])), " ,")
 
 			// Parse the event types, event topic, and event target audience
 			filters := toMap(rawEvent.Event["filters"])
