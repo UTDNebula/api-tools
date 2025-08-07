@@ -35,3 +35,13 @@ To build the project, simply clone the repository and then either:
   - Run `build.bat` on Windows systems (unless you want to deal with getting `make` to work on Windows :P)
 
 The build process will output an executable file named `api-tools`; this executable is the CLI and can be ran in your terminal!
+
+#### Docker
+
+Docker is used for automated running on Google Cloud Platform. More info [here](https://nebula-labs.atlassian.net/wiki/x/AYBjFw).
+
+To build the container for local testing first make sure all scripts in the `runners` folder have LF line endings then run:
+```
+docker build --target dev -t my-runner:local .
+docker run --rm -e ENVIRONMENT=dev -e RUNNER_SCRIPT_NAME=daily.sh my-runner:local
+```

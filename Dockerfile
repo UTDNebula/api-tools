@@ -9,7 +9,7 @@ RUN make check
 RUN make build
 
 # Use a lightweight final image
-FROM debian:12-slim
+FROM debian:12-slim AS base
 WORKDIR /app
 
 # Install gcloud CLI
@@ -20,12 +20,17 @@ RUN apt-get update && apt-get install -y google-cloud-sdk
 
 # Install chromium
 RUN apt-get update && apt-get install -y chromium
-ENV CHROMIUM_BIN /usr/bin/chromium
-ENV GOOGLE_CHROME_BIN /usr/bin/chromium # Also set this for compatibility
+ENV CHROMIUM_BIN=/usr/bin/chromium
+ENV GOOGLE_CHROME_BIN=/usr/bin/chromium
 
 # Copy build file from builder
 COPY --from=builder /app/api-tools /app/api-tools
-COPY runners /app/runners
 
+# Copy setup and runner scripts for entrypoint
+COPY runners /app/runners
 RUN chmod +x /app/runners/setup.sh
 ENTRYPOINT ["/app/runners/setup.sh"]
+
+# Optional .env copy for development
+FROM base AS dev
+COPY .env /app/.env
