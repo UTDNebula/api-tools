@@ -8,3 +8,7 @@
 ./api-tools -scrape -astra -verbose
 ./api-tools -parse -astra -verbose
 ./api-tools -upload -events -verbose
+
+# generate and upload letters
+./api-tools -headless -verbose -generate -letters
+./api-tools -headless -verbose -upload -letters
