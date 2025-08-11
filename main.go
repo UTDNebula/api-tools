@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/UTDNebula/api-tools/generators"
 	"github.com/UTDNebula/api-tools/parser"
 	"github.com/UTDNebula/api-tools/scrapers"
 	"github.com/UTDNebula/api-tools/uploader"
@@ -50,6 +51,10 @@ func main() {
 	parse := flag.Bool("parse", false, "Puts the tool into parsing mode.")
 	csvDir := flag.String("csv", "./grade-data", "Alongside -parse, specifies the path to the directory of CSV files containing grade data.")
 	skipValidation := flag.Bool("skipv", false, "Alongside -parse, signifies that the post-parsing validation should be skipped. Be careful with this!")
+
+	// Flags for generating
+	generate := flag.Bool("generate", false, "Puts the tool into generate mode.")
+	letters := flag.Bool("letters", false, "Alongside -generate or -upload, signifies that letters for games should be generated/uploaded.")
 
 	// Flags for uploading data
 	upload := flag.Bool("upload", false, "Puts the tool into upload mode.")
@@ -127,12 +132,19 @@ func main() {
 		default:
 			parser.Parse(*inDir, *outDir, *csvDir, *skipValidation)
 		}
+	case *generate:
+		switch {
+		case *letters:
+			generators.GenerateLetters(*outDir)
+		}
 	case *upload:
 		switch {
 		case *events:
 			uploader.UploadEvents(*inDir)
 		case *mapFlag:
 			uploader.UploadMapLocations(*inDir)
+		case *letters:
+			uploader.UploadLetters(*inDir, *replace)
 		default:
 			uploader.Upload(*inDir, *replace, *staticOnly)
 		}

@@ -17,6 +17,8 @@ Project maintained by [Nebula Labs](https://about.utdnebula.com).
   - The input data is considered **immutable** by the parsing stage. This means the parsers should never modify the data being fed into them.
 #### - The `uploader` directory contains the uploader that sends the parsed data to the Nebula API MongoDB database. This is the final stage of the data pipeline.
   - The uploader(s) are concerned solely with pushing parsed data to the database. Data, at this point, is assumed to be valid and ready for use.
+#### - The `generator` directory contains code to create data from scratch.
+  - This is part of a seperate pipeline (generator > uploader instead of scraper > parser > uploader) for data that does not come from an external source.
 
 ### Contributing
 
@@ -28,7 +30,7 @@ Please visit our [Discord](https://discord.utdnebula.com) and talk to us if you'
 
 ### Development
 
-Documentation for the project will be created soon, but for more information please visit our [Discord](https://discord.com/invite/tcpcnfxmeQ).
+Documentation for the project will be created soon, but for more information please visit our [Discord](https://discord.utdnebula.com).
 
 To build the project, simply clone the repository and then either:
   - Run `make` in the root (top level) directory (for systems with `make` installed, i.e. most Linux distros, MacOS)
