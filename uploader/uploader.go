@@ -181,7 +181,7 @@ func UploadData[T any](client *mongo.Client, ctx context.Context, fptr *os.File,
 		}
 
 		// Create a merge aggregate pipeline
-		// Matched documents from the temporary collection will replace matched documents from the Mongo collection
+		// Matched documents from the temporary collection will replace matched documents from the Mongo collection (besides _id field)
 		// Unmatched documents from the temporary collection will be inserted into the Mongo collection
 		var matchFilters []string
 		switch fileName {

@@ -8,6 +8,7 @@ import (
 // Pipeline for merging temp collection into existing collection
 func MergeStageGenerator(fileName string, matchFilters []string) mongo.Pipeline {
 	return mongo.Pipeline{
+		bson.D{{Key: "$unset", Value: "_id"}},
 		bson.D{
 			{Key: "$merge", Value: bson.D{
 				{Key: "into", Value: fileName},
