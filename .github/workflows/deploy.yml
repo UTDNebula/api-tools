@@ -40,6 +40,7 @@ jobs:
       with:
         push: true 
         tags: us-central1-docker.pkg.dev/api-tools-451421/runners/runner
+        target: base
 
     - name: Upload to daily dev job
       uses: google-github-actions/deploy-cloudrun@v2
