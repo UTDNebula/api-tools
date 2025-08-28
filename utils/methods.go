@@ -38,7 +38,14 @@ func GetEnv(name string) (string, error) {
 func InitChromeDp() (chromedpCtx context.Context, cancelFnc context.CancelFunc) {
 	log.Printf("Initializing chromedp...")
 	if Headless {
-		chromedpCtx, cancelFnc = chromedp.NewContext(context.Background())
+		opts := append(chromedp.DefaultExecAllocatorOptions[:],
+			chromedp.Flag("headless", true),
+			chromedp.Flag("no-sandbox", true),
+			chromedp.Flag("disable-dev-shm-usage", true),
+			chromedp.Flag("disable-gpu", true),
+		)
+		allocCtx, _ := chromedp.NewExecAllocator(context.Background(), opts...)
+		chromedpCtx, cancelFnc = chromedp.NewContext(allocCtx)
 	} else {
 		allocCtx, _ := chromedp.NewExecAllocator(context.Background())
 		chromedpCtx, cancelFnc = chromedp.NewContext(allocCtx)
@@ -168,6 +175,9 @@ func RefreshAstraToken(chromedpCtx context.Context) map[string][]string {
 		chromedp.WaitVisible(`body`, chromedp.ByQuery),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			cookies, err := network.GetCookies().Do(ctx)
+			if err != nil {
+				return err
+			}
 			gotToken := false
 			for _, cookie := range cookies {
 				cookieStr = fmt.Sprintf("%s%s=%s; ", cookieStr, cookie.Name, cookie.Value)
@@ -179,7 +189,7 @@ func RefreshAstraToken(chromedpCtx context.Context) map[string][]string {
 			if !gotToken {
 				return errors.New("failed to get a new token")
 			}
-			return err
+			return nil
 		}),
 	)
 	if err != nil {
