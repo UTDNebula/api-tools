@@ -1,0 +1,5 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '--target=base', '-t', 'us-central1-docker.pkg.dev/api-tools-451421/runners/runner', '.']
+images:
+  - 'us-central1-docker.pkg.dev/api-tools-451421/runners/runner'
