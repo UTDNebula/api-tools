@@ -44,7 +44,7 @@ func TestDuplicateProfFail(t *testing.T) {
 
 	for i, prof := range testProfessors {
 		name := fmt.Sprintf("Duplicate professor %v", i)
-		t.Run(fmt.Sprintf("Duplicate professor %v", i), func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
 			defer FailTestIfNoPanic(t, name)

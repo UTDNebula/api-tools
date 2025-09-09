@@ -10,6 +10,8 @@ import (
 	"strings"
 )
 
+const NumGradeColumns = 13
+
 func loadGrades(csvDir string) error {
 	log.Print("Beginning grades loading.")
 
@@ -98,15 +100,14 @@ func csvToMap(csvFilePath string) (map[string][]int, error) {
 	}
 
 	for _, record := range records[1:] {
-		// convert grade distribution from string to int
-		intSlice := [14]int{}
+		intSlice := [NumGradeColumns + 1]int{}
 
-		for j := 0; j < 13; j++ {
+		for j := 0; j < NumGradeColumns; j++ {
 			intSlice[j], _ = strconv.Atoi(record[aPlusCol+j])
 		}
-		// add w number to the grade_distribution slice
+		// add w number to the end of grade_distribution slice
 		if wCol != -1 {
-			intSlice[13], _ = strconv.Atoi(record[wCol])
+			intSlice[NumGradeColumns], _ = strconv.Atoi(record[wCol])
 		}
 
 		// add new grade distribution to map, keyed by SUBJECT + NUMBER + SECTION

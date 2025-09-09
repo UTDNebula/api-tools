@@ -1,28 +1,6 @@
 [
 	{
-		"_id": "68911bed54c7e89bce3d42d5",
-		"first_name": "Naim Bugra",
-		"last_name": "Ozel",
-		"titles": [
-			"Primary Instructor (50%)"
-		],
-		"email": "nbo150030@utdallas.edu",
-		"phone_number": "",
-		"office": {
-			"building": "",
-			"room": "",
-			"map_uri": ""
-		},
-		"profile_uri": "",
-		"image_uri": "",
-		"office_hours": null,
-		"sections": [
-			"68911bed54c7e89bce3d42d4",
-			"68911bed54c7e89bce3d42d7"
-		]
-	},
-	{
-		"_id": "68911bed54c7e89bce3d42d6",
+		"_id": "68c05c5a43a5888bbec43bde",
 		"first_name": "Jieying",
 		"last_name": "Zhang",
 		"titles": [
@@ -37,14 +15,14 @@
 		},
 		"profile_uri": "",
 		"image_uri": "",
-		"office_hours": null,
+		"office_hours": [],
 		"sections": [
-			"68911bed54c7e89bce3d42d4",
-			"68911bed54c7e89bce3d42d7"
+			"68c05c5a43a5888bbec43bdc",
+			"68c05c5a43a5888bbec43bdf"
 		]
 	},
 	{
-		"_id": "68911bed54c7e89bce3d42da",
+		"_id": "68c05c5a43a5888bbec43be2",
 		"first_name": "Peter",
 		"last_name": "Lewin",
 		"titles": [
@@ -59,13 +37,13 @@
 		},
 		"profile_uri": "",
 		"image_uri": "",
-		"office_hours": null,
+		"office_hours": [],
 		"sections": [
-			"68911bed54c7e89bce3d42d9"
+			"68c05c5a43a5888bbec43be1"
 		]
 	},
 	{
-		"_id": "68911bed54c7e89bce3d42dd",
+		"_id": "68c05c5a43a5888bbec43be5",
 		"first_name": "Tian",
 		"last_name": "Hong",
 		"titles": [
@@ -80,13 +58,13 @@
 		},
 		"profile_uri": "",
 		"image_uri": "",
-		"office_hours": null,
+		"office_hours": [],
 		"sections": [
-			"68911bed54c7e89bce3d42dc"
+			"68c05c5a43a5888bbec43be4"
 		]
 	},
 	{
-		"_id": "68911bed54c7e89bce3d42d3",
+		"_id": "68c05c5a43a5888bbec43bdb",
 		"first_name": "Botir",
 		"last_name": "Kobilov",
 		"titles": [
@@ -101,9 +79,31 @@
 		},
 		"profile_uri": "",
 		"image_uri": "",
-		"office_hours": null,
+		"office_hours": [],
 		"sections": [
-			"68911bed54c7e89bce3d42d2"
+			"68c05c5a43a5888bbec43bda"
+		]
+	},
+	{
+		"_id": "68c05c5a43a5888bbec43bdd",
+		"first_name": "Naim Bugra",
+		"last_name": "Ozel",
+		"titles": [
+			"Primary Instructor (50%)"
+		],
+		"email": "nbo150030@utdallas.edu",
+		"phone_number": "",
+		"office": {
+			"building": "",
+			"room": "",
+			"map_uri": ""
+		},
+		"profile_uri": "",
+		"image_uri": "",
+		"office_hours": [],
+		"sections": [
+			"68c05c5a43a5888bbec43bdc",
+			"68c05c5a43a5888bbec43bdf"
 		]
 	}
 ]

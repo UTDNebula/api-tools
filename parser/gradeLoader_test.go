@@ -63,7 +63,6 @@ func TestLoadGrades(t *testing.T) {
 			t.Errorf("failed to build csv file %v", err)
 		}
 
-		//build expected map
 		expectedMap[name] = map[string][]int{
 			testCase.key: testCase.grades,
 		}
@@ -132,8 +131,9 @@ func buildCsv(t *testing.T, fileName string, subject string, catalogNumber strin
 
 	line := make([]string, 0, 28)
 	line = append(line, "", "", "", "", "", "", subject, catalogNumber, sectionNumber)
-	line = append(line, gradesInput[0:13]...)
-	line = append(line, "", "", "", "", "", gradesInput[13])
+	line = append(line, gradesInput[0:NumGradeColumns]...)
+	// move w from end of grade slice to csv position
+	line = append(line, "", "", "", "", "", gradesInput[NumGradeColumns])
 
 	if err = writer.Write(line); err != nil {
 		return fmt.Errorf("cannot write to file %s : %v", fileName, err)

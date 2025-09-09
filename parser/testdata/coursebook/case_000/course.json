@@ -1,5 +1,5 @@
 {
-	"_id": "68911bed54c7e89bce3d42bc",
+	"_id": "68c05c5a43a5888bbec43bc6",
 	"subject_prefix": "ACCT",
 	"course_number": "2301",
 	"title": "Introductory Financial Accounting",
@@ -15,7 +15,7 @@
 	"corequisites": null,
 	"co_or_pre_requisites": null,
 	"sections": [
-		"68911bed54c7e89bce3d42bd"
+		"68c05c5a43a5888bbec43bc7"
 	],
 	"lecture_contact_hours": "3",
 	"laboratory_contact_hours": "0",

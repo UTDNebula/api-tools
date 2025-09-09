@@ -1,6 +1,6 @@
 [
 	{
-		"_id": "68911bed54c7e89bce3d42c1",
+		"_id": "68c05c5a43a5888bbec43bcb",
 		"first_name": "Naim Bugra",
 		"last_name": "Ozel",
 		"titles": [
@@ -15,13 +15,13 @@
 		},
 		"profile_uri": "",
 		"image_uri": "",
-		"office_hours": null,
+		"office_hours": [],
 		"sections": [
-			"68911bed54c7e89bce3d42c0"
+			"68c05c5a43a5888bbec43bca"
 		]
 	},
 	{
-		"_id": "68911bed54c7e89bce3d42c2",
+		"_id": "68c05c5a43a5888bbec43bcc",
 		"first_name": "Jieying",
 		"last_name": "Zhang",
 		"titles": [
@@ -36,9 +36,9 @@
 		},
 		"profile_uri": "",
 		"image_uri": "",
-		"office_hours": null,
+		"office_hours": [],
 		"sections": [
-			"68911bed54c7e89bce3d42c0"
+			"68c05c5a43a5888bbec43bca"
 		]
 	}
 ]

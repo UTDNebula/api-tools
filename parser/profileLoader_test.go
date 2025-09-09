@@ -1,9 +1,6 @@
 package parser
 
 import (
-	"bytes"
-	"log"
-	"os"
 	"testing"
 
 	"github.com/UTDNebula/nebula-api/api/schema"
@@ -17,16 +14,13 @@ func TestProfileLoader(t *testing.T) {
 	professors := make(map[string]*schema.Professor)
 	professorIDMap := make(map[primitive.ObjectID]string)
 
-	// profiles.json is just a copy of professors.json
-	for _, prof := range testProfessors {
+	for _, prof := range testProfiles {
 		professorKey := prof.First_name + prof.Last_name
 		professors[professorKey] = &prof
 		professorIDMap[prof.Id] = professorKey
 	}
 
-	log.SetOutput(&bytes.Buffer{})
 	err := loadProfiles("testdata/coursebook/")
-	log.SetOutput(os.Stdout)
 
 	if err != nil {
 		t.Errorf("faild with error %v", err)

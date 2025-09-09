@@ -79,7 +79,11 @@ func Parse(inDir string, outDir string, csvPath string, skipValidation bool) {
 	initMatchers()
 
 	for _, course := range Courses {
-		ReqParsers[course.Id]()
+		if parseReqFunc, ok := ReqParsers[course.Id]; ok {
+			parseReqFunc()
+		} else {
+			fmt.Printf("Couldn't find course with id: %v", course.Id)
+		}
 	}
 	log.Print("Finished parsing course requisites!")
 

@@ -41,6 +41,8 @@ var (
 	testSections []schema.Section
 	// testProfessors is the unmarshalled /testdata/coursebook/professors.json
 	testProfessors []schema.Professor
+	// testProfiles is the unmarshalled /testdata/coursebook/profiles.json
+	testProfiles []schema.Professor
 )
 
 // TestMain entry point for all tests in the parser package.
@@ -57,7 +59,7 @@ var (
 //
 // `go test -v ./parser -args -update`
 func TestMain(m *testing.M) {
-	update := flag.Bool("update", true, "Regenerates the expected output for the provided test inputs. Should only be used when you are 100% sure your code is correct! It will make all test pass :)")
+	update := flag.Bool("update", false, "Regenerates the expected output for the provided test inputs. Should only be used when you are 100% sure your code is correct! It will make all test pass :)")
 
 	if !flag.Parsed() {
 		flag.Parse()
@@ -100,6 +102,11 @@ func TestMain(m *testing.M) {
 	testProfessors, err = utils.UnmarshallFile[[]schema.Professor]("./testdata/coursebook/professors.json")
 	if err != nil {
 		log.Fatalf("Failed to load professors: %v", err)
+	}
+
+	testProfiles, err = utils.UnmarshallFile[[]schema.Professor]("./testdata/coursebook/profiles.json")
+	if err != nil {
+		log.Fatalf("Failed to load profiles: %v", err)
 	}
 
 	os.Exit(m.Run())
@@ -165,7 +172,7 @@ func loadTest(dir string) (result TestData, err error) {
 //
 // Errors may still occur while copying or deleting the testdata directory.
 func updateTestData() error {
-	//ignore logging
+	//suppress logs
 	log.SetOutput(&bytes.Buffer{})
 	defer log.SetOutput(os.Stdout)
 

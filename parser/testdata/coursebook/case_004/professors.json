@@ -1,6 +1,6 @@
 [
 	{
-		"_id": "68911bed54c7e89bce3d42cc",
+		"_id": "68c05c5a43a5888bbec43bd6",
 		"first_name": "Tian",
 		"last_name": "Hong",
 		"titles": [
@@ -15,9 +15,9 @@
 		},
 		"profile_uri": "",
 		"image_uri": "",
-		"office_hours": null,
+		"office_hours": [],
 		"sections": [
-			"68911bed54c7e89bce3d42cb"
+			"68c05c5a43a5888bbec43bd5"
 		]
 	}
 ]

@@ -14,10 +14,14 @@ func TestGetCourse(t *testing.T) {
 
 	for name, testCase := range testData {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
 			_, courseNum := getInternalClassAndCourseNum(testCase.ClassInfo)
 			output := *getCourse(courseNum, testCase.Section.Academic_session, testCase.RowInfo, testCase.ClassInfo)
 			expected := testCase.Course
 
+			// skip fields that use primitive.ObjectID or are populated by ReqParser they are already
+			// covered in parser_test and are awkward to implement here, also mostly out of the scope of course parser
 			diff := cmp.Diff(expected, output, cmpopts.IgnoreFields(schema.Course{}, "Id", "Sections", "Enrollment_reqs", "Prerequisites"))
 
 			if diff != "" {
@@ -72,7 +76,6 @@ func TestGetCatalogYear(t *testing.T) {
 				defer FailTestIfPanic(t, name)
 			}
 
-			// only call if we *expect* it to succeed
 			output := getCatalogYear(testCase.Session)
 			if !testCase.Panic && output != testCase.Expected {
 				t.Errorf("expected %q, got %q", testCase.Expected, output)
@@ -126,6 +129,8 @@ func TestGetPrefixAndCourseNum(t *testing.T) {
 
 	for name, testCase := range testCases {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
 			if testCase.Panic {
 				defer FailTestIfNoPanic(t, name)
 			} else {

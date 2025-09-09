@@ -10,10 +10,10 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func parseProfessors(sectionId primitive.ObjectID, rowInfo map[string]*goquery.Selection, classInfo map[string]string) []primitive.ObjectID {
+func parseProfessors(sectionId primitive.ObjectID, rowInfo map[string]*goquery.Selection) []primitive.ObjectID {
 	professorText := utils.TrimWhitespace(rowInfo["Instructor(s):"].Text())
 	professorMatches := personRegexp.FindAllStringSubmatch(professorText, -1)
-	var profRefs []primitive.ObjectID = make([]primitive.ObjectID, 0, len(professorMatches))
+	var profRefs = make([]primitive.ObjectID, 0, len(professorMatches))
 	for _, match := range professorMatches {
 
 		nameStr := utils.TrimWhitespace(match[1])
@@ -43,6 +43,7 @@ func parseProfessors(sectionId primitive.ObjectID, rowInfo map[string]*goquery.S
 		prof.Titles = []string{utils.TrimWhitespace(match[2])}
 		prof.Email = utils.TrimWhitespace(match[3])
 		prof.Sections = []primitive.ObjectID{sectionId}
+		prof.Office_hours = []schema.Meeting{}
 		profRefs = append(profRefs, prof.Id)
 		Professors[profKey] = prof
 		ProfessorIDMap[prof.Id] = profKey

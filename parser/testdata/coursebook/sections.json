@@ -1,59 +1,8 @@
 [
 	{
-		"_id": "68911bed54c7e89bce3d42e1",
-		"section_number": "002",
-		"course_reference": "68911bed54c7e89bce3d42e0",
-		"section_corequisites": null,
-		"academic_session": {
-			"name": "25S",
-			"start_date": "2025-01-21T00:00:00-06:00",
-			"end_date": "2025-05-16T00:00:00-05:00"
-		},
-		"professors": [],
-		"teaching_assistants": [],
-		"internal_class_number": "27906",
-		"instruction_mode": "Face-to-Face",
-		"meetings": [
-			{
-				"start_date": "2025-01-21T00:00:00-06:00",
-				"end_date": "2025-05-09T00:00:00-05:00",
-				"meeting_days": [
-					"Tuesday"
-				],
-				"start_time": "1:00pm",
-				"end_time": "3:45pm",
-				"modality": "",
-				"location": {
-					"building": "",
-					"room": "",
-					"map_uri": ""
-				}
-			},
-			{
-				"start_date": "2025-01-21T00:00:00-06:00",
-				"end_date": "2025-05-09T00:00:00-05:00",
-				"meeting_days": [
-					"Thursday"
-				],
-				"start_time": "3:30pm",
-				"end_time": "5:20pm",
-				"modality": "",
-				"location": {
-					"building": "",
-					"room": "",
-					"map_uri": ""
-				}
-			}
-		],
-		"core_flags": [],
-		"syllabus_uri": "",
-		"grade_distribution": [],
-		"attributes": null
-	},
-	{
-		"_id": "68911bed54c7e89bce3d42d2",
+		"_id": "68c05c5a43a5888bbec43bda",
 		"section_number": "001",
-		"course_reference": "68911bed54c7e89bce3d42d1",
+		"course_reference": "68c05c5a43a5888bbec43bd9",
 		"section_corequisites": null,
 		"academic_session": {
 			"name": "24F",
@@ -61,7 +10,7 @@
 			"end_date": "2024-12-13T00:00:00-06:00"
 		},
 		"professors": [
-			"68911bed54c7e89bce3d42d3"
+			"68c05c5a43a5888bbec43bdb"
 		],
 		"teaching_assistants": [
 			{
@@ -112,9 +61,9 @@
 		"attributes": null
 	},
 	{
-		"_id": "68911bed54c7e89bce3d42d4",
+		"_id": "68c05c5a43a5888bbec43bdc",
 		"section_number": "003",
-		"course_reference": "68911bed54c7e89bce3d42d1",
+		"course_reference": "68c05c5a43a5888bbec43bd9",
 		"section_corequisites": null,
 		"academic_session": {
 			"name": "25S",
@@ -122,8 +71,8 @@
 			"end_date": "2025-05-16T00:00:00-05:00"
 		},
 		"professors": [
-			"68911bed54c7e89bce3d42d5",
-			"68911bed54c7e89bce3d42d6"
+			"68c05c5a43a5888bbec43bdd",
+			"68c05c5a43a5888bbec43bde"
 		],
 		"teaching_assistants": [
 			{
@@ -165,9 +114,9 @@
 		"attributes": null
 	},
 	{
-		"_id": "68911bed54c7e89bce3d42d7",
+		"_id": "68c05c5a43a5888bbec43bdf",
 		"section_number": "001",
-		"course_reference": "68911bed54c7e89bce3d42d1",
+		"course_reference": "68c05c5a43a5888bbec43bd9",
 		"section_corequisites": null,
 		"academic_session": {
 			"name": "25S",
@@ -175,8 +124,8 @@
 			"end_date": "2025-05-16T00:00:00-05:00"
 		},
 		"professors": [
-			"68911bed54c7e89bce3d42d6",
-			"68911bed54c7e89bce3d42d5"
+			"68c05c5a43a5888bbec43bde",
+			"68c05c5a43a5888bbec43bdd"
 		],
 		"teaching_assistants": [
 			{
@@ -218,9 +167,9 @@
 		"attributes": null
 	},
 	{
-		"_id": "68911bed54c7e89bce3d42d9",
+		"_id": "68c05c5a43a5888bbec43be1",
 		"section_number": "501",
-		"course_reference": "68911bed54c7e89bce3d42d8",
+		"course_reference": "68c05c5a43a5888bbec43be0",
 		"section_corequisites": null,
 		"academic_session": {
 			"name": "25S",
@@ -228,7 +177,7 @@
 			"end_date": "2025-05-16T00:00:00-05:00"
 		},
 		"professors": [
-			"68911bed54c7e89bce3d42da"
+			"68c05c5a43a5888bbec43be2"
 		],
 		"teaching_assistants": [
 			{
@@ -267,9 +216,9 @@
 		"attributes": null
 	},
 	{
-		"_id": "68911bed54c7e89bce3d42dc",
+		"_id": "68c05c5a43a5888bbec43be4",
 		"section_number": "016",
-		"course_reference": "68911bed54c7e89bce3d42db",
+		"course_reference": "68c05c5a43a5888bbec43be3",
 		"section_corequisites": null,
 		"academic_session": {
 			"name": "25S",
@@ -277,7 +226,7 @@
 			"end_date": "2025-05-16T00:00:00-05:00"
 		},
 		"professors": [
-			"68911bed54c7e89bce3d42dd"
+			"68c05c5a43a5888bbec43be5"
 		],
 		"teaching_assistants": [],
 		"internal_class_number": "29611",
@@ -305,9 +254,9 @@
 		"attributes": null
 	},
 	{
-		"_id": "68911bed54c7e89bce3d42df",
+		"_id": "68c05c5a43a5888bbec43be7",
 		"section_number": "201",
-		"course_reference": "68911bed54c7e89bce3d42de",
+		"course_reference": "68c05c5a43a5888bbec43be6",
 		"section_corequisites": null,
 		"academic_session": {
 			"name": "25S",
