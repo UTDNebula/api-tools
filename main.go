@@ -32,7 +32,7 @@ func main() {
 	scrapeCoursebook := flag.Bool("coursebook", false, "Alongside -scrape, signifies that coursebook should be scraped.")
 	term := flag.String("term", "", "Alongside -coursebook, specifies the term to scrape, i.e. 23S")
 	startPrefix := flag.String("startprefix", "", "Alongside -coursebook, specifies the course prefix to start scraping from, i.e. cp_span")
-	resume := flag.Bool("resume", false, "Alongside -scrape, signifies that coursebook should be scraped.")
+	resume := flag.Bool("resume", false, "Alongside -coursebook, signifies that scraping should begin at the last complete prefix and should not re-scrape existing data")
 
 	// Flag for profile scraping
 	scrapeProfiles := flag.Bool("profiles", false, "Alongside -scrape, signifies that professor profiles should be scraped.")

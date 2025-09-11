@@ -10,9 +10,12 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"sort"
 	"strings"
@@ -21,29 +24,41 @@ import (
 	"github.com/UTDNebula/api-tools/utils"
 )
 
+var (
+	prefixRegex = regexp.MustCompile("cp_[a-z]{0,5}")
+	termRegex   = regexp.MustCompile("[0-9]{1,2}[sfu]")
+)
+
+const reqThrottle = 400 * time.Millisecond
+const prefixThrottle = 5 * time.Second
+
 // ScrapeCoursebook scrapes utd coursebook for the provided term (semester)
 // if resume flag is true then
 func ScrapeCoursebook(term string, startPrefix string, outDir string, resume bool) {
+	if startPrefix != "" && !prefixRegex.MatchString(startPrefix) {
+		log.Fatalf("Invalid starting prefix %s, must match format cp_{abcde}", startPrefix)
+	}
+	if !termRegex.MatchString(term) {
+		log.Fatalf("Invalid term %s, must match format {00-99}{s/f/u}", term)
+	}
+
 	scraper := newCoursebookScraper(term, outDir)
 	defer scraper.cancel()
 
-	if startPrefix == "" {
+	if resume && startPrefix == "" {
 		// providing a starting prefix overrides the resume flag
 		startPrefix = scraper.lastCompletePrefix()
 	}
 
-	skipped := 0
-	for _, prefix := range scraper.prefixes {
-		if startPrefix == "" || strings.Compare(prefix, startPrefix) == -1 {
-			utils.VPrintf("Skipping prefix %s", prefix)
+	log.Printf("[Begin Scrape] Starting scrape for term %s with %d prefixes", term, len(scraper.prefixes))
+
+	totalTime := time.Now()
+	for i, prefix := range scraper.prefixes {
+		if startPrefix != "" && strings.Compare(prefix, startPrefix) < 0 {
 			continue
 		}
 
-		if skipped != -1 {
-			log.Printf("Skipped %d prefixes", skipped)
-			skipped = -1
-		}
-
+		start := time.Now()
 		if err := scraper.ensurePrefixFolder(prefix); err != nil {
 			log.Fatal(err)
 		}
@@ -57,9 +72,17 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string, resume boo
 		} else {
 			sectionIds, err = scraper.getSectionIdsForPrefix(prefix)
 		}
+
 		if err != nil {
-			log.Fatal("Error getting section ids for prefix ", prefix)
+			log.Fatalf("Error getting section ids for %s ", prefix)
 		}
+
+		if len(sectionIds) == 0 {
+			log.Printf("No sections found for %s ", prefix)
+			continue
+		}
+
+		log.Printf("[Scrape Prefix] %s (%d/%d): Found %d sections to scrape.", prefix, i+1, len(scraper.prefixes), len(sectionIds))
 
 		for _, sectionId := range sectionIds {
 			content, err := scraper.getSectionContent(sectionId)
@@ -69,21 +92,17 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string, resume boo
 			if err := scraper.writeSection(prefix, sectionId, content); err != nil {
 				log.Fatalf("Error writing section %s: %v", sectionId, err)
 			}
-			utils.VPrintf("Got section: %s", sectionId)
-
-			// wait 3 seconds between requests to avoid rate limiting
-			time.Sleep(3 * time.Second)
+			time.Sleep(reqThrottle)
 		}
 
+		// At the end of the prefix loop
+		log.Printf("[End Prefix] %s: Scraped %d sections in %v.", prefix, len(sectionIds), time.Since(start))
+		time.Sleep(prefixThrottle)
 	}
-	log.Print("Done scraping term!")
-	log.Print("Validating... ")
+	log.Printf("[Scrape Complete] Finished scraping term %s in %v. Total sections %d: Total retries %d", term, time.Since(totalTime), scraper.totalScrapedSections, scraper.reqRetries)
 
-	success, err := scraper.validate()
-	if err != nil {
+	if err := scraper.validate(); err != nil {
 		log.Fatal("Validating failed: ", err)
-	} else if success {
-		log.Print("Validating successful!")
 	}
 }
 
@@ -95,11 +114,20 @@ type coursebookScraper struct {
 	prefixes          []string
 	term              string
 	outDir            string
+
+	prefixIdsCache map[string][]string
+
+	//metrics
+	reqRetries           int
+	totalScrapedSections int
 }
 
 func newCoursebookScraper(term string, outDir string) *coursebookScraper {
 	ctx, cancel := utils.InitChromeDp()
-	httpClient := &http.Client{}
+	httpClient := &http.Client{
+		// longer than 10 seconds is probably a rate limit
+		Timeout: 10 * time.Second,
+	}
 
 	//prefixes in alphabetical order for skip prefix flag
 	prefixes := utils.GetCoursePrefixes(ctx)
@@ -112,6 +140,7 @@ func newCoursebookScraper(term string, outDir string) *coursebookScraper {
 		coursebookHeaders: utils.RefreshToken(ctx),
 		term:              term,
 		outDir:            outDir,
+		prefixIdsCache:    make(map[string][]string),
 	}
 }
 
@@ -119,6 +148,10 @@ func newCoursebookScraper(term string, outDir string) *coursebookScraper {
 // html files for all of its section ids. returns an empty string if there are no
 // complete prefixes
 func (s *coursebookScraper) lastCompletePrefix() string {
+	if err := s.ensureOutputFolder(); err != nil {
+		log.Fatal(err)
+	}
+
 	dir, err := os.ReadDir(filepath.Join(s.outDir, s.term))
 	if err != nil {
 		log.Fatalf("failed to read output directory: %v", err)
@@ -140,8 +173,18 @@ func (s *coursebookScraper) lastCompletePrefix() string {
 		if len(missing) == 0 {
 			return prefix
 		}
+		time.Sleep(reqThrottle)
 	}
 	return ""
+}
+
+// ensurePrefixFolder creates {outDir}/term if it does not exist
+
+func (s *coursebookScraper) ensureOutputFolder() error {
+	if err := os.MkdirAll(filepath.Join(s.outDir, s.term), 0755); err != nil {
+		return fmt.Errorf("failed to create term forlder: %w", err)
+	}
+	return nil
 }
 
 // ensurePrefixFolder creates {outDir}/term/prefix if it does not exist
@@ -164,10 +207,11 @@ func (s *coursebookScraper) writeSection(prefix string, id string, content strin
 // retries up to 3 times, each time refreshing the token and waiting longer
 func (s *coursebookScraper) getSectionContent(id string) (string, error) {
 	queryStr := fmt.Sprintf("id=%s&req=b30da8ab21637dbef35fd7682f48e1c1W0ypMhaj%%2FdsnYn3Wa03BrxSNgCeyvLfvucSTobcSXRf38SWaUaNfMjJQn%%2BdcabF%%2F7ZuG%%2BdKqHAqmrxEKyg8AdB0FqVGcz4rkff3%%2B3SIUIt8%%3D&action=info", id)
-	response, err := s.req(queryStr, 3, fmt.Sprintf("section %s content", id))
+	response, err := s.req(queryStr, 3, id)
 	if err != nil {
 		return "", fmt.Errorf("get section content for id %s failed: %w", id, err)
 	}
+	s.totalScrapedSections++
 	return response, nil
 }
 
@@ -203,9 +247,6 @@ func (s *coursebookScraper) getMissingIdsForPrefix(prefix string) ([]string, err
 	for _, id := range sectionIds {
 		if !foundIds[id] {
 			filteredIds = append(filteredIds, id)
-		} else {
-			utils.VPrintf("Found section: %s", id)
-
 		}
 	}
 
@@ -213,23 +254,27 @@ func (s *coursebookScraper) getMissingIdsForPrefix(prefix string) ([]string, err
 }
 
 // getSectionIdsForPrefix calls internal coursebook api to get all section ids for the provide prefix
-// retries up to 10 times, each time refreshing the token and waiting longer
+// retries up to 10 times, each time refreshing the token and waiting longer.
 func (s *coursebookScraper) getSectionIdsForPrefix(prefix string) ([]string, error) {
+	if ids, ok := s.prefixIdsCache[prefix]; ok {
+		return ids, nil
+	}
+
 	sections := make([]string, 0, 100)
 	for _, clevel := range []string{"clevel_u", "clevel_g"} {
 		queryStr := fmt.Sprintf("action=search&s%%5B%%5D=term_%s&s%%5B%%5D=%s&s%%5B%%5D=%s", s.term, prefix, clevel)
-		content, err := s.req(queryStr, 10, fmt.Sprintf("sections for %s", prefix))
+		content, err := s.req(queryStr, 10, prefix)
 		if err != nil {
-			return []string{}, fmt.Errorf("failed to fetch sections: %s", err)
+			return nil, fmt.Errorf("failed to fetch sections: %s", err)
 		}
-
 		sectionRegexp := utils.Regexpf(`View details for section (%s%s\.\w+\.%s)`, prefix[3:], utils.R_COURSE_CODE, utils.R_TERM_CODE)
 		smatches := sectionRegexp.FindAllStringSubmatch(content, -1)
 		for _, match := range smatches {
 			sections = append(sections, match[1])
 		}
 	}
-	log.Printf("Found %d sections for %s", len(sections), prefix)
+
+	s.prefixIdsCache[prefix] = sections
 	return sections, nil
 }
 
@@ -242,17 +287,27 @@ func (s *coursebookScraper) req(queryStr string, retries int, reqName string) (s
 			log.Fatalf("Http request failed: %v", err)
 		}
 		req.Header = s.coursebookHeaders
+
+		start := time.Now()
 		res, err = s.httpClient.Do(req)
+		dur := time.Since(start)
+
 		if res != nil && res.StatusCode != 200 {
+			if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
+				utils.VPrintf("[Timeout] Request for [%s] timed out", reqName)
+				return netErr // Return the error to trigger a retry
+			}
+
 			return errors.New("non-200 response status code")
 		}
+
+		utils.VPrintf("[Success] Request for [%s] took %v", reqName, dur)
 		return err
 	}, retries, func(numRetries int) {
-		log.Printf("Failed to get %s, Retry %d of %d", reqName, numRetries, retries)
+		utils.VPrintf("[Retry] Attempt %d of %d for request [%s]", numRetries, retries, reqName)
 		s.coursebookHeaders = utils.RefreshToken(s.chromedpCtx)
-
-		// front load delay since if the first one fails it is likely the next few will as well
-		time.Sleep((8 * time.Second) + (500 * time.Millisecond * time.Duration(numRetries)))
+		s.reqRetries++
+		time.Sleep(time.Duration(math.Pow(2, float64(numRetries))) * time.Second)
 	})
 	if err != nil {
 		return "", err
@@ -276,38 +331,41 @@ func (s *coursebookScraper) cancel() {
 }
 
 // validate returns true if each prefix contains all required ids
-func (s *coursebookScraper) validate() (bool, error) {
-	missing := make(map[string][]string)
+// if it does not it will re-scrape all missing sections
+func (s *coursebookScraper) validate() error {
+	log.Printf("[Begin Validation] Starting Validation for term %s", s.term)
 
-	count := 0
 	for _, prefix := range s.prefixes {
 		ids, err := s.getMissingIdsForPrefix(prefix)
 		if err != nil {
-			return false, err
+			return err
 		}
-		if len(ids) > 0 {
-			count++
+		if len(ids) == 0 {
+			log.Printf("[Validation] %s is correct", prefix)
+			continue
 		}
-		missing[prefix] = ids
+
+		log.Printf("[Validation] Missing %d sections for %s", len(ids), prefix)
+
+		if err := s.ensurePrefixFolder(prefix); err != nil {
+			log.Fatal(err)
+		}
+
+		for _, id := range ids {
+			content, err := s.getSectionContent(id)
+			if err != nil {
+				return fmt.Errorf("error getting section content for section %s: %v", id, err)
+			}
+			if err := s.writeSection(prefix, id, content); err != nil {
+				return fmt.Errorf("error writing section %s: %v", id, err)
+			}
+			time.Sleep(3 * time.Second)
+		}
+
+		log.Printf("[Validation] %s is correct", prefix)
 		time.Sleep(5 * time.Second)
 	}
 
-	for prefix, ids := range missing {
-		if len(ids) > 0 {
-			log.Printf("Missing %d sections for prefix: %s", len(ids), prefix)
-
-			for _, id := range ids {
-				content, err := s.getSectionContent(id)
-				if err != nil {
-					return false, fmt.Errorf("error getting section content for section %s: %v", id, err)
-				}
-				if err := s.writeSection(prefix, id, content); err != nil {
-					return false, fmt.Errorf("error writing section %s: %v", id, err)
-				}
-				utils.VPrintf("Got section: %s", id)
-				time.Sleep(3 * time.Second)
-			}
-		}
-	}
-	return true, nil
+	log.Print("[End Validation] Validation Successful")
+	return nil
 }
