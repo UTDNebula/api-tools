@@ -171,8 +171,7 @@ func RefreshAstraToken(chromedpCtx context.Context) map[string][]string {
 
 	// Save all cookies to string
 	cookieStr := ""
-	_, err = chromedp.RunResponse(chromedpCtx,
-		chromedp.WaitVisible(`body`, chromedp.ByQuery),
+	err = chromedp.Run(chromedpCtx,
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			cookies, err := network.GetCookies().Do(ctx)
 			if err != nil {
