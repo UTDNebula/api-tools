@@ -264,7 +264,7 @@ func (s *coursebookScraper) getSectionIdsForPrefix(prefix string) ([]string, err
 	sections := make([]string, 0, 100)
 	for _, clevel := range []string{"clevel_u", "clevel_g"} {
 		queryStr := fmt.Sprintf("action=search&s%%5B%%5D=term_%s&s%%5B%%5D=%s&s%%5B%%5D=%s", s.term, prefix, clevel)
-		content, err := s.req(queryStr, 10, prefix)
+		content, err := s.req(queryStr, 10, fmt.Sprintf("%s:%s", prefix, clevel))
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch sections: %s", err)
 		}
@@ -356,11 +356,11 @@ func (s *coursebookScraper) validate() error {
 			if err := s.writeSection(prefix, id, content); err != nil {
 				return fmt.Errorf("error writing section %s: %v", id, err)
 			}
-			time.Sleep(3 * time.Second)
+			time.Sleep(reqThrottle)
 		}
 
 		log.Printf("[Validation] %s is correct", prefix)
-		time.Sleep(5 * time.Second)
+		time.Sleep(prefixThrottle)
 	}
 
 	log.Print("[End Validation] Validation Successful")
