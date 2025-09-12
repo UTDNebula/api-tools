@@ -29,11 +29,13 @@ var (
 	termRegex   = regexp.MustCompile("[0-9]{1,2}[sfu]")
 )
 
-const reqThrottle = 400 * time.Millisecond
-const prefixThrottle = 5 * time.Second
+const (
+	reqThrottle    = 400 * time.Millisecond
+	prefixThrottle = 5 * time.Second
+	httpTimeout    = 10 * time.Second
+)
 
 // ScrapeCoursebook scrapes utd coursebook for the provided term (semester)
-// if resume flag is true then
 func ScrapeCoursebook(term string, startPrefix string, outDir string, resume bool) {
 	if startPrefix != "" && !prefixRegex.MatchString(startPrefix) {
 		log.Fatalf("Invalid starting prefix %s, must match format cp_{abcde}", startPrefix)
@@ -43,7 +45,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string, resume boo
 	}
 
 	scraper := newCoursebookScraper(term, outDir)
-	defer scraper.cancel()
+	defer scraper.chromedpCancel()
 
 	if resume && startPrefix == "" {
 		// providing a starting prefix overrides the resume flag
@@ -125,8 +127,7 @@ type coursebookScraper struct {
 func newCoursebookScraper(term string, outDir string) *coursebookScraper {
 	ctx, cancel := utils.InitChromeDp()
 	httpClient := &http.Client{
-		// longer than 10 seconds is probably a rate limit
-		Timeout: 10 * time.Second,
+		Timeout: httpTimeout,
 	}
 
 	//prefixes in alphabetical order for skip prefix flag
@@ -268,8 +269,8 @@ func (s *coursebookScraper) getSectionIdsForPrefix(prefix string) ([]string, err
 			return nil, fmt.Errorf("failed to fetch sections: %s", err)
 		}
 		sectionRegexp := utils.Regexpf(`View details for section (%s%s\.\w+\.%s)`, prefix[3:], utils.R_COURSE_CODE, utils.R_TERM_CODE)
-		smatches := sectionRegexp.FindAllStringSubmatch(content, -1)
-		for _, match := range smatches {
+		matches := sectionRegexp.FindAllStringSubmatch(content, -1)
+		for _, match := range matches {
 			sections = append(sections, match[1])
 		}
 	}
@@ -292,21 +293,27 @@ func (s *coursebookScraper) req(queryStr string, retries int, reqName string) (s
 		res, err = s.httpClient.Do(req)
 		dur := time.Since(start)
 
-		if res != nil && res.StatusCode != 200 {
-			if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
-				utils.VPrintf("[Timeout] Request for [%s] timed out", reqName)
-				return netErr // Return the error to trigger a retry
+		if res != nil {
+			if res.StatusCode != 200 {
+				return errors.New("non-200 response status code")
 			}
-
-			return errors.New("non-200 response status code")
+			utils.VPrintf("[Request Success] Request for [%s] took %v", reqName, dur)
+		} else if err != nil {
+			var netErr net.Error
+			if errors.As(err, &netErr) && netErr.Timeout() {
+				utils.VPrintf("[Timeout] Request for [%s] timed out", reqName)
+			} else {
+				utils.VPrintf("[Request Error] Request for %s failed: %v", reqName, err)
+			}
 		}
 
-		utils.VPrintf("[Success] Request for [%s] took %v", reqName, dur)
 		return err
 	}, retries, func(numRetries int) {
-		utils.VPrintf("[Retry] Attempt %d of %d for request [%s]", numRetries, retries, reqName)
+		utils.VPrintf("[Request Retry] Attempt %d of %d for request %s", numRetries, retries, reqName)
 		s.coursebookHeaders = utils.RefreshToken(s.chromedpCtx)
 		s.reqRetries++
+
+		//back off exponentially
 		time.Sleep(time.Duration(math.Pow(2, float64(numRetries))) * time.Second)
 	})
 	if err != nil {
@@ -318,16 +325,6 @@ func (s *coursebookScraper) req(queryStr string, retries int, reqName string) (s
 		return "", fmt.Errorf("failed to read response body: %s", err)
 	}
 	return string(content), nil
-}
-
-// refreshToken token using login info
-func (s *coursebookScraper) refreshToken() {
-	s.coursebookHeaders = utils.RefreshToken(s.chromedpCtx)
-}
-
-// cancel cancels chromedp context
-func (s *coursebookScraper) cancel() {
-	s.chromedpCancel()
 }
 
 // validate returns true if each prefix contains all required ids
