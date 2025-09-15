@@ -294,8 +294,6 @@ func GetCoursePrefixes(chromedpCtx context.Context) []string {
 	// Might need to refresh the token every time we get new course prefixes in the future
 	// refreshToken(chromedpCtx)
 
-	log.Printf("Finding course prefix nodes...")
-
 	var coursePrefixes []string
 	log.Println("Finding course prefixes...")
 
