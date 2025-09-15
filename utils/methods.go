@@ -312,7 +312,7 @@ func GetCoursePrefixes(chromedpCtx context.Context) []string {
 	if err != nil {
 		log.Panic(err)
 	}
-	log.Printf("Found the %d course prefixes!\n", len(coursePrefixes))
+	log.Printf("Found the %d course prefixes!", len(coursePrefixes))
 	return coursePrefixes
 }
 
