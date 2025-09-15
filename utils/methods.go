@@ -20,6 +20,7 @@ import (
 
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/network"
+	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
 )
 
@@ -100,6 +101,9 @@ func RefreshToken(chromedpCtx context.Context) map[string][]string {
 			chromedp.Navigate(`https://coursebook.utdallas.edu/`),
 			chromedp.ActionFunc(func(ctx context.Context) error {
 				cookies, err := network.GetCookies().Do(ctx)
+				if err != nil {
+					return err
+				}
 				cookieStrs = make([]string, len(cookies))
 				gotToken := false
 				for i, cookie := range cookies {
@@ -112,7 +116,7 @@ func RefreshToken(chromedpCtx context.Context) map[string][]string {
 				if !gotToken {
 					return errors.New("failed to get a new token")
 				}
-				return err
+				return nil
 			}),
 		)
 		if r != nil && r.Status != 200 {
@@ -287,42 +291,35 @@ func Retry(action func() error, maxRetries int, retryCallback func(numRetries in
 
 // Get all the available course prefixes
 func GetCoursePrefixes(chromedpCtx context.Context) []string {
-	// Refresh the token
+	// Might need to refresh the token every time we get new course prefixes in the future
 	// refreshToken(chromedpCtx)
 
 	log.Printf("Finding course prefix nodes...")
 
 	var coursePrefixes []string
-	var coursePrefixNodes []*cdp.Node
+	log.Println("Finding course prefixes...")
 
 	// Get option elements for course prefix dropdown
-	err := chromedp.Run(chromedpCtx,
+	_, err := chromedp.RunResponse(chromedpCtx,
 		chromedp.Navigate("https://coursebook.utdallas.edu"),
-		chromedp.Nodes("select#combobox_cp option", &coursePrefixNodes, chromedp.ByQueryAll),
+		chromedp.QueryAfter("select#combobox_cp option",
+			func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
+				for _, node := range nodes[1:] {
+					coursePrefixes = append(coursePrefixes, node.AttributeValue("value"))
+				}
+				return nil
+			},
+		),
 	)
-
 	if err != nil {
 		log.Panic(err)
 	}
-
-	log.Println("Found the course prefix nodes!")
-
-	log.Println("Finding course prefixes...")
-
-	// Remove the first option due to it being empty
-	coursePrefixNodes = coursePrefixNodes[1:]
-
-	// Get the value of each option and append to coursePrefixes
-	for _, node := range coursePrefixNodes {
-		coursePrefixes = append(coursePrefixes, node.AttributeValue("value"))
-	}
-
-	log.Println("Found the course prefixes!")
-
+	log.Printf("Found the %d course prefixes!\n", len(coursePrefixes))
 	return coursePrefixes
 }
 
-func ConvertFromInterface[T string | float64](value interface{}) *T {
+// Convert the value of any type to either string or float64
+func ConvertFromInterface[T string | float64](value any) *T {
 	if parsed, ok := value.(T); ok {
 		return &parsed
 	}
