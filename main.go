@@ -46,7 +46,7 @@ func main() {
 	// Flag for map scraping, parsing, and uploading
 	mapFlag := flag.Bool("map", false, "Alongside -scrape, -parse, or -upload, signifies that the UTD map should be scraped/parsed/uploaded.")
 	// Flag for academic calendar scraping
-	academicCalendars := flag.Bool("academicCalendars", false, "Alongside -scrape, signifies that the academic calendars should be scraped.")
+	academicCalendars := flag.Bool("academicCalendars", false, "Alongside -scrape or -parse, signifies that the academic calendars should be scraped/parsed.")
 
 	// Flags for parsing
 	parse := flag.Bool("parse", false, "Puts the tool into parsing mode.")
@@ -128,6 +128,8 @@ func main() {
 			parser.ParseMazevo(*inDir, *outDir)
 		case *mapFlag:
 			parser.ParseMapLocations(*inDir, *outDir)
+		case *academicCalendars:
+			parser.ParseAcademicCalendars(*inDir, *outDir)
 		default:
 			parser.Parse(*inDir, *outDir, *csvDir, *skipValidation)
 		}
