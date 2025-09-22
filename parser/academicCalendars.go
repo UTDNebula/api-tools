@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/fs"
 	"log"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -154,7 +155,6 @@ func parsePdf(path string) (schema.AcademicCalendar, error) {
 	if err != nil {
 		return schema.AcademicCalendar{}, err
 	}
-	log.Printf("struct: %+v", response.UsageMetadata)
 
 	// Get response, remove backtick formatting
 	jsonStr := strings.ReplaceAll(strings.ReplaceAll(response.Candidates[0].Content.Parts[0].Text, "```json", ""), "```", "")
@@ -202,8 +202,21 @@ func readPdf(path string) (string, error) {
 // Auth is from GOOGLE_GENAI_USE_VERTEXAI, GOOGLE_CLOUD_PROJECT and GOOGLE_APPLICATION_CREDENTIALS environment variables and service account JSON
 func getGeminiClient() *genai.Client {
 	once.Do(func() {
+		// Create JSON file
+		serviceAccount, err := utils.GetEnv("GEMINI_SERVICE_ACCOUNT")
+		if err != nil {
+			panic(err)
+		}
+		jsonFile, err := utils.GetEnv("GOOGLE_APPLICATION_CREDENTIALS")
+		if err != nil {
+			panic(err)
+		}
+		err = os.WriteFile(jsonFile, []byte(serviceAccount), 0644)
+		if err != nil {
+			panic(err)
+		}
+
 		// Create client
-		var err error
 		geminiClient, err = genai.NewClient(context.Background(),
 			&genai.ClientConfig{
 				Project:  "api-tools-451421",
