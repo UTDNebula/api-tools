@@ -54,6 +54,7 @@ var prompt = `Parse this PDF content and generate the following JSON schema.
   no_classes: [[date string, date string]],
 }
 
+- Use the ISO 8601 format for date strings (2006-01-02)
 - There will be 3 sessions for Fall and Spring and 4 sessions for Summer.
 - You can determine the year for the dates based on the title. Be careful with Spring and Summer academic calendars as for example the 2025 one may have some earlier dates, such as registration, in 2024.
 - Only use dates that are explicitly written in the PDF text. 
@@ -72,34 +73,37 @@ func ParseAcademicCalendars(inDir string, outDir string) {
 
 	result := []schema.AcademicCalendar{}
 
+	// Parallel requests
+	numWorkers := 10
+
+	jobs := make(chan string)
+	var wg sync.WaitGroup
+
+	// Start worker goroutines
+	for i := 0; i < numWorkers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for path := range jobs {
+				log.Printf("Parsing %s...", filepath.Base(path))
+
+				academicCalendar, err := parsePdf(path)
+				if err != nil {
+					panic(err)
+				}
+				result = append(result, academicCalendar)
+
+				log.Printf("Parsed %s!", filepath.Base(path))
+			}
+		}()
+	}
+
 	err := filepath.WalkDir(outSubDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-
 		if !d.IsDir() { // Is a file
-			// Fall 2025 to 25F
-			filename := filepath.Base(path)
-			filename = filename[0 : len(filename)-4]
-			filenameParts := strings.Split(filename, "-")
-			name := filenameParts[1][len(filenameParts[1])-2 : len(filenameParts[1])]
-			if strings.Contains(filenameParts[1], "Fall") {
-				name = name + "F"
-			} else if strings.Contains(filenameParts[1], "Spring") {
-				name = name + "S"
-			} else {
-				name = name + "U"
-			}
-			timeline := filenameParts[0]
-
-			// Parse
-			academicCalendar, err := parsePdf(name, timeline, path)
-			if err != nil {
-				return err
-			}
-			result = append(result, academicCalendar)
-
-			log.Printf("Parsed academic calendar %s!", filename)
+			jobs <- path
 		}
 		return nil
 	})
@@ -107,10 +111,30 @@ func ParseAcademicCalendars(inDir string, outDir string) {
 		panic(err)
 	}
 
+	close(jobs)
+
+	// Wait for workers to finish
+	wg.Wait()
+
 	utils.WriteJSON(fmt.Sprintf("%s/academicCalendars.json", outDir), result)
 }
 
-func parsePdf(id string, timeline string, path string) (schema.AcademicCalendar, error) {
+func parsePdf(path string) (schema.AcademicCalendar, error) {
+	// Fall 2025 to 25F
+	filename := filepath.Base(path)
+	filename = filename[0 : len(filename)-4]
+	filenameParts := strings.Split(filename, "-")
+	name := filenameParts[1][len(filenameParts[1])-2 : len(filenameParts[1])]
+	if strings.Contains(filenameParts[1], "Fall") {
+		name = name + "F"
+	} else if strings.Contains(filenameParts[1], "Spring") {
+		name = name + "S"
+	} else {
+		name = name + "U"
+	}
+	timeline := filenameParts[0]
+
+	// Read PDF
 	content, err := readPdf(path)
 	if err != nil {
 		return schema.AcademicCalendar{}, err
@@ -119,7 +143,7 @@ func parsePdf(id string, timeline string, path string) (schema.AcademicCalendar,
 	geminiClient := getGeminiClient()
 
 	// Build prompt
-	promptFilled := fmt.Sprintf(prompt, id, timeline, content)
+	promptFilled := fmt.Sprintf(prompt, name, timeline, content)
 
 	// Send with default config
 	response, err := geminiClient.Models.GenerateContent(context.Background(),
@@ -130,6 +154,7 @@ func parsePdf(id string, timeline string, path string) (schema.AcademicCalendar,
 	if err != nil {
 		return schema.AcademicCalendar{}, err
 	}
+	log.Printf("struct: %+v", response.UsageMetadata)
 
 	// Get response, remove backtick formatting
 	jsonStr := strings.ReplaceAll(strings.ReplaceAll(response.Candidates[0].Content.Parts[0].Text, "```json", ""), "```", "")
