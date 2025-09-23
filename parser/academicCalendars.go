@@ -67,8 +67,6 @@ PDF Content:
 %s`
 
 func ParseAcademicCalendars(inDir string, outDir string) {
-	pdf.DebugOn = true
-
 	// Get sub folder from output folder
 	outSubDir := filepath.Join(outDir, "academicCalendars")
 
