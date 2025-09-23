@@ -34,6 +34,7 @@ func ScrapeAcademicCalendars(outDir string) {
 	outSubDir := filepath.Join(outDir, "academicCalendars")
 
 	// Make output folder
+	os.RemoveAll(outSubDir)
 	err := os.MkdirAll(outSubDir, 0777)
 	if err != nil {
 		panic(err)
