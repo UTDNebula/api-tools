@@ -46,7 +46,7 @@ func main() {
 	// Flag for map scraping, parsing, and uploading
 	mapFlag := flag.Bool("map", false, "Alongside -scrape, -parse, or -upload, signifies that the UTD map should be scraped/parsed/uploaded.")
 	// Flag for academic calendar scraping
-	academicCalendars := flag.Bool("academicCalendars", false, "Alongside -scrape or -parse, signifies that the academic calendars should be scraped/parsed.")
+	academicCalendars := flag.Bool("academicCalendars", false, "Alongside -scrape, -parse, or -upload, signifies that the academic calendars should be scraped/parsed/uploaded.")
 
 	// Flags for parsing
 	parse := flag.Bool("parse", false, "Puts the tool into parsing mode.")
@@ -139,6 +139,8 @@ func main() {
 			uploader.UploadEvents(*inDir)
 		case *mapFlag:
 			uploader.UploadMapLocations(*inDir)
+		case *academicCalendars:
+			uploader.UploadAcademicCalendars(*inDir)
 		default:
 			uploader.Upload(*inDir, *replace, *staticOnly)
 		}
