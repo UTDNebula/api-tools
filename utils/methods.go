@@ -20,6 +20,7 @@ import (
 
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/network"
+	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
 )
 
@@ -38,7 +39,14 @@ func GetEnv(name string) (string, error) {
 func InitChromeDp() (chromedpCtx context.Context, cancelFnc context.CancelFunc) {
 	log.Printf("Initializing chromedp...")
 	if Headless {
-		chromedpCtx, cancelFnc = chromedp.NewContext(context.Background())
+		opts := append(chromedp.DefaultExecAllocatorOptions[:],
+			chromedp.Flag("headless", true),
+			chromedp.Flag("no-sandbox", true),
+			chromedp.Flag("disable-dev-shm-usage", true),
+			chromedp.Flag("disable-gpu", true),
+		)
+		allocCtx, _ := chromedp.NewExecAllocator(context.Background(), opts...)
+		chromedpCtx, cancelFnc = chromedp.NewContext(allocCtx)
 	} else {
 		allocCtx, _ := chromedp.NewExecAllocator(context.Background())
 		chromedpCtx, cancelFnc = chromedp.NewContext(allocCtx)
@@ -93,6 +101,9 @@ func RefreshToken(chromedpCtx context.Context) map[string][]string {
 			chromedp.Navigate(`https://coursebook.utdallas.edu/`),
 			chromedp.ActionFunc(func(ctx context.Context) error {
 				cookies, err := network.GetCookies().Do(ctx)
+				if err != nil {
+					return err
+				}
 				cookieStrs = make([]string, len(cookies))
 				gotToken := false
 				for i, cookie := range cookies {
@@ -105,7 +116,7 @@ func RefreshToken(chromedpCtx context.Context) map[string][]string {
 				if !gotToken {
 					return errors.New("failed to get a new token")
 				}
-				return err
+				return nil
 			}),
 		)
 		if r != nil && r.Status != 200 {
@@ -164,10 +175,12 @@ func RefreshAstraToken(chromedpCtx context.Context) map[string][]string {
 
 	// Save all cookies to string
 	cookieStr := ""
-	_, err = chromedp.RunResponse(chromedpCtx,
-		chromedp.WaitVisible(`body`, chromedp.ByQuery),
+	err = chromedp.Run(chromedpCtx,
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			cookies, err := network.GetCookies().Do(ctx)
+			if err != nil {
+				return err
+			}
 			gotToken := false
 			for _, cookie := range cookies {
 				cookieStr = fmt.Sprintf("%s%s=%s; ", cookieStr, cookie.Name, cookie.Value)
@@ -179,7 +192,7 @@ func RefreshAstraToken(chromedpCtx context.Context) map[string][]string {
 			if !gotToken {
 				return errors.New("failed to get a new token")
 			}
-			return err
+			return nil
 		}),
 	)
 	if err != nil {
@@ -278,42 +291,33 @@ func Retry(action func() error, maxRetries int, retryCallback func(numRetries in
 
 // Get all the available course prefixes
 func GetCoursePrefixes(chromedpCtx context.Context) []string {
-	// Refresh the token
+	// Might need to refresh the token every time we get new course prefixes in the future
 	// refreshToken(chromedpCtx)
 
-	log.Printf("Finding course prefix nodes...")
-
 	var coursePrefixes []string
-	var coursePrefixNodes []*cdp.Node
+	log.Println("Finding course prefixes...")
 
 	// Get option elements for course prefix dropdown
-	err := chromedp.Run(chromedpCtx,
+	_, err := chromedp.RunResponse(chromedpCtx,
 		chromedp.Navigate("https://coursebook.utdallas.edu"),
-		chromedp.Nodes("select#combobox_cp option", &coursePrefixNodes, chromedp.ByQueryAll),
+		chromedp.QueryAfter("select#combobox_cp option",
+			func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
+				for _, node := range nodes[1:] {
+					coursePrefixes = append(coursePrefixes, node.AttributeValue("value"))
+				}
+				return nil
+			},
+		),
 	)
-
 	if err != nil {
 		log.Panic(err)
 	}
-
-	log.Println("Found the course prefix nodes!")
-
-	log.Println("Finding course prefixes...")
-
-	// Remove the first option due to it being empty
-	coursePrefixNodes = coursePrefixNodes[1:]
-
-	// Get the value of each option and append to coursePrefixes
-	for _, node := range coursePrefixNodes {
-		coursePrefixes = append(coursePrefixes, node.AttributeValue("value"))
-	}
-
-	log.Println("Found the course prefixes!")
-
+	log.Printf("Found the %d course prefixes!", len(coursePrefixes))
 	return coursePrefixes
 }
 
-func ConvertFromInterface[T string | float64](value interface{}) *T {
+// Convert the value of any type to either string or float64
+func ConvertFromInterface[T string | float64](value any) *T {
 	if parsed, ok := value.(T); ok {
 		return &parsed
 	}

@@ -1,6 +1,6 @@
 module github.com/UTDNebula/api-tools
 
-go 1.23.0
+go 1.24
 
 require (
 	github.com/PuerkitoBio/goquery v1.8.1

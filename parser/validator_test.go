@@ -342,10 +342,10 @@ func testDuplicatePass(objType string, ix1 int, ix2 int, t *testing.T) {
 	defer func() {
 		logOutput := logBuffer.String()
 		if logOutput != "" {
-			t.Errorf("Expected nothing in log for " + objType)
+			t.Errorf("Expected nothing in log for %s", objType)
 		}
 		if r := recover(); r != nil {
-			t.Errorf("The function panic unexpectedly for " + objType)
+			t.Errorf("The function panic unexpectedly for %s", objType)
 		}
 	}()
 
