@@ -3,10 +3,14 @@ package parser
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/fs"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -139,27 +143,46 @@ func parsePdf(path string) (schema.AcademicCalendar, error) {
 		return schema.AcademicCalendar{}, err
 	}
 
-	geminiClient := getGeminiClient()
-
 	// Build prompt
 	promptFilled := fmt.Sprintf(prompt, name, timeline, content)
 
-	// Send with default config
-	response, err := geminiClient.Models.GenerateContent(context.Background(),
-		"gemini-2.5-pro",
-		genai.Text(promptFilled),
-		&genai.GenerateContentConfig{},
-	)
+	// Check cache
+	hash := sha256.Sum256([]byte(promptFilled))
+	key := hex.EncodeToString(hash[:]) + ".json"
+	result, err := checkCache(key)
 	if err != nil {
 		return schema.AcademicCalendar{}, err
 	}
+	if result != "" {
+		log.Printf("Cache found for %s!", filename)
+	} else {
+		log.Printf("No cache for %s, asking Gemini.", filename)
+		// AI
+		geminiClient := getGeminiClient()
 
-	// Get response, remove backtick formatting
-	jsonStr := strings.ReplaceAll(strings.ReplaceAll(response.Candidates[0].Content.Parts[0].Text, "```json", ""), "```", "")
+		// Send with default config
+		response, err := geminiClient.Models.GenerateContent(context.Background(),
+			"gemini-2.5-pro",
+			genai.Text(promptFilled),
+			&genai.GenerateContentConfig{},
+		)
+		if err != nil {
+			return schema.AcademicCalendar{}, err
+		}
+
+		// Get response, remove backtick formatting
+		result = strings.ReplaceAll(strings.ReplaceAll(response.Candidates[0].Content.Parts[0].Text, "```json", ""), "```", "")
+
+		// Set cache
+		err = setCache(key, result)
+		if err != nil {
+			return schema.AcademicCalendar{}, err
+		}
+	}
 
 	// Build struct
 	var academicCalendar schema.AcademicCalendar
-	err = json.Unmarshal([]byte(jsonStr), &academicCalendar)
+	err = json.Unmarshal([]byte(result), &academicCalendar)
 	if err != nil {
 		return schema.AcademicCalendar{}, err
 	}
@@ -194,6 +217,106 @@ func readPdf(path string) (string, error) {
 	}
 
 	return buf.String(), nil
+}
+
+func checkCache(hash string) (string, error) {
+	apiUrl, apiBucket, apiKey, apiStorageKey, err := getNebulaKeys()
+	if err != nil {
+		return "", err
+	}
+
+	client := &http.Client{}
+
+	// Make request
+	req, err := http.NewRequest("GET", apiUrl+"storage/"+apiBucket+"/"+hash, nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Add("x-api-key", apiKey)
+	req.Header.Add("x-storage-key", apiStorageKey)
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	// Read the response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	var parsedBody schema.APIResponse[schema.ObjectInfo]
+	err = json.Unmarshal([]byte(body), &parsedBody)
+	if err != nil {
+		// If this errors, return ("", nil) to indicate not found
+		return "", nil
+	}
+
+	// Fetch object
+	req, err = http.NewRequest("GET", parsedBody.Data.MediaLink, nil)
+	if err != nil {
+		return "", err
+	}
+	resp, err = client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	// Read the response body
+	body, err = io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return string(body), nil
+}
+
+func setCache(key string, result string) error {
+	apiUrl, apiBucket, apiKey, apiStorageKey, err := getNebulaKeys()
+	if err != nil {
+		return err
+	}
+
+	// Make request
+	jsonStr := []byte(result)
+	bodyReader := bytes.NewBuffer(jsonStr)
+	req, err := http.NewRequest("POST", apiUrl+"storage/"+apiBucket+"/"+key, bodyReader)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Add("x-api-key", apiKey)
+	req.Header.Add("x-storage-key", apiStorageKey)
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return nil
+}
+
+func getNebulaKeys() (string, string, string, string, error) {
+	apiUrl, err := utils.GetEnv("NEBULA_API_URL")
+	if err != nil {
+		return "", "", "", "", err
+	}
+	apiBucket, err := utils.GetEnv("NEBULA_API_STORAGE_BUCKET")
+	if err != nil {
+		return "", "", "", "", err
+	}
+	apiKey, err := utils.GetEnv("NEBULA_API_KEY")
+	if err != nil {
+		return "", "", "", "", err
+	}
+	apiStorageKey, err := utils.GetEnv("NEBULA_API_STORAGE_KEY")
+	if err != nil {
+		return "", "", "", "", err
+	}
+
+	return apiUrl, apiBucket, apiKey, apiStorageKey, nil
 }
 
 // Create client only once
