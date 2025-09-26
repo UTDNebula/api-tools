@@ -5,6 +5,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+// TrendsCourseSectionsPipeline links course documents to their section records for trend reporting.
 var TrendsCourseSectionsPipeline = mongo.Pipeline{
 	bson.D{
 		{Key: "$lookup",

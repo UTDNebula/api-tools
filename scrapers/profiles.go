@@ -23,6 +23,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+// BASE_URL is the root listing endpoint for UTD professor profiles.
 const BASE_URL string = "https://profiles.utdallas.edu/browse?page="
 
 var primaryLocationRegex *regexp.Regexp = regexp.MustCompile(`^(\w+)\s+(\d+\.\d{3}[A-z]?)$`)
@@ -141,6 +142,7 @@ func scrapeProfessorLinks(chromedpCtx context.Context) []string {
 	return professorLinks
 }
 
+// ScrapeProfiles navigates UTD profile listings and writes professor metadata to JSON.
 func ScrapeProfiles(outDir string) {
 
 	chromedpCtx, cancel := utils.InitChromeDp()

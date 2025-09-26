@@ -1,7 +1,4 @@
-/*
-	This file contains the code for the coursebook scraper.
-*/
-
+// Package scrapers gathers data from external UTD sources for downstream parsing and upload.
 package scrapers
 
 import (
@@ -17,6 +14,7 @@ import (
 	"github.com/UTDNebula/api-tools/utils"
 )
 
+// ScrapeCoursebook collects coursebook sections for a term and writes raw HTML to disk.
 func ScrapeCoursebook(term string, startPrefix string, outDir string) {
 	// Start chromedp
 	chromedpCtx, cancel := utils.InitChromeDp()

@@ -57,6 +57,7 @@ func init() {
 }
 
 // Test duplicate courses. Designed for fail cases
+// TestDuplicateCoursesFail expects duplicates to trigger validation panic.
 func TestDuplicateCoursesFail(t *testing.T) {
 	for i := range len(testCourses) {
 		t.Run(fmt.Sprintf("Duplicate course %v", i), func(t *testing.T) {
@@ -66,6 +67,7 @@ func TestDuplicateCoursesFail(t *testing.T) {
 }
 
 // Test duplicate sections. Designed for fail cases
+// TestDuplicateSectionsFail ensures duplicate sections are rejected.
 func TestDuplicateSectionsFail(t *testing.T) {
 	for i := range len(testSections) {
 		t.Run(fmt.Sprintf("Duplicate section %v", i), func(t *testing.T) {
@@ -75,6 +77,7 @@ func TestDuplicateSectionsFail(t *testing.T) {
 }
 
 // Test duplicate professors . Designed for fail cases
+// TestDuplicateProfFail ensures duplicate professors fail validation.
 func TestDuplicateProfFail(t *testing.T) {
 	for i := range len(testProfessors) {
 		t.Run(fmt.Sprintf("Duplicate professor %v", i), func(t *testing.T) {
@@ -84,6 +87,7 @@ func TestDuplicateProfFail(t *testing.T) {
 }
 
 // Test duplicate courses. Designed for pass case
+// TestDuplicateCoursesPass confirms unique courses validate successfully.
 func TestDuplicateCoursesPass(t *testing.T) {
 	for i := range len(testCourses) - 1 {
 		t.Run(fmt.Sprintf("Duplicate courses %v, %v", i, i+1), func(t *testing.T) {
@@ -93,6 +97,7 @@ func TestDuplicateCoursesPass(t *testing.T) {
 }
 
 // Test duplicate sections. Designed for pass cases
+// TestDuplicateSectionsPass confirms unique sections validate successfully.
 func TestDuplicateSectionsPass(t *testing.T) {
 	for i := range len(testSections) - 1 {
 		t.Run(fmt.Sprintf("Duplicate sections %v, %v", i, i+1), func(t *testing.T) {
@@ -102,6 +107,7 @@ func TestDuplicateSectionsPass(t *testing.T) {
 }
 
 // Test duplicate professors. Designed for pass cases
+// TestDuplicateProfPass confirms unique professors validate successfully.
 func TestDuplicateProfPass(t *testing.T) {
 	for i := range len(testProfessors) - 1 {
 		t.Run(fmt.Sprintf("Duplicate professors %v, %v", i, i+1), func(t *testing.T) {
@@ -111,6 +117,7 @@ func TestDuplicateProfPass(t *testing.T) {
 }
 
 // Test if course references to anything nonexistent. Designed for pass case
+// TestCourseReferencePass ensures section references to courses succeed.
 func TestCourseReferencePass(t *testing.T) {
 	sectionMap := make(map[primitive.ObjectID]*schema.Section)
 	for _, section := range testSections {
@@ -144,6 +151,7 @@ func TestCourseReferencePass(t *testing.T) {
 //   - Section doesn't reference back to same course
 //
 // This is fail: missing
+// TestCourseReferenceFail1 detects missing course references during validation.
 func TestCourseReferenceFail1(t *testing.T) {
 	for key, value := range indexMap {
 		t.Run(fmt.Sprintf("Section %v & course %v", key, value), func(t *testing.T) {
@@ -153,6 +161,7 @@ func TestCourseReferenceFail1(t *testing.T) {
 }
 
 // This is fail: modified
+// TestCourseReferenceFail2 detects mismatched section-course references.
 func TestCourseReferenceFail2(t *testing.T) {
 	for key, value := range indexMap {
 		t.Run(fmt.Sprintf("Section %v & course %v", key, value), func(t *testing.T) {
@@ -162,6 +171,7 @@ func TestCourseReferenceFail2(t *testing.T) {
 }
 
 // Test section reference to professor, designed for pass case
+// TestSectionReferenceProfPass ensures section professor references are mutual.
 func TestSectionReferenceProfPass(t *testing.T) {
 	// Build profIDMap & profs
 	profIDMap := make(map[primitive.ObjectID]string)
@@ -192,6 +202,7 @@ func TestSectionReferenceProfPass(t *testing.T) {
 }
 
 // Test section reference to professors, designed for fail case
+// TestSectionReferenceProfFail catches missing professor back-references.
 func TestSectionReferenceProfFail(t *testing.T) {
 
 	profIDMap := make(map[primitive.ObjectID]string)
@@ -234,6 +245,7 @@ func TestSectionReferenceProfFail(t *testing.T) {
 }
 
 // Test section reference to course
+// TestSectionReferenceCourse verifies section-course reference validation.
 func TestSectionReferenceCourse(t *testing.T) {
 	courseIDMap := make(map[primitive.ObjectID]string)
 	for _, course := range testCourses {
