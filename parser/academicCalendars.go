@@ -26,6 +26,7 @@ import (
 var once sync.Once
 var geminiClient *genai.Client
 
+// What gets sent to Gemini, with the PDF content added
 var prompt = `Parse this PDF content and generate the following JSON schema.
 
 {
@@ -78,12 +79,11 @@ func ParseAcademicCalendars(inDir string, outDir string) {
 
 	// Parallel requests
 	numWorkers := 10
-
 	jobs := make(chan string)
 	var wg sync.WaitGroup
 
 	// Start worker goroutines
-	for i := 0; i < numWorkers; i++ {
+	for range numWorkers {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -122,8 +122,9 @@ func ParseAcademicCalendars(inDir string, outDir string) {
 	utils.WriteJSON(fmt.Sprintf("%s/academicCalendars.json", outDir), result)
 }
 
+// Read a PDF, build a prompt for Gemini to parse it, check if it has already been asked in the cache, and ask Gemini if not
 func parsePdf(path string) (schema.AcademicCalendar, error) {
-	// Fall 2025 to 25F
+	// "Fall 2025" to "25F"
 	filename := filepath.Base(path)
 	filename = filename[0 : len(filename)-4]
 	filenameParts := strings.Split(filename, "-")
@@ -147,20 +148,24 @@ func parsePdf(path string) (schema.AcademicCalendar, error) {
 	promptFilled := fmt.Sprintf(prompt, name, timeline, content)
 
 	// Check cache
-	hash := sha256.Sum256([]byte(promptFilled))
-	key := hex.EncodeToString(hash[:]) + ".json"
-	result, err := checkCache(key)
+	hashByte := sha256.Sum256([]byte(promptFilled))
+	hash := hex.EncodeToString(hashByte[:]) + ".json"
+	result, err := checkCache(hash)
 	if err != nil {
 		return schema.AcademicCalendar{}, err
 	}
+
+	// Skip AI if cache found
 	if result != "" {
 		log.Printf("Cache found for %s!", filename)
 	} else {
+		// Cache not found
 		log.Printf("No cache for %s, asking Gemini.", filename)
+
 		// AI
 		geminiClient := getGeminiClient()
 
-		// Send with default config
+		// Send request with default config
 		response, err := geminiClient.Models.GenerateContent(context.Background(),
 			"gemini-2.5-pro",
 			genai.Text(promptFilled),
@@ -170,11 +175,11 @@ func parsePdf(path string) (schema.AcademicCalendar, error) {
 			return schema.AcademicCalendar{}, err
 		}
 
-		// Get response, remove backtick formatting
+		// Get response, remove backtick formatting if present
 		result = strings.ReplaceAll(strings.ReplaceAll(response.Candidates[0].Content.Parts[0].Text, "```json", ""), "```", "")
 
-		// Set cache
-		err = setCache(key, result)
+		// Set cache for next time
+		err = setCache(hash, result)
 		if err != nil {
 			return schema.AcademicCalendar{}, err
 		}
@@ -190,6 +195,7 @@ func parsePdf(path string) (schema.AcademicCalendar, error) {
 	return academicCalendar, nil
 }
 
+// Read the text from the first page of a PDF
 func readPdf(path string) (string, error) {
 	// Open the PDF
 	f, r, err := pdf.Open(path)
@@ -219,6 +225,7 @@ func readPdf(path string) (string, error) {
 	return buf.String(), nil
 }
 
+// Check cache for a response to the same prompt
 func checkCache(hash string) (string, error) {
 	apiUrl, apiBucket, apiKey, apiStorageKey, err := getNebulaKeys()
 	if err != nil {
@@ -272,7 +279,8 @@ func checkCache(hash string) (string, error) {
 	return string(body), nil
 }
 
-func setCache(key string, result string) error {
+// Upload AI response to cache
+func setCache(hash string, result string) error {
 	apiUrl, apiBucket, apiKey, apiStorageKey, err := getNebulaKeys()
 	if err != nil {
 		return err
@@ -281,7 +289,7 @@ func setCache(key string, result string) error {
 	// Make request
 	jsonStr := []byte(result)
 	bodyReader := bytes.NewBuffer(jsonStr)
-	req, err := http.NewRequest("POST", apiUrl+"storage/"+apiBucket+"/"+key, bodyReader)
+	req, err := http.NewRequest("POST", apiUrl+"storage/"+apiBucket+"/"+hash, bodyReader)
 	if err != nil {
 		return err
 	}
@@ -298,6 +306,7 @@ func setCache(key string, result string) error {
 	return nil
 }
 
+// Get all the keys to access the Nebula API storage routes
 func getNebulaKeys() (string, string, string, string, error) {
 	apiUrl, err := utils.GetEnv("NEBULA_API_URL")
 	if err != nil {
@@ -320,7 +329,7 @@ func getNebulaKeys() (string, string, string, string, error) {
 }
 
 // Create client only once
-// Auth is from GOOGLE_GENAI_USE_VERTEXAI, GOOGLE_CLOUD_PROJECT and GOOGLE_APPLICATION_CREDENTIALS environment variables and service account JSON
+// Auth is from GOOGLE_GENAI_USE_VERTEXAI, GOOGLE_CLOUD_PROJECT and GOOGLE_APPLICATION_CREDENTIALS environment variables and service account JSON which is created from GEMINI_SERVICE_ACCOUNT
 func getGeminiClient() *genai.Client {
 	once.Do(func() {
 		// Create JSON file
