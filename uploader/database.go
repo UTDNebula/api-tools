@@ -1,15 +1,10 @@
-/*
-	This file is responsible for providing various useful database functions.
-*/
-
 package uploader
 
 import (
-	//"go.mongodb.org/mongo-driver/bson"
-	//"go.mongodb.org/mongo-driver/bson/primitive"
 	"context"
 	"log"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/UTDNebula/api-tools/utils"
@@ -17,29 +12,43 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+// TODO: Replace instances and check
+type DBSingleton struct {
+	client *mongo.Client
+}
+
+var dbInstance *DBSingleton
+var once sync.Once
+
 func connectDB() *mongo.Client {
+	once.Do(func() {
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
 
-	opts := options.Client().ApplyURI(getEnvMongoURI())
+		opts := options.Client().ApplyURI(getEnvMongoURI())
 
-	client, err := mongo.Connect(ctx, opts)
-	if err != nil {
-		log.Panic("Unable to create MongoDB client and connect to database")
-		os.Exit(1)
-	}
+		client, err := mongo.Connect(ctx, opts)
+		if err != nil {
+			log.Panic("Unable to create MongoDB client and connect to database")
+			os.Exit(1)
+		}
 
-	//ping the database
-	err = client.Ping(ctx, nil)
-	if err != nil {
-		log.Panic("Unable to ping database")
-		os.Exit(1)
-	}
+		//ping the database
+		err = client.Ping(ctx, nil)
+		if err != nil {
+			log.Panic("Unable to ping database")
+			os.Exit(1)
+		}
 
-	log.Println("Connected to MongoDB")
+		log.Println("Connected to MongoDB")
 
-	return client
+		dbInstance = &DBSingleton{
+			client: client,
+		}
+	})
+
+	return dbInstance.client
 }
 
 func getCollection(client *mongo.Client, collectionName string) *mongo.Collection {
