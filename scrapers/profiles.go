@@ -11,9 +11,12 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/chromedp/cdproto/dom"
 
 	"github.com/UTDNebula/api-tools/utils"
 	"github.com/UTDNebula/nebula-api/api/schema"
@@ -23,10 +26,11 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-const BASE_URL string = "https://profiles.utdallas.edu/browse?page="
+const BaseUrl string = "https://profiles.utdallas.edu/browse?page="
+const ProfilesDir string = "profiles"
 
-var primaryLocationRegex *regexp.Regexp = regexp.MustCompile(`^(\w+)\s+(\d+\.\d{3}[A-z]?)$`)
-var fallbackLocationRegex *regexp.Regexp = regexp.MustCompile(`^([A-z]+)(\d+)\.?(\d{3}[A-z]?)$`)
+var primaryLocationRegex = regexp.MustCompile(`^(\w+)\s+(\d+\.\d{3}[A-z]?)$`)
+var fallbackLocationRegex = regexp.MustCompile(`^([A-z]+)(\d+)\.?(\d{3}[A-z]?)$`)
 
 func parseLocation(text string) schema.Location {
 	var building string
@@ -99,7 +103,7 @@ func getNodeText(node *cdp.Node) string {
 func scrapeProfessorLinks(chromedpCtx context.Context) []string {
 	var pageLinks []*cdp.Node
 	_, err := chromedp.RunResponse(chromedpCtx,
-		chromedp.Navigate(BASE_URL+"1"),
+		chromedp.Navigate(BaseUrl+"1"),
 		chromedp.QueryAfter(".page-link",
 			func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
 				pageLinks = nodes
@@ -119,7 +123,7 @@ func scrapeProfessorLinks(chromedpCtx context.Context) []string {
 	professorLinks := make([]string, 0, numPages)
 	for curPage := 1; curPage <= numPages; curPage++ {
 		_, err := chromedp.RunResponse(chromedpCtx,
-			chromedp.Navigate(BASE_URL+strconv.Itoa(curPage)),
+			chromedp.Navigate(BaseUrl+strconv.Itoa(curPage)),
 			chromedp.QueryAfter("//h5[@class='card-title profile-name']//a",
 				func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
 					for _, node := range nodes {
@@ -146,8 +150,8 @@ func ScrapeProfiles(outDir string) {
 	chromedpCtx, cancel := utils.InitChromeDp()
 	defer cancel()
 
-	err := os.MkdirAll(outDir, 0777)
-	if err != nil {
+	resultDir := filepath.Join(outDir, ProfilesDir)
+	if err := os.MkdirAll(resultDir, 0777); err != nil {
 		panic(err)
 	}
 
@@ -158,13 +162,24 @@ func ScrapeProfiles(outDir string) {
 	log.Print("Scraped professor links!")
 
 	for _, link := range professorLinks {
+		utils.VPrint("Scraping name...")
+
+		html, err := getOuterHtml(chromedpCtx, link)
+		if err != nil {
+			log.Fatalf("Failed to scrape link %s: %v", link, err)
+		}
+
+		name := link[strings.LastIndex(link, "/"):]
+		if err = os.WriteFile(filepath.Join(resultDir, name+".html"), []byte(html), 0644); err != nil {
+			log.Fatalf("Failed save html for %s: %v", name, err)
+			return
+		}
+
+		/// Everything below should be moved to parser
 
 		// Navigate to the link and get the names
 		var firstName, lastName string
-
-		utils.VPrint("Scraping name...")
-
-		_, err := chromedp.RunResponse(chromedpCtx,
+		_, err = chromedp.RunResponse(chromedpCtx,
 			chromedp.Navigate(link),
 			chromedp.ActionFunc(func(ctx context.Context) error {
 				var text string
@@ -300,4 +315,24 @@ func ScrapeProfiles(outDir string) {
 	encoder.SetIndent("", "\t")
 	encoder.Encode(professors)
 	fptr.Close()
+}
+
+func getOuterHtml(chromedpCtx context.Context, url string) (string, error) {
+	var html string
+	err := chromedp.Run(chromedpCtx,
+		chromedp.Navigate(url),
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			node, err := dom.GetDocument().Do(ctx)
+			if err != nil {
+				return err
+			}
+			html, err = dom.GetOuterHTML().WithNodeID(node.NodeID).Do(ctx)
+			return err
+		}),
+	)
+
+	if err != nil {
+		return "", fmt.Errorf("failed to get outerHtml for page %s: %w", url, err)
+	}
+	return html, nil
 }

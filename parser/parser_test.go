@@ -132,14 +132,13 @@ func updateTestData() error {
 	//doesn't do anything since there is no profile data
 	loadProfiles("")
 
-	tempDir, err := os.MkdirTemp("", "testdata-*")
+	tempResultDir, err := os.MkdirTemp("", "testdata-*")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to create temporary directory: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer os.RemoveAll(tempResultDir)
 
 	//Fill temp dir with all the test cases and expected values
-
 	duplicates := make(map[string]bool)
 
 	for i, input := range utils.GetAllFilesWithExtension("testdata", ".html") {
@@ -188,7 +187,7 @@ func updateTestData() error {
 		}
 		classInfo := getClassInfo(doc)
 
-		caseDir := filepath.Join(tempDir, fmt.Sprintf("case_%03d", i))
+		caseDir := filepath.Join(tempResultDir, fmt.Sprintf("case_%03d", i))
 		if err = os.Mkdir(caseDir, 0777); err != nil {
 			return fmt.Errorf("failed to create directory: %v", err)
 		}
@@ -218,24 +217,51 @@ func updateTestData() error {
 		clearGlobals()
 	}
 
-	//rerun parser to get Courses.json, Sections.json, Professors.json
-
-	//Parse(tempDir, tempDir, "../grade-data", false)
-	//Grade data isn't work with tests currently
-	Parse(tempDir, tempDir, "", false)
+	input, err := createSampleInput()
+	if err != nil {
+		return fmt.Errorf("failed to create sample input for Parse: %v", err)
+	}
+	defer os.RemoveAll(input)
+	Parse(input, tempResultDir, "", false)
 
 	//overwrite the current test data with the new data
 	if err := os.RemoveAll("testdata"); err != nil {
 		return fmt.Errorf("failed to remove testdata: %v", err)
 	}
 
-	if err := os.CopyFS("testdata", os.DirFS(tempDir)); err != nil {
+	if err := os.CopyFS("testdata", os.DirFS(tempResultDir)); err != nil {
 		return fmt.Errorf("failed to copy testdata: %v", err)
 	}
 
-	//reset maps to avoid side effects. maybe parser should be an object?
 	clearGlobals()
 	return nil
+}
+
+func createSampleInput() (string, error) {
+	tempInputDir, err := os.MkdirTemp("", "input-*")
+	if err != nil {
+		log.Fatalf("Failed to create temporary input directory: %v", err)
+	}
+
+	if err = os.Mkdir(filepath.Join(tempInputDir, "coursebook"), 0777); err != nil {
+		log.Fatalf("Failed to create course book directory in temp intput dir: %v", err)
+	}
+	// for future test data
+	if err = os.Mkdir(filepath.Join(tempInputDir, "profiles"), 0777); err != nil {
+		log.Fatalf("Failed to create profiles directory in temp intput dir: %v", err)
+	}
+
+	for i, input := range utils.GetAllFilesWithExtension("testdata", ".html") {
+		data, err := os.ReadFile(input)
+		if err != nil {
+			return "", fmt.Errorf("failed to load test data: %v", err)
+		}
+		err = os.WriteFile(filepath.Join(tempInputDir, "coursebook", fmt.Sprintf("input%03d.html", i)), data, 0777)
+		if err != nil {
+			return "", fmt.Errorf("failed to write test data: %v", err)
+		}
+	}
+	return tempInputDir, nil
 }
 
 func clearGlobals() {
@@ -249,8 +275,15 @@ func clearGlobals() {
 
 func TestParse(t *testing.T) {
 	tempDir := t.TempDir()
+
+	input, err := createSampleInput()
+	if err != nil {
+		t.Errorf("failed to create sample input for Parse: %v", err)
+	}
+	defer os.RemoveAll(input)
+
 	// todo fix grade data, csvPath = ./grade-data panics
-	Parse("testdata", tempDir, "", false)
+	Parse(input, tempDir, "", false)
 
 	OutputCourses, err := unmarshallFile[[]schema.Course](filepath.Join(tempDir, "courses.json"))
 	if err != nil {

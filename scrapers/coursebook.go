@@ -30,6 +30,8 @@ var (
 )
 
 const (
+	coursebookDir = "coursebook"
+
 	reqThrottle    = 400 * time.Millisecond
 	prefixThrottle = 5 * time.Second
 	httpTimeout    = 10 * time.Second
@@ -153,7 +155,7 @@ func (s *coursebookScraper) lastCompletePrefix() string {
 		log.Fatal(err)
 	}
 
-	dir, err := os.ReadDir(filepath.Join(s.outDir, s.term))
+	dir, err := os.ReadDir(filepath.Join(s.outDir, coursebookDir, s.term))
 	if err != nil {
 		log.Fatalf("failed to read output directory: %v", err)
 	}
@@ -179,26 +181,25 @@ func (s *coursebookScraper) lastCompletePrefix() string {
 	return ""
 }
 
-// ensurePrefixFolder creates {outDir}/term if it does not exist
-
+// ensurePrefixFolder creates {outDir}/coursebookDir/term if it does not exist
 func (s *coursebookScraper) ensureOutputFolder() error {
-	if err := os.MkdirAll(filepath.Join(s.outDir, s.term), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Join(s.outDir, coursebookDir, s.term), 0755); err != nil {
 		return fmt.Errorf("failed to create term forlder: %w", err)
 	}
 	return nil
 }
 
-// ensurePrefixFolder creates {outDir}/term/prefix if it does not exist
+// ensurePrefixFolder creates {outDir}/coursebookDir/term/prefix if it does not exist
 func (s *coursebookScraper) ensurePrefixFolder(prefix string) error {
-	if err := os.MkdirAll(filepath.Join(s.outDir, s.term, prefix), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Join(s.outDir, coursebookDir, s.term, prefix), 0755); err != nil {
 		return fmt.Errorf("failed to create folder for %s: %w", prefix, err)
 	}
 	return nil
 }
 
-// writeSection writes content to file {outDir}/term/prefix/{id}.html
+// writeSection writes content to file {outDir}/coursebookDir/term/prefix/{id}.html
 func (s *coursebookScraper) writeSection(prefix string, id string, content string) error {
-	if err := os.WriteFile(filepath.Join(s.outDir, s.term, prefix, id+".html"), []byte(content), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(s.outDir, coursebookDir, s.term, prefix, id+".html"), []byte(content), 0644); err != nil {
 		return fmt.Errorf("failed to write section %s: %w", id, err)
 	}
 	return nil
@@ -219,7 +220,7 @@ func (s *coursebookScraper) getSectionContent(id string) (string, error) {
 // getMissingIdsForPrefix calls getSectionIdsForPrefix and filters out the ids that already
 // exist in the prefix directory
 func (s *coursebookScraper) getMissingIdsForPrefix(prefix string) ([]string, error) {
-	path := filepath.Join(s.outDir, s.term, prefix)
+	path := filepath.Join(s.outDir, coursebookDir, s.term, prefix)
 
 	sectionIds, err := s.getSectionIdsForPrefix(prefix)
 	if err != nil {
