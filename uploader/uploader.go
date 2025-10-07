@@ -29,11 +29,16 @@ import (
 //  Also note that this uploader assumes that the collection names match the names of these files, which they should.
 //  If the names of these collections ever change, the file names should be updated accordingly.
 
+// Wrapped for testability - can be replaced with mock in unit tests
+var connectDBFunc = func() *mongo.Client {
+	return connectDB()
+}
+
 var filesToUpload [3]string = [3]string{"courses.json", "professors.json", "sections.json"}
 
 func Upload(inDir string, replace bool, staticOnly bool) {
 	//Connect to mongo
-	client := connectDB()
+	client := connectDBFunc()
 
 	// Get 5 minute context
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
