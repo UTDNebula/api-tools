@@ -89,25 +89,19 @@ func csvToMap(csvFile *os.File, logFile *os.File) map[string][]int {
 		}
 	}
 
-	if _, ok := indexMap["W"]; !ok {
-		logFile.WriteString("could not find W column")
-		//log.Panicf("could not find W column")
+	// required columns
+	for _, name := range []string{"Section", "Subject", "Catalog Number", "A+"} {
+		if _, ok := indexMap[name]; !ok {
+			logFile.WriteString(fmt.Sprintf("could not find %s column", name))
+			log.Panicf("could not find %s column", name)
+		}
 	}
-	if _, ok := indexMap["Section"]; !ok {
-		logFile.WriteString("could not find Section column")
-		log.Panicf("could not find Section column")
-	}
-	if _, ok := indexMap["Subject"]; !ok {
-		logFile.WriteString("could not find Subject column")
-		log.Panicf("could not find Subject column")
-	}
-	if _, ok := indexMap["Catalog Number"]; !ok {
-		logFile.WriteString("could not find catalog # column")
-		log.Panicf("could not find catalog # column")
-	}
-	if _, ok := indexMap["A+"]; !ok {
-		logFile.WriteString("could not find A+ column")
-		log.Panicf("could not find A+ column")
+
+	// optional columns
+	for _, name := range []string{"W", "P", "CR", "NC", "I", "NF"} {
+		if _, ok := indexMap[name]; !ok {
+			logFile.WriteString(fmt.Sprintf("could not find %s column\n", name))
+		}
 	}
 
 	sectionCol := indexMap["Section"]
