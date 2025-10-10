@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-var grades = []string{"A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "F", "W", "P", "CR", "NC", "I", "NF"}
+var grades = []string{"A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "F", "W", "P", "CR", "NC", "I"}
 
 func loadGrades(csvDir string) map[string]map[string][]int {
 
@@ -98,7 +98,7 @@ func csvToMap(csvFile *os.File, logFile *os.File) map[string][]int {
 	}
 
 	// optional columns
-	for _, name := range []string{"W", "P", "CR", "NC", "I", "NF"} {
+	for _, name := range []string{"W", "P", "CR", "NC", "I"} {
 		if _, ok := indexMap[name]; !ok {
 			logFile.WriteString(fmt.Sprintf("could not find %s column\n", name))
 		}
