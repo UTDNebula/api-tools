@@ -8,18 +8,13 @@ import (
 	"regexp"
 	"slices"
 	"strings"
-	"slices"
-	"regexp"
 
 	"github.com/UTDNebula/api-tools/utils"
 	"github.com/UTDNebula/nebula-api/api/schema"
 )
 
-<<<<<<< HEAD
-=======
 // Some events have only the building name, not the abbreviation
 // Maps building names to their abbreviations
->>>>>>> 0af6300 (Add calendar parser)
 var buildingAbbreviations = map[string]string{
 	"Activity Center":                              "AB",
 	"Activity Center Bookstore":                    "ACB",
