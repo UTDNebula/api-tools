@@ -261,5 +261,5 @@ func ParseCalendar(inDir string, outDir string) {
 	
 	log.Print("Parsed Calendar!")
 
-	utils.WriteJSON(fmt.Sprintf("%s/eventsTEST.json", outDir), result)
+	utils.WriteJSON(fmt.Sprintf("%s/events.json", outDir), result)
 }
