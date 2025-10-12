@@ -156,7 +156,7 @@ var roomNumbers = map[string]string {
 
 func ParseCalendar(inDir string, outDir string) {
 	
-	calendarFile, err := os.ReadFile(inDir + "/events.json")
+	calendarFile, err := os.ReadFile(inDir + "/eventScraped.json")
 	if err != nil {
 		panic(err)
 	}
