@@ -1,3 +1,6 @@
+/*
+This file is responsible for providing various useful database functions.
+*/
 package uploader
 
 import (
@@ -22,7 +25,6 @@ var once sync.Once
 
 func connectDB() *mongo.Client {
 	once.Do(func() {
-
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
@@ -34,7 +36,7 @@ func connectDB() *mongo.Client {
 			os.Exit(1)
 		}
 
-		//ping the database
+		// ping the database
 		err = client.Ping(ctx, nil)
 		if err != nil {
 			log.Panic("Unable to ping database")
