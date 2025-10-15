@@ -31,9 +31,14 @@ import (
 
 var filesToUpload [3]string = [3]string{"courses.json", "professors.json", "sections.json"}
 
+// Wrapped for testability - can be replaced with mock in unit tests
+var connectDBFunc = func() *mongo.Client {
+	return connectDB()
+}
+
 func Upload(inDir string, replace bool, staticOnly bool) {
 	//Connect to mongo
-	client := connectDB()
+	client := connectDBFunc()
 
 	// Get 5 minute context
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
