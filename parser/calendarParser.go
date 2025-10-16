@@ -61,7 +61,7 @@ var buildingAbbreviations = map[string]string{
 	"Student Union Food Court":                     "SUFC",
 	"Synergy Park North":                           "SPN",
 	"Synergy Park North 2":                         "SP2",
-	"University Theater":                           "TH",
+	"University Theatre":                           "TH",
 	"Visitor Center":                               "VC",
 	"Waterview Science and Technology Center":      "WSTC",
 	"Andromeda Hall & University Housing Office":   "RHA",
@@ -131,29 +131,6 @@ var validAbbreviations []string = []string{
 	"RCW",
 }
 
-// Some events refer to the room name instead of their number
-// It's very likely that there are other named rooms with room numbers not added yet
-// Maps room names to room number
-var roomNumbers = map[string]string {
-	"Artemis I":                                    "2.905A",
-	"Artemis II":                                   "2.905B",
-	"Main Gym":                                     "1.2",
-	"Auxiliary Gym":                                "1.318",
-	"Axxess Atrium":                                "1.100",
-	"Ballroom A":                                   "1.102A",
-	"Ballroom B":                                   "1.102B",
-	"Ballroom C":                                   "1.102C",
-	"AHT Gallery":                                  "3.102",
-	"SP/N Gallery":                                 "11.150",
-	"Galaxy Rooms":                                 "2.602",
-	"ATC Auditorium":                               "1.102",
-	"ATC Lecture Hall":                             "l.l02",
-	"TI Auditorium":                                "2.102",
-	"SSA Auditorium":                               "13.330",
-	"Clark Auditorium":                             "1.315",
-	"ATC Lobby":                                    "1.700",
-}
-
 func ParseCalendar(inDir string, outDir string) {
 	
 	calendarFile, err := os.ReadFile(inDir + "/eventScraped.json")
@@ -188,40 +165,41 @@ func ParseCalendar(inDir string, outDir string) {
 		room := roomRegexp.FindString(*location)
 
 		// buildingRegexp might capture something that isn't a valid building abbreviation (e.g., UTD)
-		if checkBuilding := slices.Contains(validAbbreviations, building); !checkBuilding {
-			building = ""
-		}
+		isValidBuilding := slices.Contains(validAbbreviations, building)
 		
+		// If location doesn't have building abbreviation or buildingRegexp captured an invalid abbreviation,
+		// check for the full building name
 		lowercaseLocation := strings.ToLower(*location)
-		// If location doesn't have building abbreviation, check for the full building name
-		if building == "" {
+		if building == "" || !isValidBuilding {
 			for key := range buildingAbbreviations {
 				if strings.Contains(lowercaseLocation, strings.ToLower(key)) {
 					building = buildingAbbreviations[key]
+					isValidBuilding = true
 				}
 			}
 		}
 		
-		// If location doesn't have room number, check for room names
-		if room == "" {
-			for key := range roomNumbers {
-				if strings.Contains(lowercaseLocation, strings.ToLower(key)) {
-					room = roomNumbers[key]
-				}
-			}
+		// If location doesn't have room number, check to see if location included a room
+		if room == "" && isValidBuilding {
+			locationParts := strings.SplitN(*location, ",", 2)
+			if len(locationParts) == 2 {
+				room = locationParts[1]
+			} 
 		}
 
 		// If building is still empty string, then location was initally an empty string
-		// or was a place off campus
+		// or location was a place off campus
 		if building == "" {
 			building = "Other"
 		}
 
 		// If room is still empty string, then location was initally an empty string, or
-		// the room had no equivalent room number, or was a place off campus
+		// location did not include a room, or location was a place off campus
 		if room == "" {
 			room = "Other"
 		}
+
+		fmt.Println(*location + " | " + building + " | " + room)
 
 		if _, exists := multiBuildingMap[date]; !exists {
 			multiBuildingMap[date] = make(map[string]map[string][]schema.Event)
