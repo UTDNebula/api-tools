@@ -75,6 +75,7 @@ Run the tool by changing directory using `cd` to the `api-tools` directory and r
 | Command | Description |
 |---------|-------------|
 | `./api-tools -parse -astra` | Parses Astra data. |
+| `./api-tools -parse -calendar` | Parses calendar data. |
 | `./api-tools -parse -csv [directory]` | Outputs grade data CSVs (default: `./grade-data`). |
 | `./api-tools -parse -map` | Parses UTD Map data. |
 | `./api-tools -parse -mazevo` | Parses Mazevo data. |
