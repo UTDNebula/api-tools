@@ -199,8 +199,6 @@ func ParseCalendar(inDir string, outDir string) {
 			room = "Other"
 		}
 
-		fmt.Println(*location + " | " + building + " | " + room)
-
 		if _, exists := multiBuildingMap[date]; !exists {
 			multiBuildingMap[date] = make(map[string]map[string][]schema.Event)
 		}
