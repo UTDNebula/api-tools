@@ -11,11 +11,13 @@ import (
 	"github.com/UTDNebula/nebula-api/api/schema"
 )
 
+// InputData describes the raw Astra export payload containing fields metadata and row values.
 type InputData struct {
 	Fields string          `json:"fields"`
 	Data   [][]interface{} `json:"data"`
 }
 
+// ParseAstra reads Astra scrape output and produces structured multi-building event JSON files.
 func ParseAstra(inDir string, outDir string) {
 
 	astraFile, err := os.ReadFile(inDir + "/astraScraped.json")
