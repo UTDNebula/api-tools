@@ -42,6 +42,7 @@ var (
 	emailRegex       = regexp.MustCompile(fmt.Sprintf(`%s@%s%s`, localPartPattern, subdomainPattern, topdomainPattern))
 )
 
+// ScrapeOrganizations authenticates with SharePoint and exports the student organization directory CSV.
 func ScrapeOrganizations(outdir string) {
 	log.Println("Scraping SOC ...")
 	ctx, cancel := utils.InitChromeDp()

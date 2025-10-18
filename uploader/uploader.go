@@ -1,7 +1,4 @@
-/*
-	This file is responsible for handling uploading of parsed data to MongoDB.
-*/
-
+// Package uploader writes parsed datasets and derived aggregations into MongoDB collections.
 package uploader
 
 import (
@@ -31,6 +28,7 @@ import (
 
 var filesToUpload [3]string = [3]string{"courses.json", "professors.json", "sections.json"}
 
+// Upload sends parsed JSON files to MongoDB and refreshes static aggregations.
 func Upload(inDir string, replace bool, staticOnly bool) {
 	//Connect to mongo
 	client := connectDB()
@@ -72,10 +70,8 @@ func Upload(inDir string, replace bool, staticOnly bool) {
 	log.Print("Done building static aggregations!")
 }
 
-// Generic upload function to upload parsed JSON data to the Mongo database
-// Make sure that the name of the file being parsed matches with the name of the collection you are uploading to!
-// For example, your file should be named courses.json if you want to upload courses
-// As of right now, courses, professors, and sections are available to upload.
+// UploadData uploads parsed JSON documents to a MongoDB collection.
+// Make sure the file name matches the collection name (e.g., courses.json for the courses collection).
 func UploadData[T any](client *mongo.Client, ctx context.Context, fptr *os.File, replace bool) {
 	fileName := fptr.Name()[strings.LastIndex(fptr.Name(), "/")+1 : len(fptr.Name())-5]
 	log.Println("Uploading " + fileName + ".json ...")

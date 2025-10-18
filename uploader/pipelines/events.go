@@ -1,3 +1,4 @@
+// Package pipelines defines reusable MongoDB aggregation pipelines for derived data.
 package pipelines
 
 import (
@@ -5,7 +6,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// Pipeline for aggregating sections->events
+// EventsPipeline aggregates section meetings into building and room event summaries.
 var EventsPipeline = mongo.Pipeline{
 	//separate each meeting
 	{{Key: "$unwind", Value: "$meetings"}},

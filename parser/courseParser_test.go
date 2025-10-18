@@ -9,6 +9,7 @@ import (
 	"github.com/UTDNebula/nebula-api/api/schema"
 )
 
+// TestGetCourse checks course parsing from HTML fixtures.
 func TestGetCourse(t *testing.T) {
 	t.Parallel()
 
@@ -28,6 +29,7 @@ func TestGetCourse(t *testing.T) {
 	}
 }
 
+// TestGetCatalogYear ensures catalog year derivation matches expected academic sessions.
 func TestGetCatalogYear(t *testing.T) {
 	t.Parallel()
 
@@ -88,6 +90,7 @@ func TestGetCatalogYear(t *testing.T) {
 	}
 }
 
+// TestGetPrefixAndCourseNum verifies extraction of subject prefixes and course numbers.
 func TestGetPrefixAndCourseNum(t *testing.T) {
 	t.Parallel()
 

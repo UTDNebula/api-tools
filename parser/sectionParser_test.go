@@ -8,6 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
+// TestGetInternalClassAndCourseNum checks parsing of internal course identifiers.
 func TestGetInternalClassAndCourseNum(t *testing.T) {
 	t.Parallel()
 
@@ -59,6 +60,7 @@ func TestGetInternalClassAndCourseNum(t *testing.T) {
 	}
 }
 
+// TestGetAcademicSession ensures term metadata is parsed correctly.
 func TestGetAcademicSession(t *testing.T) {
 	t.Parallel()
 
@@ -78,6 +80,7 @@ func TestGetAcademicSession(t *testing.T) {
 	}
 }
 
+// TestGetSectionNumber validates extraction of section numbers.
 func TestGetSectionNumber(t *testing.T) {
 	t.Parallel()
 
