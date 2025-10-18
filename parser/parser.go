@@ -14,20 +14,20 @@ import (
 )
 
 var (
-	// Sections dictionary for mapping UUIDs to a *schema.Section
-	Sections = make(map[primitive.ObjectID]*schema.Section)
+	// Sections dictionary for mapping (prefix + courseNumber + sectionNumber + term) to a *schema.Section
+	Sections = make(map[string]*schema.Section)
 
-	// Courses dictionary for keys (Internal_course_number +  Catalog_year) to a *schema.Course
+	// Courses dictionary for keys (prefix + courseNumber + Catalog_year) to a *schema.Course
 	Courses = make(map[string]*schema.Course)
 
-	// Professors dictionary for keys (First_name +   Last_name) to a *schema.Professor
+	// Professors dictionary for key (firstName + lastName) to a *schema.Professor
 	Professors = make(map[string]*schema.Professor)
 
-	//CourseIDMap auxiliary dictionary for mapping UUIDs to a *schema.Course
-	CourseIDMap = make(map[primitive.ObjectID]string)
+	// CourseIDMap auxiliary dictionary for mapping UUIDs to a *schema.Course
+	// CourseIDMap = make(map[primitive.ObjectID]string)
 
-	//ProfessorIDMap auxiliary dictionary for mapping UUIDs to a *schema.Professor
-	ProfessorIDMap = make(map[primitive.ObjectID]string)
+	// ProfessorIDMap auxiliary dictionary for mapping UUIDs to a *schema.Professor
+	// ProfessorIDMap = make(map[primitive.ObjectID]string)
 
 	// ReqParsers dictionary mapping course UUIDs to the func() that parsers its Reqs
 	ReqParsers = make(map[primitive.ObjectID]func())

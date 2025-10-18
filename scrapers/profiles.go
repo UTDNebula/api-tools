@@ -285,7 +285,7 @@ func ScrapeProfiles(outDir string) {
 			Profile_uri:  link,
 			Image_uri:    imageUri,
 			Office_hours: []schema.Meeting{},
-			Sections:     []primitive.ObjectID{},
+			Sections:     []*schema.ProfSectionRef{},
 		})
 
 		utils.VPrintf("Scraped profile for %s %s!", firstName, lastName)

@@ -41,32 +41,38 @@ var (
 func parseSection(rowInfo map[string]*goquery.Selection, classInfo map[string]string) {
 	classNum, courseNum := getInternalClassAndCourseNum(classInfo)
 	session := getAcademicSession(rowInfo)
-	courseRef := parseCourse(courseNum, session, rowInfo, classInfo)
-
-	sectionNumber := getSectionNumber(classInfo)
+	course := parseCourse(courseNum, session, rowInfo, classInfo)
 
 	id := primitive.NewObjectID()
+	sectionNumber := getSectionNumber(classInfo)
+	courseRef := schema.CourseRef{
+		Prefix: course.Subject_prefix,
+		Number: course.Course_number,
+		Year:   course.Catalog_year,
+	}
 
 	section := schema.Section{
 		Id:                    id,
 		Section_number:        sectionNumber,
-		Course_reference:      courseRef.Id,
+		Course_reference:      &courseRef,
 		Academic_session:      session,
-		Professors:            parseProfessors(id, rowInfo, classInfo),
+		Professors:            parseProfessors(id, sectionNumber, rowInfo, *course, session),
 		Teaching_assistants:   getTeachingAssistants(rowInfo),
 		Internal_class_number: classNum,
 		Instruction_mode:      getInstructionMode(classInfo),
 		Meetings:              getMeetings(rowInfo),
 		Core_flags:            getCoreFlags(rowInfo),
 		Syllabus_uri:          getSyllabusUri(rowInfo),
-		Grade_distribution:    getGradeDistribution(session, sectionNumber, courseRef),
+		Grade_distribution:    getGradeDistribution(session, sectionNumber, course),
 	}
 
 	// Add new section to section map
-	Sections[section.Id] = &section
-
+	Sections[courseRef.Prefix+courseRef.Number+sectionNumber+session.Name] = &section
 	// Append new section to course's section listing
-	courseRef.Sections = append(courseRef.Sections, section.Id)
+	course.Sections = append(course.Sections, schema.CourseSectionRef{
+		Term:           session.Name,
+		Section_number: sectionNumber,
+	})
 }
 
 // getInternalClassAndCourseNum returns a sections internal course and class number,

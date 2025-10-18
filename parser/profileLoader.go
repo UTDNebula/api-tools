@@ -35,9 +35,7 @@ func loadProfiles(inDir string) {
 		if err != nil {
 			panic(err)
 		}
-		professorKey := prof.First_name + prof.Last_name
-		Professors[professorKey] = &prof
-		ProfessorIDMap[prof.Id] = professorKey
+		Professors[prof.First_name+" "+prof.Last_name] = &prof
 	}
 
 	// Read closing bracket

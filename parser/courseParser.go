@@ -24,10 +24,15 @@ var (
 // parseCourse returns a pointer to the course specified by the
 // provided information. If the associated course is not found in
 // Courses, it will run getCourse and add the result to Courses.
-func parseCourse(internalCourseNumber string, session schema.AcademicSession, rowInfo map[string]*goquery.Selection, classInfo map[string]string) *schema.Course {
+func parseCourse(
+	internalCourseNumber string, session schema.AcademicSession,
+	rowInfo map[string]*goquery.Selection, classInfo map[string]string,
+) *schema.Course {
+
 	// Courses are internally keyed by their internal course number and the catalog year they're part of
 	catalogYear := getCatalogYear(session)
-	courseKey := internalCourseNumber + catalogYear
+	prefix, courseNumber := getPrefixAndNumber(classInfo)
+	courseKey := prefix + courseNumber + catalogYear
 
 	// Don't recreate the course if it already exists
 	course, courseExists := Courses[courseKey]
@@ -35,27 +40,28 @@ func parseCourse(internalCourseNumber string, session schema.AcademicSession, ro
 		return course
 	}
 
-	course = getCourse(internalCourseNumber, session, rowInfo, classInfo)
+	course = getCourse(prefix, courseNumber, internalCourseNumber, session, rowInfo, classInfo)
 
 	// Get closure for parsing course requisites (god help me)
 	enrollmentReqs, hasEnrollmentReqs := rowInfo["Enrollment Reqs:"]
 	ReqParsers[course.Id] = getReqParser(course, hasEnrollmentReqs, enrollmentReqs)
 
 	Courses[courseKey] = course
-	CourseIDMap[course.Id] = courseKey
 	return course
 }
 
 // getCourse extracts course details from the provided information and creates a schema.Course object.
 // This function does not modify any global state.
 // Returns a pointer to the newly created schema.Course object.
-func getCourse(internalCourseNumber string, session schema.AcademicSession, rowInfo map[string]*goquery.Selection, classInfo map[string]string) *schema.Course {
-	CoursePrefix, CourseNumber := getPrefixAndNumber(classInfo)
+func getCourse(
+	prefix string, number string, internalCourseNumber string, session schema.AcademicSession,
+	rowInfo map[string]*goquery.Selection, classInfo map[string]string,
+) *schema.Course {
 
 	course := schema.Course{
 		Id:                     primitive.NewObjectID(),
-		Course_number:          CourseNumber,
-		Subject_prefix:         CoursePrefix,
+		Course_number:          number,
+		Subject_prefix:         prefix,
 		Title:                  utils.TrimWhitespace(rowInfo["Course Title:"].Text()),
 		Description:            utils.TrimWhitespace(rowInfo["Description:"].Text()),
 		School:                 utils.TrimWhitespace(rowInfo["College:"].Text()),

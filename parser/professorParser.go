@@ -10,12 +10,26 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func parseProfessors(sectionId primitive.ObjectID, rowInfo map[string]*goquery.Selection, classInfo map[string]string) []primitive.ObjectID {
+// Parse the list of professors of the section with given id.
+// For each professor, set up their reference to the given section using compound key
+func parseProfessors(
+	sectionId primitive.ObjectID, sectionNumber string, rowInfo map[string]*goquery.Selection,
+	course schema.Course, session schema.AcademicSession,
+) []string {
+
 	professorText := utils.TrimWhitespace(rowInfo["Instructor(s):"].Text())
 	professorMatches := personRegexp.FindAllStringSubmatch(professorText, -1)
-	var profRefs []primitive.ObjectID = make([]primitive.ObjectID, 0, len(professorMatches))
-	for _, match := range professorMatches {
+	profRefs := make([]string, 0, len(professorMatches))
 
+	// Each professor's reference to the given section
+	profSectionRef := schema.ProfSectionRef{
+		Prefix:         course.Subject_prefix,
+		Number:         course.Course_number,
+		Term:           session.Name,
+		Section_number: sectionNumber,
+	}
+
+	for _, match := range professorMatches {
 		nameStr := utils.TrimWhitespace(match[1])
 		names := strings.Split(nameStr, " ")
 
@@ -27,25 +41,24 @@ func parseProfessors(sectionId primitive.ObjectID, rowInfo map[string]*goquery.S
 			continue
 		}
 
-		profKey := firstName + lastName
-
-		prof, profExists := Professors[profKey]
+		prof, profExists := Professors[firstName+" "+lastName]
 		if profExists {
-			prof.Sections = append(prof.Sections, sectionId)
-			profRefs = append(profRefs, prof.Id)
+			prof.Sections = append(prof.Sections, &profSectionRef)
+			// Under the assumption that existent prof has email recorded
+			profRefs = append(profRefs, firstName+" "+lastName)
 			continue
 		}
 
-		prof = &schema.Professor{}
-		prof.Id = primitive.NewObjectID()
-		prof.First_name = firstName
-		prof.Last_name = lastName
-		prof.Titles = []string{utils.TrimWhitespace(match[2])}
-		prof.Email = utils.TrimWhitespace(match[3])
-		prof.Sections = []primitive.ObjectID{sectionId}
-		profRefs = append(profRefs, prof.Id)
-		Professors[profKey] = prof
-		ProfessorIDMap[prof.Id] = profKey
+		prof = &schema.Professor{
+			Id:         primitive.NewObjectID(),
+			First_name: firstName,
+			Last_name:  lastName,
+			Titles:     []string{utils.TrimWhitespace(match[2])},
+			Email:      utils.TrimWhitespace(match[3]),
+			Sections:   []*schema.ProfSectionRef{&profSectionRef},
+		}
+		profRefs = append(profRefs, prof.First_name+" "+prof.Last_name)
+		Professors[firstName+" "+lastName] = prof
 	}
 	return profRefs
 }
