@@ -221,10 +221,18 @@ func WriteJSON(filepath string, data interface{}) error {
 	if err != nil {
 		return err
 	}
-	defer fptr.Close()
+	//defer fptr.Close()
 	encoder := json.NewEncoder(fptr)
 	encoder.SetIndent("", "\t")
-	encoder.Encode(data)
+	err = encoder.Encode(data)
+	if err != nil {
+		return fmt.Errorf("Failed to encode JSON for %v: %v", filepath, err)
+	}
+
+	err = fptr.Close()
+	if err != nil {
+		return fmt.Errorf("Failed to close JSON file %v: %v", filepath, err)
+	}
 	return nil
 }
 
