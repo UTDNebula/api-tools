@@ -17,6 +17,7 @@ import (
 	"github.com/UTDNebula/api-tools/utils"
 )
 
+// ScrapeMazevo pulls Mazevo calendar events via the public API and stores the raw response.
 func ScrapeMazevo(outDir string) {
 	apikey, err := utils.GetEnv("MAZEVO_API_KEY")
 	if err != nil {

@@ -1,3 +1,4 @@
+// Package parser converts scraped course and scheduling inputs into structured Nebula API schema documents.
 package parser
 
 import (
@@ -14,32 +15,32 @@ import (
 )
 
 var (
-	// Sections dictionary for mapping UUIDs to a *schema.Section
+	// Sections maps section IDs to the associated section records.
 	Sections = make(map[primitive.ObjectID]*schema.Section)
 
-	// Courses dictionary for keys (Internal_course_number +  Catalog_year) to a *schema.Course
+	// Courses maps catalog identifiers to course definitions.
 	Courses = make(map[string]*schema.Course)
 
-	// Professors dictionary for keys (First_name +   Last_name) to a *schema.Professor
+	// Professors maps professor names to professor documents.
 	Professors = make(map[string]*schema.Professor)
 
-	//CourseIDMap auxiliary dictionary for mapping UUIDs to a *schema.Course
+	// CourseIDMap maps course IDs to their catalog keys.
 	CourseIDMap = make(map[primitive.ObjectID]string)
 
-	//ProfessorIDMap auxiliary dictionary for mapping UUIDs to a *schema.Professor
+	// ProfessorIDMap maps professor IDs to their lookup keys.
 	ProfessorIDMap = make(map[primitive.ObjectID]string)
 
-	// ReqParsers dictionary mapping course UUIDs to the func() that parsers its Reqs
+	// ReqParsers maps course IDs to requisite parser functions.
 	ReqParsers = make(map[primitive.ObjectID]func())
 
-	// GradeMap mappings for section grade distributions, mapping is MAP[SEMESTER] -> MAP[SUBJECT + NUMBER + SECTION] -> GRADE DISTRIBUTION
+	// GradeMap stores grade distributions keyed by semester and section identifier.
 	GradeMap map[string]map[string][]int
 
-	// timeLocation Time location for dates (uses America/Chicago tz database zone for CDT which accounts for daylight saving)
+	// timeLocation captures the America/Chicago location for timestamp normalization.
 	timeLocation, timeError = time.LoadLocation("America/Chicago")
 )
 
-// Parse Externally exposed parse function
+// Parse loads scraped course artifacts, applies parsing and validation, and persists structured results.
 func Parse(inDir string, outDir string, csvPath string, skipValidation bool) {
 
 	// Panic if timeLocation didn't load properly

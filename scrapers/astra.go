@@ -16,8 +16,10 @@ import (
 	"github.com/valyala/fastjson"
 )
 
+// MAX_EVENTS_PER_DAY caps the Astra API results to guard against truncated responses.
 var MAX_EVENTS_PER_DAY = 5000
 
+// ScrapeAstra iterates day-by-day through Astra events and persists the raw JSON output.
 func ScrapeAstra(outDir string) {
 	// Start chromedp
 	chromedpCtx, cancel := utils.InitChromeDp()

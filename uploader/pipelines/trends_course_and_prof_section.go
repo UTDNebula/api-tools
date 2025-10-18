@@ -5,8 +5,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// TrendsCourseSectionsPipeline links course documents to their section records for trend reporting.
-var TrendsCourseSectionsPipeline = mongo.Pipeline{
+var TrendsCourseProfSectionsPipeline = mongo.Pipeline{
+
 	bson.D{
 		{Key: "$lookup",
 			Value: bson.D{
@@ -18,11 +18,30 @@ var TrendsCourseSectionsPipeline = mongo.Pipeline{
 		},
 	},
 	bson.D{
-		{Key: "$project",
+		{Key: "$group",
 			Value: bson.D{
 				{Key: "subject_prefix", Value: 1},
 				{Key: "course_number", Value: 1},
 				{Key: "sections", Value: 1},
+			},
+		},
+	},
+
+	bson.D{
+		{Key: "$unwind",
+			Value: bson.D{
+				{Key: "path", Value: "$sections"},
+				{Key: "preserveNullAndEmptyArrays", Value: false},
+			},
+		},
+	},
+	bson.D{
+		{Key: "$lookup",
+			Value: bson.D{
+				{Key: "from", Value: "professors"},
+				{Key: "localField", Value: "sections.professors"},
+				{Key: "foreignField", Value: "_id"},
+				{Key: "as", Value: "professors"},
 			},
 		},
 	},
@@ -34,6 +53,7 @@ var TrendsCourseSectionsPipeline = mongo.Pipeline{
 			},
 		},
 	},
+
 	bson.D{
 		{Key: "$group",
 			Value: bson.D{
@@ -43,6 +63,8 @@ var TrendsCourseSectionsPipeline = mongo.Pipeline{
 							Value: bson.A{
 								"$subject_prefix",
 								"$course_number",
+								"$professors.first_name",
+								"$professors.last_name",
 							},
 						},
 					},
