@@ -41,11 +41,12 @@ func parseProfessors(
 			continue
 		}
 
-		prof, profExists := Professors[firstName+" "+lastName]
+		profKey := firstName + lastName
+
+		prof, profExists := Professors[profKey]
 		if profExists {
 			prof.Sections = append(prof.Sections, &profSectionRef)
-			// Under the assumption that existent prof has email recorded
-			profRefs = append(profRefs, firstName+" "+lastName)
+			profRefs = append(profRefs, profKey)
 			continue
 		}
 
@@ -57,8 +58,8 @@ func parseProfessors(
 			Email:      utils.TrimWhitespace(match[3]),
 			Sections:   []*schema.ProfSectionRef{&profSectionRef},
 		}
-		profRefs = append(profRefs, prof.First_name+" "+prof.Last_name)
-		Professors[firstName+" "+lastName] = prof
+		profRefs = append(profRefs, profKey)
+		Professors[profKey] = prof
 	}
 	return profRefs
 }

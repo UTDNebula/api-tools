@@ -31,8 +31,9 @@ func parseCourse(
 
 	// Courses are internally keyed by their internal course number and the catalog year they're part of
 	catalogYear := getCatalogYear(session)
-	prefix, courseNumber := getPrefixAndNumber(classInfo)
-	courseKey := prefix + courseNumber + catalogYear
+	subjectPrefix, courseNumber := getPrefixAndNumber(classInfo)
+
+	courseKey := subjectPrefix + courseNumber + catalogYear
 
 	// Don't recreate the course if it already exists
 	course, courseExists := Courses[courseKey]
@@ -40,7 +41,7 @@ func parseCourse(
 		return course
 	}
 
-	course = getCourse(prefix, courseNumber, internalCourseNumber, session, rowInfo, classInfo)
+	course = getCourse(subjectPrefix, courseNumber, internalCourseNumber, session, rowInfo, classInfo)
 
 	// Get closure for parsing course requisites (god help me)
 	enrollmentReqs, hasEnrollmentReqs := rowInfo["Enrollment Reqs:"]
@@ -54,14 +55,15 @@ func parseCourse(
 // This function does not modify any global state.
 // Returns a pointer to the newly created schema.Course object.
 func getCourse(
-	prefix string, number string, internalCourseNumber string, session schema.AcademicSession,
+	subjectPrefix string, courseNumber string, internalCourseNumber string,
+	session schema.AcademicSession,
 	rowInfo map[string]*goquery.Selection, classInfo map[string]string,
 ) *schema.Course {
 
 	course := schema.Course{
 		Id:                     primitive.NewObjectID(),
-		Course_number:          number,
-		Subject_prefix:         prefix,
+		Course_number:          courseNumber,
+		Subject_prefix:         subjectPrefix,
 		Title:                  utils.TrimWhitespace(rowInfo["Course Title:"].Text()),
 		Description:            utils.TrimWhitespace(rowInfo["Description:"].Text()),
 		School:                 utils.TrimWhitespace(rowInfo["College:"].Text()),

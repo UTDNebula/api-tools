@@ -45,6 +45,7 @@ func parseSection(rowInfo map[string]*goquery.Selection, classInfo map[string]st
 
 	id := primitive.NewObjectID()
 	sectionNumber := getSectionNumber(classInfo)
+
 	courseRef := schema.CourseRef{
 		Prefix: course.Subject_prefix,
 		Number: course.Course_number,
@@ -68,6 +69,7 @@ func parseSection(rowInfo map[string]*goquery.Selection, classInfo map[string]st
 
 	// Add new section to section map
 	Sections[courseRef.Prefix+courseRef.Number+sectionNumber+session.Name] = &section
+
 	// Append new section to course's section listing
 	course.Sections = append(course.Sections, schema.CourseSectionRef{
 		Term:           session.Name,
@@ -283,7 +285,7 @@ func getSyllabusUri(rowInfo map[string]*goquery.Selection) string {
 // If GradeMap contains the resulting key it will return the specified slice,
 // otherwise it will return an empty slice, `[]int{}`.
 // The key is generated using the following formula:
-// key = SubjectPrefix + InternalCourseNumber + InternalSectionNumber.
+// key = SubjectPrefix + CourseNumber + InternalSectionNumber.
 // Note that the InternalSectionNumber is trimmed of leading '0's
 func getGradeDistribution(session schema.AcademicSession, sectionNumber string, courseRef *schema.Course) []int {
 	if semesterGrades, ok := GradeMap[session.Name]; ok {

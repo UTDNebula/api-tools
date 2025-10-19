@@ -35,7 +35,7 @@ func loadProfiles(inDir string) {
 		if err != nil {
 			panic(err)
 		}
-		Professors[prof.First_name+" "+prof.Last_name] = &prof
+		Professors[prof.First_name+prof.Last_name] = &prof
 	}
 
 	// Read closing bracket

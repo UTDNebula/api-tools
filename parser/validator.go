@@ -16,19 +16,17 @@ func validate() {
 		}
 	}()
 
+	// Validate courses
 	log.Printf("Validating courses...")
 	courseKeys := utils.GetMapKeys(Courses)
 	for i := range len(courseKeys) {
-		course1 := Courses[courseKeys[i]]
-		// Check for duplicate courses by comparing course_number, subject_prefix,
-		// and catalog_year as a compound key
+		// Check for duplicate courses by comparing course_number, subject_prefix, and catalog_year as a compound key
 		for j := i + 1; j < len(courseKeys); j++ {
-			course2 := Courses[courseKeys[j]]
-			valDuplicateCourses(course1, course2)
+			valDuplicateCourses(Courses[courseKeys[i]], Courses[courseKeys[j]])
 		}
 		// Make sure course isn't referencing any nonexistent sections,
 		// and that course-section references are consistent both ways
-		valCourseReference(course1, Sections)
+		valCourseReference(Courses[courseKeys[i]], Sections)
 	}
 	courseKeys = nil
 	log.Print("No invalid courses!")
@@ -36,19 +34,17 @@ func validate() {
 	log.Print("Validating sections...")
 	sectionKeys := utils.GetMapKeys(Sections)
 	for i := range len(sectionKeys) {
-		section1 := Sections[sectionKeys[i]]
 		// Check for duplicate sections by comparing section_number, course_reference,
 		// and academic_session as a compound key
 		for j := i + 1; j < len(sectionKeys); j++ {
-			section2 := Sections[sectionKeys[j]]
-			valDuplicateSections(section1, section2)
+			valDuplicateSections(Sections[sectionKeys[i]], Sections[sectionKeys[j]])
 		}
 		// Make sure section isn't referencing any nonexistent professors,
 		// and that section-professor references are consistent both ways
-		valSectionReferenceProf(section1, Professors)
+		valSectionReferenceProf(Sections[sectionKeys[i]], Professors)
 
 		// Make sure section isn't referencing a nonexistant course
-		valSectionReferenceCourse(section1, Courses)
+		valSectionReferenceCourse(Sections[sectionKeys[i]], Courses)
 	}
 	sectionKeys = nil
 	log.Printf("No invalid sections!")
@@ -57,10 +53,8 @@ func validate() {
 	profKeys := utils.GetMapKeys(Professors)
 	// Check for duplicate professors by comparing first_name, last_name, and sections as a compound key
 	for i := range len(profKeys) {
-		professor1 := Professors[profKeys[i]]
 		for j := i + 1; j < len(profKeys); j++ {
-			professor2 := Professors[profKeys[j]]
-			valDuplicateProfessors(professor1, professor2)
+			valDuplicateProfessors(Professors[profKeys[i]], Professors[profKeys[j]])
 		}
 	}
 	log.Printf("No invalid professors!")
