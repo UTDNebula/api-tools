@@ -5,6 +5,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+// TrendsProfSectionsPipeline denormalizes professor records with their taught sections for analytics.
 var TrendsProfSectionsPipeline = mongo.Pipeline{
 	bson.D{
 		{Key: "$lookup",

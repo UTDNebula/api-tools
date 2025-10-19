@@ -20,6 +20,7 @@ import (
 
 var eventsFilesToUpload [2]string = [2]string{"astra.json", "mazevo.json"}
 
+// UploadEvents loads event JSON files and replaces the corresponding MongoDB collections.
 func UploadEvents(inDir string) {
 
 	//Load env vars

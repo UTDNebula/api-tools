@@ -12,11 +12,12 @@ import (
 	"github.com/UTDNebula/nebula-api/api/schema"
 )
 
-// Found under "Academic & Administrative" and "Housing" on https://api.concept3d.com/categories/?map=1772&key=0001085cc708b9cef47080f064612ca5
+// BUILDINGS_CATEGORY_IDS lists category identifiers for academic, administrative, and housing buildings on Concept3D.
 var BUILDINGS_CATEGORY_IDS = []int{42138, 42141}
 
 var acronymRegex = regexp.MustCompile(`.*\((.*)\)`)
 
+// ParseMapLocations filters Concept3D location exports to building records and writes normalized JSON output.
 func ParseMapLocations(inDir string, outDir string) {
 	mapFile, err := os.ReadFile(inDir + "/mapLocationsScraped.json")
 	if err != nil {

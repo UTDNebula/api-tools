@@ -13,17 +13,17 @@ import (
 	"log"
 )
 
-// Custom io.Writer for routing writing to multiple sub-writers
+// SplitWriter routes writes to multiple underlying writers.
 type SplitWriter struct {
 	writers []io.Writer
 }
 
-// Constructor for utils.SplitWriter
+// NewSplitWriter constructs a SplitWriter that fans out writes to the provided writers.
 func NewSplitWriter(writers ...io.Writer) *SplitWriter {
 	return &SplitWriter{writers: writers}
 }
 
-// Writes the specified bytes to every sub-writer of the SplitWriter
+// Write copies the provided bytes to each underlying writer.
 func (splitWriter *SplitWriter) Write(p []byte) (n int, err error) {
 	type writeResult struct {
 		n   int
@@ -49,19 +49,20 @@ func (splitWriter *SplitWriter) Write(p []byte) (n int, err error) {
 	return n, err
 }
 
-// Verbose logging flag, only works with the utils.Logger verbose functions
+// Lverbose enables verbose logging on Logger instances and global loggers.
 const Lverbose = 1 << 7
 
-// Extension of log.Logger that supports a verbose logging flag; verbose printing functions start with 'V'
+// Logger extends log.Logger with helper methods that respect the verbose flag.
 type Logger struct {
 	log.Logger
 }
 
+// NewLogger constructs a Logger that writes to out with the given prefix and flags.
 func NewLogger(out io.Writer, prefix string, flag int) *Logger {
 	return &Logger{*log.New(out, prefix, flag)}
 }
 
-// Verbose-only variant of Logger.Printf
+// VPrintf prints using fmt.Printf semantics when the verbose flag is set.
 func (logger *Logger) VPrintf(format string, vars ...any) {
 	flags := logger.Flags()
 	if flags&Lverbose != 0 {
@@ -69,7 +70,7 @@ func (logger *Logger) VPrintf(format string, vars ...any) {
 	}
 }
 
-// Verbose-only variant of Logger.Print
+// VPrint prints text when the verbose flag is set.
 func (logger *Logger) VPrint(text string) {
 	flags := logger.Flags()
 	if flags&Lverbose != 0 {
@@ -77,7 +78,7 @@ func (logger *Logger) VPrint(text string) {
 	}
 }
 
-// Verbose-only variant of Logger.Println
+// VPrintln prints text with a newline when the verbose flag is set.
 func (logger *Logger) VPrintln(text string) {
 	flags := logger.Flags()
 	if flags&Lverbose != 0 {
@@ -85,7 +86,7 @@ func (logger *Logger) VPrintln(text string) {
 	}
 }
 
-// Verbose-only variant of log.Printf
+// VPrintf prints through the package-level logger when the verbose flag is set.
 func VPrintf(format string, vars ...any) {
 	flags := log.Flags()
 	if flags&Lverbose != 0 {
@@ -93,7 +94,7 @@ func VPrintf(format string, vars ...any) {
 	}
 }
 
-// Verbose-only variant of log.Print
+// VPrint prints text through the package-level logger when the verbose flag is set.
 func VPrint(text string) {
 	flags := log.Flags()
 	if flags&Lverbose != 0 {
@@ -101,7 +102,7 @@ func VPrint(text string) {
 	}
 }
 
-// Verbose-only variant of log.Println
+// VPrintln prints text with a newline through the package-level logger when the verbose flag is set.
 func VPrintln(text string) {
 	flags := log.Flags()
 	if flags&Lverbose != 0 {

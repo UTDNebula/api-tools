@@ -16,10 +16,12 @@ var buildingRenames = map[string]string{
 	"Student Services Addition (SSA)": "SSA",
 }
 
+// SourceData represents the Mazevo API response containing booking records.
 type SourceData struct {
 	Bookings []map[string]interface{} `json:"bookings"`
 }
 
+// ParseMazevo reads Mazevo scrape output and emits normalized multi-building event JSON.
 func ParseMazevo(inDir string, outDir string) {
 
 	mazevoFile, err := os.ReadFile(inDir + "/mazevoScraped.json")

@@ -1,7 +1,4 @@
-/*
-	This file contains utility methods used throughout various files in this repo.
-*/
-
+// Package utils provides shared helpers for scraping, parsing, and uploading workflows.
 package utils
 
 import (
@@ -24,9 +21,10 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
+// Headless toggles whether chromedp runs without a visible browser window.
 var Headless = true
 
-// Finds .env value and produces proper error if not found
+// GetEnv finds an environment variable and returns an error when it is unset.
 func GetEnv(name string) (string, error) {
 	value, exists := os.LookupEnv(name)
 	if !exists || value == "" {
@@ -35,7 +33,7 @@ func GetEnv(name string) (string, error) {
 	return value, nil
 }
 
-// Initializes Chrome DevTools Protocol
+// InitChromeDp configures and returns a chromedp context with optional headless settings.
 func InitChromeDp() (chromedpCtx context.Context, cancelFnc context.CancelFunc) {
 	log.Printf("Initializing chromedp...")
 	if Headless {
@@ -55,7 +53,7 @@ func InitChromeDp() (chromedpCtx context.Context, cancelFnc context.CancelFunc) 
 	return chromedpCtx, cancelFnc
 }
 
-// This function generates a fresh auth token and returns the new headers
+// RefreshToken logs into CourseBook and returns headers containing a fresh session token.
 func RefreshToken(chromedpCtx context.Context) map[string][]string {
 	netID, err := GetEnv("LOGIN_NETID")
 	if err != nil {
@@ -140,7 +138,7 @@ func RefreshToken(chromedpCtx context.Context) map[string][]string {
 	}
 }
 
-// This function signs into Astra
+// RefreshAstraToken signs into Astra and returns headers containing authentication cookies.
 func RefreshAstraToken(chromedpCtx context.Context) map[string][]string {
 	// Get username and password
 	username, err := GetEnv("LOGIN_ASTRA_USERNAME")
@@ -217,7 +215,7 @@ func RefreshAstraToken(chromedpCtx context.Context) map[string][]string {
 	}
 }
 
-// Encodes and writes the given data as tab-indented JSON to the given filepath.
+// WriteJSON encodes data as indented JSON and writes it to filepath.
 func WriteJSON(filepath string, data interface{}) error {
 	fptr, err := os.Create(filepath)
 	if err != nil {
@@ -230,7 +228,7 @@ func WriteJSON(filepath string, data interface{}) error {
 	return nil
 }
 
-// Recursively gets the filepath of every file with the given extension, using the given directory as the root.
+// GetAllFilesWithExtension recursively gathers file paths within inDir that match extension.
 func GetAllFilesWithExtension(inDir string, extension string) []string {
 	var filePaths []string
 	err := filepath.WalkDir(inDir, func(path string, d fs.DirEntry, err error) error {
@@ -249,12 +247,12 @@ func GetAllFilesWithExtension(inDir string, extension string) []string {
 	return filePaths
 }
 
-// Removes standard whitespace characters (space, tab, newline, carriage return) from a given string.
+// TrimWhitespace removes spaces, tabs, newlines, and carriage returns from the provided string.
 func TrimWhitespace(text string) string {
 	return strings.Trim(text, " \t\n\r")
 }
 
-// Gets all of the values from a given map.
+// GetMapValues returns a slice of all map values.
 func GetMapValues[M ~map[K]V, K comparable, V any](m M) []V {
 	r := make([]V, 0, len(m))
 	for _, v := range m {
@@ -263,7 +261,7 @@ func GetMapValues[M ~map[K]V, K comparable, V any](m M) []V {
 	return r
 }
 
-// Gets all of the keys from a given map.
+// GetMapKeys returns a slice of all map keys.
 func GetMapKeys[M ~map[K]V, K comparable, V any](m M) []K {
 	r := make([]K, 0, len(m))
 	for k := range m {
@@ -272,12 +270,12 @@ func GetMapKeys[M ~map[K]V, K comparable, V any](m M) []K {
 	return r
 }
 
-// Creates a regexp with MustCompile() using a sprintf input.
+// Regexpf formats and compiles a regular expression pattern using fmt.Sprintf semantics.
 func Regexpf(format string, vars ...interface{}) *regexp.Regexp {
 	return regexp.MustCompile(fmt.Sprintf(format, vars...))
 }
 
-// Attempts to retry running the given error-returning function up to a maximum number of retries, at which point the last error is returned. A callback is called between each retry.
+// Retry calls action until it succeeds or exceeds maxRetries, invoking retryCallback between attempts.
 func Retry(action func() error, maxRetries int, retryCallback func(numRetries int)) error {
 	for retries := 1; ; retries++ {
 		// Perform the action
@@ -289,7 +287,7 @@ func Retry(action func() error, maxRetries int, retryCallback func(numRetries in
 	}
 }
 
-// Get all the available course prefixes
+// GetCoursePrefixes retrieves all course prefix values from CourseBook.
 func GetCoursePrefixes(chromedpCtx context.Context) []string {
 	// Might need to refresh the token every time we get new course prefixes in the future
 	// refreshToken(chromedpCtx)
@@ -316,7 +314,7 @@ func GetCoursePrefixes(chromedpCtx context.Context) []string {
 	return coursePrefixes
 }
 
-// Convert the value of any type to either string or float64
+// ConvertFromInterface attempts to convert a value into the requested type and returns a pointer when successful.
 func ConvertFromInterface[T string | float64](value any) *T {
 	if parsed, ok := value.(T); ok {
 		return &parsed
