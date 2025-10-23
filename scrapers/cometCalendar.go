@@ -31,8 +31,8 @@ type APICalendarResponse struct {
 	Date   map[string]string `json:"date"`
 }
 
-// ScrapeCalendar retrieves calendar events through the API and writes normalized JSON output.
-func ScrapeCalendar(outDir string) {
+// ScrapeCometCalendar retrieves calendar events through the API and writes normalized JSON output.
+func ScrapeCometCalendar(outDir string) {
 	err := os.MkdirAll(outDir, 0777)
 	if err != nil {
 		panic(err)
@@ -134,7 +134,7 @@ func ScrapeCalendar(outDir string) {
 		log.Printf("Parsed the events of page %d successfully!\n\n", page+1)
 	}
 
-	if err := utils.WriteJSON(fmt.Sprintf("%s/eventScraped.json", outDir), events); err != nil {
+	if err := utils.WriteJSON(fmt.Sprintf("%s/cometCalendarScraped.json", outDir), events); err != nil {
 		panic(err)
 	}
 	log.Printf("Finished parsing %d events successfully!\n\n", len(events))

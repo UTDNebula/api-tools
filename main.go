@@ -39,7 +39,7 @@ func main() {
 	// Flag for soc scraping
 	scrapeOrganizations := flag.Bool("organizations", false, "Alongside -scrape, signifies that SOC organizations should be scraped.")
 	// Flag for calendar scraping and parsing
-	calendar := flag.Bool("calendar", false, "Alongside -scrape or -parse, signifies that calendar should be scraped.")
+	cometCalendar := flag.Bool("cometCalendar", false, "Alongside -scrape or -parse, signifies that the Comet Calendar should be scraped/parsed.")
 	// Flag for astra scraping and parsing
 	astra := flag.Bool("astra", false, "Alongside -scrape or -parse, signifies that Astra should be scraped/parsed.")
 	// Flag for mazevo scraping and parsing
@@ -56,7 +56,7 @@ func main() {
 	upload := flag.Bool("upload", false, "Puts the tool into upload mode.")
 	replace := flag.Bool("replace", false, "Alongside -upload, specifies that uploaded data should replace existing data rather than being merged.")
 	staticOnly := flag.Bool("static", false, "Alongside -upload, specifies that we should only build and upload the static aggregations.")
-	events := flag.Bool("events", false, "Alongside -upload, signifies that Astra and Mazevo should be uploaded.")
+	events := flag.Bool("events", false, "Alongside -upload, signifies that Astra, Mazevo, and the Comet Calendar should be uploaded.")
 
 	// Flags for logging
 	verbose := flag.Bool("verbose", false, "Enables verbose logging, good for debugging purposes.")
@@ -106,8 +106,8 @@ func main() {
 			scrapers.ScrapeCoursebook(*term, *startPrefix, *outDir, *resume)
 		case *scrapeOrganizations:
 			scrapers.ScrapeOrganizations(*outDir)
-		case *calendar:
-			scrapers.ScrapeCalendar(*outDir)
+		case *cometCalendar:
+			scrapers.ScrapeCometCalendar(*outDir)
 		case *astra:
 			scrapers.ScrapeAstra(*outDir)
 		case *mazevo:
@@ -119,8 +119,8 @@ func main() {
 		}
 	case *parse:
 		switch {
-		case *calendar:
-			parser.ParseCalendar(*inDir, *outDir)
+		case *cometCalendar:
+			parser.ParseCometCalendar(*inDir, *outDir)
 		case *astra:
 			parser.ParseAstra(*inDir, *outDir)
 		case *mazevo:
