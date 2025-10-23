@@ -9,9 +9,11 @@ require (
 	github.com/chromedp/chromedp v0.12.1
 	github.com/google/go-cmp v0.7.0
 	github.com/joho/godotenv v1.5.1
+	github.com/ledongthuc/pdf v0.0.0-20220302134840-0c2507a12d80
 	github.com/valyala/fastjson v1.6.4
 	go.mongodb.org/mongo-driver v1.17.3
 	golang.org/x/net v0.43.0
+	google.golang.org/genai v1.32.0
 )
 
 require (
@@ -54,6 +56,7 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.5 // indirect
 	github.com/googleapis/gax-go/v2 v2.14.1 // indirect
+	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.17.8 // indirect
