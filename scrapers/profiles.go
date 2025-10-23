@@ -145,6 +145,7 @@ func scrapeProfessorLinks(chromedpCtx context.Context) []string {
 	return professorLinks
 }
 
+// ScrapeProfiles navigates UTD profile listings and writes professor metadata to JSON.
 func ScrapeProfiles(outDir string) {
 
 	chromedpCtx, cancel := utils.InitChromeDp()

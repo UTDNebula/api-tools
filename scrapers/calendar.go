@@ -19,18 +19,19 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-// Structure of the API response
+// RawEvent mirrors the nested event payload returned by the calendar API.
 type RawEvent struct {
 	Event map[string]interface{} `json:"event"`
 }
 
+// APICalendarResponse models the calendar API pagination envelope.
 type APICalendarResponse struct {
 	Events []RawEvent        `json:"events"`
 	Page   map[string]int    `json:"page"`
 	Date   map[string]string `json:"date"`
 }
 
-// Get the calendar data through API instead of scraping from website
+// ScrapeCalendar retrieves calendar events through the API and writes normalized JSON output.
 func ScrapeCalendar(outDir string) {
 	err := os.MkdirAll(outDir, 0777)
 	if err != nil {
@@ -133,13 +134,13 @@ func ScrapeCalendar(outDir string) {
 		log.Printf("Parsed the events of page %d successfully!\n\n", page+1)
 	}
 
-	if err := utils.WriteJSON(fmt.Sprintf("%s/events.json", outDir), events); err != nil {
+	if err := utils.WriteJSON(fmt.Sprintf("%s/eventScraped.json", outDir), events); err != nil {
 		panic(err)
 	}
 	log.Printf("Finished parsing %d events successfully!\n\n", len(events))
 }
 
-// Scrape the data from the api and unmarshal it to response data
+// scrapeAndUnmarshal fetches a calendar page and decodes it into data.
 func scrapeAndUnmarshal(client *http.Client, page int, data *APICalendarResponse) error {
 	// Call API to get the byte data
 	calendarUrl := fmt.Sprintf("https://calendar.utdallas.edu/api/2/events?days=365&pp=100&page=%d", page)
@@ -167,7 +168,7 @@ func scrapeAndUnmarshal(client *http.Client, page int, data *APICalendarResponse
 	return nil
 }
 
-// Casting an interface{} to an slice of interface{}
+// toSlice attempts to convert data into a slice of interface{}.
 func toSlice(data interface{}) []interface{} {
 	if array, ok := data.([]interface{}); ok {
 		return array
@@ -175,7 +176,7 @@ func toSlice(data interface{}) []interface{} {
 	return nil
 }
 
-// Casting an interface{} to map from string to interface{}
+// toMap attempts to convert data into a map keyed by string.
 func toMap(data interface{}) map[string]interface{} {
 	if dataMap, ok := data.(map[string]interface{}); ok {
 		return dataMap
@@ -183,7 +184,7 @@ func toMap(data interface{}) map[string]interface{} {
 	return nil
 }
 
-// Casting an interface{} to string, if the data is nil then string is ""
+// toString returns the string form of data or empty string when nil.
 func toString(data interface{}) string {
 	if data != nil {
 		if dataString, ok := data.(string); ok {
@@ -193,7 +194,7 @@ func toString(data interface{}) string {
 	return ""
 }
 
-// Parse string time
+// parseTime converts an RFC3339 timestamp string to a time.Time.
 func parseTime(stringTime string) time.Time {
 	parsedTime, err := time.Parse(time.RFC3339, stringTime)
 	if err != nil {

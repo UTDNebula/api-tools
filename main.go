@@ -38,8 +38,8 @@ func main() {
 	scrapeProfiles := flag.Bool("profiles", false, "Alongside -scrape, signifies that professor profiles should be scraped.")
 	// Flag for soc scraping
 	scrapeOrganizations := flag.Bool("organizations", false, "Alongside -scrape, signifies that SOC organizations should be scraped.")
-	// Flag for calendar scraping
-	scrapeCalendar := flag.Bool("calendar", false, "Alongside -scrape, signifies that calendar should be scraped.")
+	// Flag for calendar scraping and parsing
+	calendar := flag.Bool("calendar", false, "Alongside -scrape or -parse, signifies that calendar should be scraped.")
 	// Flag for astra scraping and parsing
 	astra := flag.Bool("astra", false, "Alongside -scrape or -parse, signifies that Astra should be scraped/parsed.")
 	// Flag for mazevo scraping and parsing
@@ -106,7 +106,7 @@ func main() {
 			scrapers.ScrapeCoursebook(*term, *startPrefix, *outDir, *resume)
 		case *scrapeOrganizations:
 			scrapers.ScrapeOrganizations(*outDir)
-		case *scrapeCalendar:
+		case *calendar:
 			scrapers.ScrapeCalendar(*outDir)
 		case *astra:
 			scrapers.ScrapeAstra(*outDir)
@@ -119,6 +119,8 @@ func main() {
 		}
 	case *parse:
 		switch {
+		case *calendar:
+			parser.ParseCalendar(*inDir, *outDir)
 		case *astra:
 			parser.ParseAstra(*inDir, *outDir)
 		case *mazevo:
