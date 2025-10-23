@@ -8,6 +8,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// TestMain loads environment variables for utils package tests.
 func TestMain(m *testing.M) {
 	// Load .env vars for testing
 	godotenv.Load("../.env")
@@ -15,6 +16,7 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
+// TestInitChromeDp ensures chromedp contexts initialize in both headed and headless modes.
 func TestInitChromeDp(t *testing.T) {
 	// Test with head
 	Headless = false
@@ -32,6 +34,7 @@ func TestInitChromeDp(t *testing.T) {
 	cancel()
 }
 
+// TestRefreshToken confirms coursebook tokens refresh under both headless settings.
 func TestRefreshToken(t *testing.T) {
 	// Get a chromedp context
 	ctx, cancel := InitChromeDp()

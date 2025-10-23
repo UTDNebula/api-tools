@@ -24,17 +24,73 @@ Please visit our [Discord](https://discord.utdnebula.com) and talk to us if you'
 
 ### Prerequisites
 
-- Golang 1.23 (or higher)
+- Golang 1.24 (or higher)
 
-### Development
-
-Documentation for the project will be created soon, but for more information please visit our [Discord](https://discord.com/invite/tcpcnfxmeQ).
+### Build
 
 To build the project, simply clone the repository and then either:
   - Run `make` in the root (top level) directory (for systems with `make` installed, i.e. most Linux distros, MacOS)
   - Run `build.bat` on Windows systems (unless you want to deal with getting `make` to work on Windows :P)
 
 The build process will output an executable file named `api-tools`; this executable is the CLI and can be ran in your terminal!
+
+Additionally, you can run build (on Windows) and make (on MacOS/Linux) with the following arguments:
+  - `setup`: Installs required dependencies for the tools.
+  - `check`: Verifies prequisites and ensures the executable can be built.
+  - `test`: Test run to see if the executable works after building
+  - `build`: Builds the executble and makes it ready for use.
+
+### Usage
+
+The `api-tools` command line interface supports three main modes: scraping, parsing and uploading data to the Nebula API.
+
+#### Environment Variables
+Before being able to use the tool, configure the `.env` file by following these steps:
+  1. Find the `.env.template` file and rename it to `.env`
+  2. Specify the required credentials for your use case as a string ("") following the variable name.
+    Example: LOGIN_NETID="ABC123456"
+
+#### Basic Usage
+
+Run the tool by changing directory using `cd` to the `api-tools` directory and running the executable with the appropriate flags in the command line. To see all available options with the tool, run: `./api-tools`. To enable logging for debugging, use the verbose flag: `./api-tools -verbose`. Find available flags for each mode in the following tables.
+
+---
+
+### Scraping Mode
+
+| Command | Description |
+|---------|-------------|
+| `./api-tools -scrape -astra` | Scrapes Astra data. |
+| `./api-tools -scrape -calendar` | Scrapes calendar data. |
+| `./api-tools -scrape -coursebook -term 24F` | Scrapes coursebook data for Fall 2024.<br>• Use `-resume` to continue from last prefix.<br>• Use `-startprefix [prefix]` to begin at a specific course prefix. |
+| `./api-tools -scrape -map` | Scrapes UTD Map data. |
+| `./api-tools -scrape -mazevo` | Scrapes Mazevo data. |
+| `./api-tools -scrape -organizations` | Scrapes SOC organizations. |
+| `./api-tools -scrape -profiles` | Scrapes UTD professor profiles. |
+| `./api-tools -scrape -headless` | Runs ChromeDP in headless mode. |
+| `./api-tools -o [directory]` | Sets output directory (default: `./data`). |
+
+### Parsing Mode:
+
+| Command | Description |
+|---------|-------------|
+| `./api-tools -parse -astra` | Parses Astra data. |
+| `./api-tools -parse -calendar` | Parses calendar data. |
+| `./api-tools -parse -csv [directory]` | Outputs grade data CSVs (default: `./grade-data`). |
+| `./api-tools -parse -map` | Parses UTD Map data. |
+| `./api-tools -parse -mazevo` | Parses Mazevo data. |
+| `./api-tools -parse -skipv` | Skips post-parse validation (**use with caution**). |
+
+
+### Upload Mode:
+| Command | Description |
+|---------|-------------|
+| `./api-tools -upload -events` | Uploads Astra and Mazevo data. |
+| `./api-tools -upload -map` | Uploads UTD Map data. |
+| `./api-tools -upload -replace` | Replaces old data instead of merging. |
+| `./api-tools -upload -static` | Uploads only static aggregations. |
+
+Additionally, you can use the `-i [directory]` flag to specify where to read data from (default: `./data`) and the `-l [directory]` flag to specify where logs must be dumped (default: `./logs`).
 
 #### Docker
 
@@ -45,3 +101,6 @@ To build the container for local testing first make sure all scripts in the `run
 docker build --target dev -t my-runner:local .
 docker run --rm -e ENVIRONMENT=dev -e RUNNER_SCRIPT_NAME=daily.sh my-runner:local
 ```
+
+## Questions?
+Reach out to the team on [Discord](https://discord.utdnebula.com) and with any questions you may have!

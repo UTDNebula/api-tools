@@ -20,6 +20,7 @@ import (
 
 var mapFilesToUpload [1]string = [1]string{"mapLocations.json"}
 
+// UploadMapLocations replaces the map locations collection with the generated map JSON.
 func UploadMapLocations(inDir string) {
 
 	//Load env vars
