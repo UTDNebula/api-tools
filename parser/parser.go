@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/UTDNebula/api-tools/utils"
@@ -55,10 +56,10 @@ func Parse(inDir string, outDir string, csvPath string, skipValidation bool) {
 	}
 
 	// Try to load any existing profile data
-	loadProfiles(inDir)
+	loadProfiles(filepath.Join(inDir, "profiles"))
 
 	// Find paths of all scraped data
-	paths := utils.GetAllFilesWithExtension(inDir, ".html")
+	paths := utils.GetAllFilesWithExtension(filepath.Join(inDir, "coursebook"), ".html")
 	if !skipValidation {
 		log.Printf("Parsing and validating %d files...", len(paths))
 	} else {
