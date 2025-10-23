@@ -187,9 +187,9 @@ func ParseCometCalendar(inDir string, outDir string) {
 			}
 		}
 
-		// If building is still empty string, then location was initally an empty string
+		// If building is still empty string or invalid abbreviation, then location was initally an empty string
 		// or location was a place off campus
-		if building == "" {
+		if building == "" || !isValidBuilding {
 			building = "Other"
 		}
 
