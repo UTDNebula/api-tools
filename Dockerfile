@@ -35,5 +35,5 @@ RUN chmod +x /app/runners/setup.sh
 ENTRYPOINT ["/app/runners/setup.sh"]
 
 # Optional .env copy for development
-FROM base AS dev
+FROM base AS local
 COPY .env /app/.env
