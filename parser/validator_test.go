@@ -381,7 +381,8 @@ func testCourseReferenceFail(fail string, courseIx int, sectionIx int, t *testin
 	var sectionID, originalID primitive.ObjectID // used to store IDs of modified sections
 
 	// Build the failed section map based on fail type
-	if fail == "missing" {
+	switch fail {
+	case "missing":
 		// Misses a section
 		for i, section := range testSections {
 			if sectionIx != i {
@@ -390,7 +391,7 @@ func testCourseReferenceFail(fail string, courseIx int, sectionIx int, t *testin
 				sectionID = section.Id // Nonexistent ID referenced by course
 			}
 		}
-	} else if fail == "modified" {
+	case "modified":
 		// One section doesn't reference to correct courses
 		for i, section := range testSections {
 			sectionMap[section.Id] = section
