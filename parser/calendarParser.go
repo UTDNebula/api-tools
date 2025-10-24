@@ -132,12 +132,12 @@ var validAbbreviations []string = []string{
 }
 
 func ParseCalendar(inDir string, outDir string) {
-	
-	calendarFile, err := os.ReadFile(inDir + "/eventScraped.json")
+
+	calendarFile, err := os.ReadFile(inDir + "/calendarScraped.json")
 	if err != nil {
 		panic(err)
 	}
-	
+
 	var allEvents []schema.Event
 
 	err = json.Unmarshal(calendarFile, &allEvents)
@@ -147,7 +147,7 @@ func ParseCalendar(inDir string, outDir string) {
 
 	multiBuildingMap := make(map[string]map[string]map[string][]schema.Event)
 
-	for _, event := range(allEvents) {
+	for _, event := range allEvents {
 
 		// Get date
 		dateTime := event.StartTime
@@ -166,7 +166,7 @@ func ParseCalendar(inDir string, outDir string) {
 
 		// buildingRegexp might capture something that isn't a valid building abbreviation (e.g., UTD)
 		isValidBuilding := slices.Contains(validAbbreviations, building)
-		
+
 		// If location doesn't have building abbreviation or buildingRegexp captured an invalid abbreviation,
 		// check for the full building name
 		lowercaseLocation := strings.ToLower(*location)
@@ -178,13 +178,13 @@ func ParseCalendar(inDir string, outDir string) {
 				}
 			}
 		}
-		
+
 		// If location doesn't have room number, check to see if location included a room
 		if room == "" && isValidBuilding {
-			locationParts := strings.SplitN(*location, ",", 2)
+			locationParts := strings.SplitN(*location, ", ", 2)
 			if len(locationParts) == 2 {
 				room = locationParts[1]
-			} 
+			}
 		}
 
 		// If building is still empty string, then location was initally an empty string
@@ -234,8 +234,8 @@ func ParseCalendar(inDir string, outDir string) {
 			Buildings: singleBuildings,
 		})
 	}
-	
+
 	log.Print("Parsed Calendar!")
 
-	utils.WriteJSON(fmt.Sprintf("%s/events.json", outDir), result)
+	utils.WriteJSON(fmt.Sprintf("%s/calendar.json", outDir), result)
 }

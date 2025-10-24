@@ -54,9 +54,7 @@ func ScrapeCalendar(outDir string) {
 		if err := scrapeAndUnmarshal(&cli, page+1, &calendarData); err != nil {
 			panic(err)
 		}
-		log.Printf("Scraped events of page %d successfully!\n", page+1)
 
-		log.Printf("Parsing the events of page %d...", page+1)
 		for _, rawEvent := range calendarData.Events {
 			// Parse the time
 			eventInstance := toMap(toMap(toSlice(rawEvent.Event["event_instances"])[0])["event_instance"])
@@ -131,13 +129,13 @@ func ScrapeCalendar(outDir string) {
 				ContactPhoneNumber: contactInfo[2],
 			})
 		}
-		log.Printf("Parsed the events of page %d successfully!\n\n", page+1)
+		log.Printf("Scraped events of page %d successfully!\n", page+1)
 	}
 
-	if err := utils.WriteJSON(fmt.Sprintf("%s/eventScraped.json", outDir), events); err != nil {
+	if err := utils.WriteJSON(fmt.Sprintf("%s/calendarScraped.json", outDir), events); err != nil {
 		panic(err)
 	}
-	log.Printf("Finished parsing %d events successfully!\n\n", len(events))
+	log.Printf("Finished scraping %d events successfully!\n\n", len(events))
 }
 
 // scrapeAndUnmarshal fetches a calendar page and decodes it into data.
