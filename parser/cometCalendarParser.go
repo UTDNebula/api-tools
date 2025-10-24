@@ -131,9 +131,9 @@ var validAbbreviations []string = []string{
 	"RCW",
 }
 
-func ParseCalendar(inDir string, outDir string) {
+func ParseCometCalendar(inDir string, outDir string) {
 
-	calendarFile, err := os.ReadFile(inDir + "/calendarScraped.json")
+	calendarFile, err := os.ReadFile(inDir + "/cometCalendarScraped.json")
 	if err != nil {
 		panic(err)
 	}
@@ -187,9 +187,9 @@ func ParseCalendar(inDir string, outDir string) {
 			}
 		}
 
-		// If building is still empty string, then location was initally an empty string
+		// If building is still empty string or invalid abbreviation, then location was initally an empty string
 		// or location was a place off campus
-		if building == "" {
+		if building == "" || !isValidBuilding {
 			building = "Other"
 		}
 
@@ -218,13 +218,13 @@ func ParseCalendar(inDir string, outDir string) {
 			var roomEvents []schema.RoomEvents[schema.Event]
 			for room, events := range rooms {
 				roomEvents = append(roomEvents, schema.RoomEvents[schema.Event]{
-					Room:   room,
+					Room:   strings.TrimSpace(room),
 					Events: events,
 				})
 			}
 
 			singleBuildings = append(singleBuildings, schema.SingleBuildingEvents[schema.Event]{
-				Building: building,
+				Building: strings.TrimSpace(building),
 				Rooms:    roomEvents,
 			})
 		}
@@ -235,7 +235,7 @@ func ParseCalendar(inDir string, outDir string) {
 		})
 	}
 
-	log.Print("Parsed Calendar!")
+	log.Print("Parsed Comet Calendar!")
 
-	utils.WriteJSON(fmt.Sprintf("%s/calendar.json", outDir), result)
+	utils.WriteJSON(fmt.Sprintf("%s/cometCalendar.json", outDir), result)
 }

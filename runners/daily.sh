@@ -7,4 +7,6 @@
 ./api-tools -headless -verbose -parse -mazevo
 ./api-tools -headless -verbose -scrape -astra
 ./api-tools -headless -verbose -parse -astra
+./api-tools -headless -verbose -scrape -cometCalendar
+./api-tools -headless -verbose -parse -cometCalendar
 ./api-tools -headless -verbose -upload -events
