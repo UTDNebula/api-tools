@@ -23,6 +23,9 @@ RUN apt-get update && apt-get install -y chromium
 ENV CHROMIUM_BIN=/usr/bin/chromium
 ENV GOOGLE_CHROME_BIN=/usr/bin/chromium
 
+# Install poppler-utils for pdftotext for academic calendar parsing
+RUN apt-get install -y poppler-utils
+
 # Copy build file from builder
 COPY --from=builder /app/api-tools /app/api-tools
 
