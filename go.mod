@@ -9,7 +9,6 @@ require (
 	github.com/chromedp/chromedp v0.12.1
 	github.com/google/go-cmp v0.7.0
 	github.com/joho/godotenv v1.5.1
-	github.com/ledongthuc/pdf v0.0.0-20220302134840-0c2507a12d80
 	github.com/valyala/fastjson v1.6.4
 	go.mongodb.org/mongo-driver v1.17.3
 	golang.org/x/net v0.43.0

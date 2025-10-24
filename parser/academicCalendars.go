@@ -1,3 +1,10 @@
+/*
+Code requires having pdftotext installed: https://www.xpdfreader.com/pdftotext-man.html
+apt-get install -y poppler-utils
+I found all the Go programs for PDF text extraction were all either paid, had a
+complicated installation process, or errored on one of the PDFs.
+*/
+
 package parser
 
 import (
@@ -12,13 +19,14 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/UTDNebula/api-tools/utils"
 	"github.com/UTDNebula/nebula-api/api/schema"
-	"github.com/ledongthuc/pdf"
 	"google.golang.org/genai"
 )
 
@@ -73,7 +81,7 @@ PDF Content:
 
 func ParseAcademicCalendars(inDir string, outDir string) {
 	// Get sub folder from output folder
-	outSubDir := filepath.Join(outDir, "academicCalendars")
+	inSubDir := filepath.Join(inDir, "academicCalendars")
 
 	result := []schema.AcademicCalendar{}
 
@@ -81,6 +89,7 @@ func ParseAcademicCalendars(inDir string, outDir string) {
 	numWorkers := 10
 	jobs := make(chan string)
 	var wg sync.WaitGroup
+	var mu sync.Mutex
 
 	// Start worker goroutines
 	for range numWorkers {
@@ -92,16 +101,33 @@ func ParseAcademicCalendars(inDir string, outDir string) {
 
 				academicCalendar, err := parsePdf(path)
 				if err != nil {
-					panic(err)
+					if strings.Contains(err.Error(), "429") {
+						// Exponential-ish backoff up to 60s for 429 rate limiting
+						backoffs := []time.Duration{20 * time.Second, 40 * time.Second, 60 * time.Second}
+						for _, delay := range backoffs {
+							time.Sleep(delay)
+							academicCalendar, err = parsePdf(path)
+							if err == nil || !strings.Contains(err.Error(), "429") {
+								break
+							}
+						}
+					}
+
+					if err != nil {
+						panic(err)
+					}
 				}
+
+				mu.Lock()
 				result = append(result, academicCalendar)
+				mu.Unlock()
 
 				log.Printf("Parsed %s!", filepath.Base(path))
 			}
 		}()
 	}
 
-	err := filepath.WalkDir(outSubDir, func(path string, d fs.DirEntry, err error) error {
+	err := filepath.WalkDir(inSubDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -196,33 +222,20 @@ func parsePdf(path string) (schema.AcademicCalendar, error) {
 }
 
 // Read the text from the first page of a PDF
+// Using external program pdftotext
 func readPdf(path string) (string, error) {
-	// Open the PDF
-	f, r, err := pdf.Open(path)
-	if err != nil {
-		return "", err
-	}
-	defer f.Close()
+	cmd := exec.Command("pdftotext", "-l", "1", "-raw", path, "-")
 
-	// Make sure at least one page exists
-	if r.NumPage() < 1 {
-		return "", fmt.Errorf("no pages in PDF")
-	}
+	var out bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
 
-	// Get the first page
-	page := r.Page(1) // pages are 1-indexed
-	if page.V.IsNull() {
-		return "", fmt.Errorf("failed to read page 1")
+	if err := cmd.Run(); err != nil {
+		return "", fmt.Errorf("failed to run pdftotext: %v (%s)", err, stderr.String())
 	}
 
-	// Read text
-	var buf bytes.Buffer
-	text := page.Content().Text
-	for _, t := range text {
-		buf.WriteString(t.S) // S is the actual string
-	}
-
-	return buf.String(), nil
+	return out.String(), nil
 }
 
 // Check cache for a response to the same prompt
