@@ -73,7 +73,7 @@ PDF Content:
 
 func ParseAcademicCalendars(inDir string, outDir string) {
 	// Get sub folder from output folder
-	outSubDir := filepath.Join(outDir, "academicCalendars")
+	inSubDir := filepath.Join(inDir, "academicCalendars")
 
 	result := []schema.AcademicCalendar{}
 
@@ -81,6 +81,7 @@ func ParseAcademicCalendars(inDir string, outDir string) {
 	numWorkers := 10
 	jobs := make(chan string)
 	var wg sync.WaitGroup
+	var mu sync.Mutex
 
 	// Start worker goroutines
 	for range numWorkers {
@@ -94,14 +95,17 @@ func ParseAcademicCalendars(inDir string, outDir string) {
 				if err != nil {
 					panic(err)
 				}
+
+				mu.Lock()
 				result = append(result, academicCalendar)
+				mu.Unlock()
 
 				log.Printf("Parsed %s!", filepath.Base(path))
 			}
 		}()
 	}
 
-	err := filepath.WalkDir(outSubDir, func(path string, d fs.DirEntry, err error) error {
+	err := filepath.WalkDir(inSubDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
