@@ -1,0 +1,13 @@
+[{
+  "_id": "test_course_1",
+  "subject_prefix": "TEST",
+  "course_number": "1000",
+  "title": "Test Course",
+  "description": "Test course description",
+  "school": "Test School",
+  "credit_hours": "3",
+  "class_level": "Undergraduate",
+  "activity_type": "Lecture",
+  "catalog_year": "24",
+  "sections": []
+}]

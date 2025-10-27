@@ -1,0 +1,7 @@
+[{
+  "_id": "test_section_1",
+  "section_number": "001",
+  "course_reference": "test_course_1",
+  "academic_session": "spring2024",
+  "professors": ["test_prof_1"]
+}]
