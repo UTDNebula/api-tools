@@ -21,7 +21,7 @@ import (
 	It's worth noting that I say stack in quotes above because it's not treated as strictly LIFO like a stack would normally be.
 */
 
-// Regex matcher object for requisite group parsing
+// Matcher defines a regex-driven handler used during requisite group parsing.
 type Matcher struct {
 	Regex   *regexp.Regexp
 	Handler func(string, []string) interface{}
@@ -31,6 +31,7 @@ type Matcher struct {
 
 var ANDRegex = regexp.MustCompile(`(?i)\s+and\s+`)
 
+// ANDMatcher parses conjunction-separated requisites into an AND collection requirement.
 func ANDMatcher(group string, subgroups []string) interface{} {
 	// Split text along " and " boundaries, then parse subexpressions as groups into an "AND" CollectionRequirement
 	subExpressions := ANDRegex.Split(group, -1)
@@ -52,12 +53,8 @@ func ANDMatcher(group string, subgroups []string) interface{} {
 	}
 }
 
-// First regex subgroup represents the text to be subgrouped and parsed with parseFnc
-// Ex: Text is: "(OPRE 3360 or STAT 3360 or STAT 4351), and JSOM majors and minors only"
-// Regex is: "(JSOM majors and minors only)"
-// Resulting substituted text would be: "(OPRE 3360 or STAT 3360 or STAT 4351), and @N", where N is some group number
-// When @N is dereferenced from the requisite list, it will have a value equivalent to the result of parseFnc(group, subgroups)
-
+// SubstitutionMatcher returns a matcher that replaces a subgroup with parseFnc's result before parsing the outer group.
+// For example, "(OPRE 3360 or STAT 3360 or STAT 4351), and JSOM majors and minors only" becomes "... and @N".
 func SubstitutionMatcher(parseFnc func(string, []string) interface{}) func(string, []string) interface{} {
 	// Return a closure that uses parseFnc to substitute subgroups[1]
 	return func(group string, subgroups []string) interface{} {
@@ -72,6 +69,7 @@ func SubstitutionMatcher(parseFnc func(string, []string) interface{}) func(strin
 
 var ORRegex = regexp.MustCompile(`(?i)\s+or\s+`)
 
+// ORMatcher parses disjunction-separated requisites into an OR collection requirement.
 func ORMatcher(group string, subgroups []string) interface{} {
 	// Split text along " or " boundaries, then parse subexpressions as groups into an "OR" CollectionRequirement
 	subExpressions := ORRegex.Split(group, -1)
@@ -93,6 +91,7 @@ func ORMatcher(group string, subgroups []string) interface{} {
 	}
 }
 
+// CourseMinGradeMatcher returns a course requirement enforcing a minimum grade when an ICN is found.
 func CourseMinGradeMatcher(group string, subgroups []string) interface{} {
 	icn, err := findICN(subgroups[1], subgroups[2])
 	if err != nil {
@@ -102,6 +101,7 @@ func CourseMinGradeMatcher(group string, subgroups []string) interface{} {
 	return schema.NewCourseRequirement(icn, subgroups[3])
 }
 
+// CourseMatcher returns a course requirement with the default minimum grade expectation.
 func CourseMatcher(group string, subgroups []string) interface{} {
 	icn, err := findICN(subgroups[1], subgroups[2])
 	if err != nil {
@@ -111,10 +111,12 @@ func CourseMatcher(group string, subgroups []string) interface{} {
 	return schema.NewCourseRequirement(icn, "D")
 }
 
+// ConsentMatcher captures grantor consent requirements from requisite text.
 func ConsentMatcher(group string, subgroups []string) interface{} {
 	return schema.NewConsentRequirement(subgroups[1])
 }
 
+// LimitMatcher produces a limit requirement that caps allowable credit hours.
 func LimitMatcher(group string, subgroups []string) interface{} {
 	hourLimit, err := strconv.Atoi(subgroups[1])
 	if err != nil {
@@ -123,18 +125,22 @@ func LimitMatcher(group string, subgroups []string) interface{} {
 	return schema.NewLimitRequirement(hourLimit)
 }
 
+// MajorMatcher produces a major-specific requirement.
 func MajorMatcher(group string, subgroups []string) interface{} {
 	return schema.NewMajorRequirement(subgroups[1])
 }
 
+// MinorMatcher produces a minor-specific requirement.
 func MinorMatcher(group string, subgroups []string) interface{} {
 	return schema.NewMinorRequirement(subgroups[1])
 }
 
+// MajorMinorMatcher builds an OR collection spanning both major and minor requirements.
 func MajorMinorMatcher(group string, subgroups []string) interface{} {
 	return schema.NewCollectionRequirement("OR", 1, []interface{}{*schema.NewMajorRequirement(subgroups[1]), *schema.NewMinorRequirement(subgroups[1])})
 }
 
+// CoreMatcher creates a requirement for completion of a specific core course count.
 func CoreMatcher(group string, subgroups []string) interface{} {
 	hourReq, err := strconv.Atoi(subgroups[1])
 	if err != nil {
@@ -143,10 +149,12 @@ func CoreMatcher(group string, subgroups []string) interface{} {
 	return schema.NewCoreRequirement(subgroups[2], hourReq)
 }
 
+// CoreCompletionMatcher indicates completion of a specific core category without an hour requirement.
 func CoreCompletionMatcher(group string, subgroups []string) interface{} {
 	return schema.NewCoreRequirement(subgroups[1], -1)
 }
 
+// ChoiceMatcher converts a subgroup collection into a mutually exclusive choice requirement.
 func ChoiceMatcher(group string, subgroups []string) interface{} {
 	collectionReq, ok := parseGroup(subgroups[1]).(*schema.CollectionRequirement)
 	if !ok {
@@ -156,6 +164,7 @@ func ChoiceMatcher(group string, subgroups []string) interface{} {
 	return schema.NewChoiceRequirement(collectionReq)
 }
 
+// GPAMatcher represents GPA-based prerequisites.
 func GPAMatcher(group string, subgroups []string) interface{} {
 	GPAFloat, err := strconv.ParseFloat(subgroups[1], 32)
 	if err != nil {
@@ -164,6 +173,7 @@ func GPAMatcher(group string, subgroups []string) interface{} {
 	return schema.NewGPARequirement(GPAFloat, "")
 }
 
+// ThrowawayMatcher marks text that should be ignored during requisite evaluation.
 func ThrowawayMatcher(group string, subgroups []string) interface{} {
 	return schema.Requirement{Type: "throwaway"}
 }
@@ -171,6 +181,7 @@ func ThrowawayMatcher(group string, subgroups []string) interface{} {
 // Regex for group tags
 var groupTagRegex = regexp.MustCompile(`@(\d+)`)
 
+// GroupTagMatcher resolves stack-referenced groups by index.
 func GroupTagMatcher(group string, subgroups []string) interface{} {
 	groupIndex, err := strconv.Atoi(subgroups[1])
 	if err != nil {
@@ -185,13 +196,14 @@ func GroupTagMatcher(group string, subgroups []string) interface{} {
 	return parsedGrp
 }
 
+// OtherMatcher wraps unmatched text in an OtherRequirement.
 func OtherMatcher(group string, subgroups []string) interface{} {
 	return schema.NewOtherRequirement(ungroupText(group), "")
 }
 
 /////////////////////// END MATCHER FUNCS ///////////////////////
 
-// Matcher container, matchers must be in order of precedence
+// Matchers contains the ordered collection of matcher rules applied during requisite parsing.
 // NOTE: PARENTHESES ARE OF HIGHEST PRECEDENCE! (This is due to groupParens() handling grouping of parenthesized text before parsing begins)
 var Matchers []Matcher
 

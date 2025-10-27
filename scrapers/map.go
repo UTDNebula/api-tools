@@ -15,15 +15,19 @@ import (
 
 //See API documentation https://devcms.concept3d.com/swagger/dist/ and https://api.concept3d.com/documentation/?map=1772&key=0001085cc708b9cef47080f064612ca5
 
-// Found in dev tools on https://map.utdallas.edu/ in any call to https://api.concept3d.com/
+// API_KEY is the Concept3D API key observed from map.utdallas.edu traffic.
 const API_KEY string = "0001085cc708b9cef47080f064612ca5"
 
-// Found in https://map.concept3d.com/?id=1772
+// UTD_MAP_ID references the Concept3D map identifier for the UTD campus map.
 const UTD_MAP_ID string = "1772"
 
+// START_URL points to the Concept3D API host.
 const START_URL string = "https://api.concept3d.com"
+
+// END_URL appends the map and key query parameters for Concept3D requests.
 const END_URL string = "/?map=" + UTD_MAP_ID + "&key=" + API_KEY
 
+// ScrapeMapLocations downloads Concept3D responses and writes raw map data to disk.
 func ScrapeMapLocations(outDir string) {
 	// Make output folder
 	err := os.MkdirAll(outDir, 0777)
