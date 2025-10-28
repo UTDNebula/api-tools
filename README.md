@@ -75,6 +75,7 @@ Run the tool by changing directory using `cd` to the `api-tools` directory and r
 | Command | Description |
 |---------|-------------|
 | `./api-tools -parse -astra` | Parses Astra data. |
+| `./api-tools -parse -calendar` | Parses calendar data. |
 | `./api-tools -parse -csv [directory]` | Outputs grade data CSVs (default: `./grade-data`). |
 | `./api-tools -parse -map` | Parses UTD Map data. |
 | `./api-tools -parse -mazevo` | Parses Mazevo data. |
@@ -97,8 +98,8 @@ Docker is used for automated running on Google Cloud Platform. More info [here](
 
 To build the container for local testing first make sure all scripts in the `runners` folder have LF line endings then run:
 ```
-docker build --target dev -t my-runner:local .
-docker run --rm -e ENVIRONMENT=dev -e RUNNER_SCRIPT_NAME=daily.sh my-runner:local
+docker build --target local -t my-runner:local .
+docker run --rm -e ENVIRONMENT=local -e RUNNER_SCRIPT_NAME=daily.sh my-runner:local
 ```
 
 ## Questions?

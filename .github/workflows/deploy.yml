@@ -55,6 +55,20 @@ jobs:
         job: 'daily-prod'
         image: 'us-central1-docker.pkg.dev/api-tools-451421/runners/runner'
         region: us-central1
+
+    - name: Upload to weekly dev job
+      uses: google-github-actions/deploy-cloudrun@v2
+      with:
+        job: 'weekly-dev'
+        image: 'us-central1-docker.pkg.dev/api-tools-451421/runners/runner'
+        region: us-central1
+
+    - name: Upload to weekly prod job
+      uses: google-github-actions/deploy-cloudrun@v2
+      with:
+        job: 'weekly-prod'
+        image: 'us-central1-docker.pkg.dev/api-tools-451421/runners/runner'
+        region: us-central1
     
     - name: Upload to monthly dev job
       uses: google-github-actions/deploy-cloudrun@v2
