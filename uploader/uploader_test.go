@@ -41,6 +41,7 @@ func TestUpload(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// This will panic when it tries to use the nil client, but that's fine for now
 			// The goal is to test that the function calls what it should call
+			// TODO: Create different test cases
 			defer func() {
 				if r := recover(); r != nil {
 					t.Logf("Expected panic when database operations are attempted: %v", r)
