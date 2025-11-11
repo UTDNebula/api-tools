@@ -10,4 +10,4 @@
 # scrape and parse discount programs
 ./api-tools -headless -verbose -scrape -discounts
 ./api-tools -headless -verbose -parse -discounts
-# Note: Upload for discounts not yet implemented
+# Note: Upload for discounts not yet implemented 
