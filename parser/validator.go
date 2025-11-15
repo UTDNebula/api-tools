@@ -87,7 +87,7 @@ func valCourseReference(course *schema.Course, sections map[string]*schema.Secti
 				"Nonexistent section reference found for %s%s!",
 				course.Subject_prefix, course.Course_number,
 			)
-			log.Printf("Referenced section ID: %s\nCourse ID: %s", section, course.Id)
+			log.Printf("Referenced section ID: %+v\nCourse ID: %s", section, course.Id)
 			log.Panic("Courses failed to validate!")
 		}
 

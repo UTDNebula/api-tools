@@ -7,7 +7,6 @@ require (
 	github.com/UTDNebula/nebula-api/api v0.0.0-20251017154537-717c59b9c398
 	github.com/chromedp/cdproto v0.0.0-20250120090109-d38428e4d9c8
 	github.com/chromedp/chromedp v0.12.1
-	github.com/google/go-cmp v0.7.0
 	github.com/joho/godotenv v1.5.1
 	github.com/valyala/fastjson v1.6.4
 	go.mongodb.org/mongo-driver v1.17.3

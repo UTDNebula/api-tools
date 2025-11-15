@@ -13,9 +13,8 @@ import (
 // Parse the list of professors of the section with given id.
 // For each professor, set up their reference to the given section using compound key
 func parseProfessors(
-	sectionId primitive.ObjectID, sectionNumber string, rowInfo map[string]*goquery.Selection,
-	course schema.Course, session schema.AcademicSession,
-) []string {
+	sectionNumber string, rowInfo map[string]*goquery.Selection,
+	course schema.Course, session schema.AcademicSession) []string {
 
 	professorText := utils.TrimWhitespace(rowInfo["Instructor(s):"].Text())
 	professorMatches := personRegexp.FindAllStringSubmatch(professorText, -1)

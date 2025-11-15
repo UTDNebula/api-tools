@@ -57,7 +57,7 @@ func parseSection(rowInfo map[string]*goquery.Selection, classInfo map[string]st
 		Section_number:        sectionNumber,
 		Course_reference:      &courseRef,
 		Academic_session:      session,
-		Professors:            parseProfessors(id, sectionNumber, rowInfo, *course, session),
+		Professors:            parseProfessors(sectionNumber, rowInfo, *course, session),
 		Teaching_assistants:   getTeachingAssistants(rowInfo),
 		Internal_class_number: classNum,
 		Instruction_mode:      getInstructionMode(classInfo),
