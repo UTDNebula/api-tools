@@ -26,8 +26,7 @@ var (
 // Courses, it will run getCourse and add the result to Courses.
 func parseCourse(
 	internalCourseNumber string, session schema.AcademicSession,
-	rowInfo map[string]*goquery.Selection, classInfo map[string]string,
-) *schema.Course {
+	rowInfo map[string]*goquery.Selection, classInfo map[string]string) *schema.Course {
 
 	// Courses are internally keyed by their internal course number and the catalog year they're part of
 	catalogYear := getCatalogYear(session)
@@ -55,10 +54,8 @@ func parseCourse(
 // This function does not modify any global state.
 // Returns a pointer to the newly created schema.Course object.
 func getCourse(
-	subjectPrefix string, courseNumber string, internalCourseNumber string,
-	session schema.AcademicSession,
-	rowInfo map[string]*goquery.Selection, classInfo map[string]string,
-) *schema.Course {
+	subjectPrefix string, courseNumber string, internalCourseNumber string, session schema.AcademicSession,
+	rowInfo map[string]*goquery.Selection, classInfo map[string]string) *schema.Course {
 
 	course := schema.Course{
 		Id:                     primitive.NewObjectID(),
