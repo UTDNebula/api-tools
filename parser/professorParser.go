@@ -40,7 +40,7 @@ func parseProfessors(
 			continue
 		}
 
-		profKey := firstName + lastName
+		profKey := firstName + " " + lastName
 
 		prof, profExists := Professors[profKey]
 		if profExists {
