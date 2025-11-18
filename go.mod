@@ -15,6 +15,9 @@ require (
 	google.golang.org/genai v1.32.0
 )
 
+replace github.com/UTDNebula/nebula-api/api => ../../nebula-api/nebula-api/api
+
+
 require (
 	cel.dev/expr v0.19.2 // indirect
 	cloud.google.com/go v0.118.3 // indirect
