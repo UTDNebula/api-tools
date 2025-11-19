@@ -374,3 +374,92 @@ func testDuplicatePass(objType string, ix1 int, ix2 int, t *testing.T) {
 }
 
 // fail = "missing" means it lacks one sections
+// fail = "modified" means one section's course reference has been modified
+func testCourseReferenceFail(fail string, courseIx int, sectionIx int, t *testing.T) {
+	sectionMap := make(map[primitive.ObjectID]*schema.Section)
+
+	var sectionID, originalID primitive.ObjectID // used to store IDs of modified sections
+
+	// Build the failed section map based on fail type
+	switch fail {
+	case "missing":
+		// Misses a section
+		for i, section := range testSections {
+			if sectionIx != i {
+				sectionMap[section.Id] = section
+			} else {
+				sectionID = section.Id // Nonexistent ID referenced by course
+			}
+		}
+	case "modified":
+		// One section doesn't reference to correct courses
+		for i, section := range testSections {
+			sectionMap[section.Id] = section
+			if sectionIx == i {
+				// Save the section ID and original course reference to be restored later on
+				sectionID = section.Id
+				originalID = section.Course_reference
+
+				// Modified part
+				sectionMap[section.Id].Course_reference = primitive.NewObjectID()
+			}
+		}
+	}
+
+	// Expected msgs
+	var expectedMsgs []string
+
+	// The course that references nonexistent stuff
+	var failCourse *schema.Course
+
+	if fail == "missing" {
+		failCourse = testCourses[courseIx]
+
+		expectedMsgs = []string{
+			fmt.Sprintf("Nonexistent section reference found for %v%v!", failCourse.Subject_prefix, failCourse.Course_number),
+			fmt.Sprintf("Referenced section ID: %s\nCourse ID: %s", sectionID, failCourse.Id),
+		}
+	} else {
+		failCourse = testCourses[courseIx]
+		failSection := testSections[sectionIx]
+
+		expectedMsgs = []string{
+			fmt.Sprintf("Inconsistent section reference found for %v%v! The course references the section, but not vice-versa!",
+				failCourse.Subject_prefix, failCourse.Course_number),
+			fmt.Sprintf("Referenced section ID: %s\nCourse ID: %s\nSection course reference: %s",
+				failSection.Id, failCourse.Id, failSection.Course_reference),
+		}
+	}
+
+	// Buffer to capture the output
+	var logBuffer bytes.Buffer
+	log.SetOutput(&logBuffer)
+
+	defer func() {
+		logOutput := logBuffer.String()
+
+		for _, msg := range expectedMsgs {
+			if !strings.Contains(logOutput, msg) {
+				t.Errorf("The function didn't log correct message. Expected \"%v\"", msg)
+			}
+		}
+
+		// Restore to original course reference of modified section (if needed)
+		if fail == "modified" {
+			sectionMap[sectionID].Course_reference = originalID
+		}
+
+		if r := recover(); r == nil {
+			t.Errorf("The function didn't panic")
+		} else {
+			if r != "Courses failed to validate!" {
+				t.Errorf("The function panic the wrong message")
+			}
+		}
+	}()
+
+	// Run func
+	for _, course := range testCourses {
+		valCourseReference(course, sectionMap)
+	}
+}
