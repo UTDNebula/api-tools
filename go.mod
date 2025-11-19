@@ -2,6 +2,8 @@ module github.com/UTDNebula/api-tools
 
 go 1.24.0
 
+replace github.com/UTDNebula/nebula-api/api v0.0.0-20251018005009-dd2dbf5b78dc => ..\nebula-api\api
+
 require (
 	github.com/PuerkitoBio/goquery v1.8.1
 	github.com/UTDNebula/nebula-api/api v0.0.0-20251018005009-dd2dbf5b78dc
@@ -14,9 +16,6 @@ require (
 	golang.org/x/net v0.43.0
 	google.golang.org/genai v1.32.0
 )
-
-replace github.com/UTDNebula/nebula-api/api => ../../nebula-api/nebula-api/api
-
 
 require (
 	cel.dev/expr v0.19.2 // indirect
