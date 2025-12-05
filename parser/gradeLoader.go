@@ -3,81 +3,48 @@ package parser
 import (
 	"encoding/csv"
 	"fmt"
+	"github.com/UTDNebula/api-tools/utils"
 	"log"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 )
 
-var grades = []string{"A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "F", "W", "P", "CR", "NC", "I"}
+var (
+	grades          = []string{"A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "F", "W", "P", "CR", "NC", "I"}
+	optionalColumns = []string{"W", "P", "CR", "NC", "I"}
+	requiredColumns = []string{"Section", "Subject", "Catalog Number", "A+"}
+)
 
-func loadGrades(csvDir string) map[string]map[string][]int {
-
+func loadGrades(csvDir string) (map[string]map[string][]int, error) {
 	// MAP[SEMESTER] -> MAP[SUBJECT + NUMBER + SECTION] -> GRADE DISTRIBUTION
 	gradeMap := make(map[string]map[string][]int)
 
-	if csvDir == "" {
-		log.Print("No grade data CSV directory specified. Grade data will not be included.")
-		return gradeMap
-	}
+	fileNames := utils.GetAllFilesWithExtension(csvDir, ".csv")
+	for _, name := range fileNames {
 
-	dirPtr, err := os.Open(csvDir)
-	if err != nil {
-		panic(err)
-	}
-	defer dirPtr.Close()
-
-	csvFiles, err := dirPtr.ReadDir(-1)
-	if err != nil {
-		panic(err)
-	}
-
-	for _, csvEntry := range csvFiles {
-
-		if csvEntry.IsDir() {
-			continue
-		}
-
-		csvPath := fmt.Sprintf("%s/%s", csvDir, csvEntry.Name())
-
-		csvFile, err := os.Open(csvPath)
+		var err error
+		gradeMap[name], err = csvToMap(name)
 		if err != nil {
-			panic(err)
+			return gradeMap, fmt.Errorf("error parsing %s: %v", name, err)
 		}
-		defer csvFile.Close()
-
-		// Create logs directory
-		if _, err := os.Stat("./logs/grades"); err != nil {
-			os.Mkdir("./logs/grades", os.ModePerm)
-		}
-
-		// Create log file [name of csv].log in logs directory
-		basePath := filepath.Base(csvPath)
-		csvName := strings.TrimSuffix(basePath, filepath.Ext(basePath))
-		logFile, err := os.Create("./logs/grades/" + csvName + ".log")
-
-		if err != nil {
-			log.Panic("Could not create CSV log file.")
-		}
-		defer logFile.Close()
-
-		// Put data from csv into map
-		gradeMap[csvName] = csvToMap(csvFile, logFile)
 	}
-
-	return gradeMap
+	return gradeMap, nil
 }
 
-func csvToMap(csvFile *os.File, logFile *os.File) map[string][]int {
-	reader := csv.NewReader(csvFile)
-	records, err := reader.ReadAll() // records is [][]strings
+func csvToMap(filename string) (map[string][]int, error) {
+	file, err := os.Open(filename)
 	if err != nil {
-		log.Panicf("Error parsing %s: %s", csvFile.Name(), err.Error())
+		return nil, fmt.Errorf("error opening CSV file '%s': %v", filename, err)
+	}
+
+	reader := csv.NewReader(file)
+	records, err := reader.ReadAll()
+	if err != nil {
+		return nil, fmt.Errorf("error parsing %s: %v", filename, err)
 	}
 
 	indexMap := make(map[string]int)
-
 	for j, col := range records[0] {
 		switch col {
 		case "Catalog Number", "Catalog Nbr":
@@ -89,18 +56,15 @@ func csvToMap(csvFile *os.File, logFile *os.File) map[string][]int {
 		}
 	}
 
-	// required columns
-	for _, name := range []string{"Section", "Subject", "Catalog Number", "A+"} {
+	for _, name := range requiredColumns {
 		if _, ok := indexMap[name]; !ok {
-			fmt.Fprintf(logFile, "could not find %s column", name)
-			log.Panicf("could not find %s column", name)
+			return nil, fmt.Errorf("could not find %s column in %s", name, filename)
 		}
 	}
 
-	// optional columns
-	for _, name := range []string{"W", "P", "CR", "NC", "I"} {
+	for _, name := range optionalColumns {
 		if _, ok := indexMap[name]; !ok {
-			logFile.WriteString(fmt.Sprintf("could not find %s column\n", name))
+			log.Printf("could not find %s column in %s", name, filename)
 		}
 	}
 
@@ -109,7 +73,6 @@ func csvToMap(csvFile *os.File, logFile *os.File) map[string][]int {
 	catalogNumberCol := indexMap["Catalog Number"]
 
 	distroMap := make(map[string][]int)
-
 	for _, record := range records[1:] {
 		// convert grade distribution from string to int
 		intSlice := make([]int, len(grades))
@@ -125,5 +88,10 @@ func csvToMap(csvFile *os.File, logFile *os.File) map[string][]int {
 		distroKey := record[subjectCol] + record[catalogNumberCol] + trimmedSectionNumber
 		distroMap[distroKey] = intSlice[:]
 	}
-	return distroMap
+
+	if err := file.Close(); err != nil {
+		return nil, fmt.Errorf("failed to close file '%s': %v", filename, err)
+	}
+
+	return distroMap, nil
 }
