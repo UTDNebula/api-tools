@@ -259,6 +259,7 @@ func getLocationAbbreviations(inDir string) (map[string]string, []string) {
 			scrapers.ScrapeMapLocations(inDir)
 			time.Sleep(2 * time.Second)
 			ParseMapLocations(inDir, inDir)
+			time.Sleep(2 * time.Second) // Probably a good idea to let it sleep before moving on?
 
 			// If fail to get the locations again, not because unscraped
 			mapFile, _ = os.ReadFile(inDir + "/mapLocations.json")
