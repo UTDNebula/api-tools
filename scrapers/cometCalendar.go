@@ -131,7 +131,8 @@ func callAndUnmarshal(client *http.Client, page int, data *APICalendarResponse) 
 // getTime parses the start and end time of the event
 func getTime(event RawEvent) (time.Time, time.Time) {
 	instance := convert[map[string]any](
-		convert[map[string]any](convert[[]any](event.Event["event_instances"])[0])["event_instance"])
+		convert[map[string]any](
+			convert[[]any](event.Event["event_instances"])[0])["event_instance"])
 
 	// Converts RFC3339 timestamp string to time.Time
 	startTime, err := time.Parse(time.RFC3339, convert[string](instance["start"]))
@@ -163,28 +164,28 @@ func getEventLocation(event RawEvent) string {
 
 // getFilters parses the types, topics, and target audiences
 func getFilters(event RawEvent) ([]string, []string, []string) {
-	eventTypes := []string{}
-	targetAudiences := []string{}
-	eventTopics := []string{}
+	types := []string{}
+	audiences := []string{}
+	topics := []string{}
 
 	filters := convert[map[string]any](event.Event["filters"])
 
 	rawTypes := convert[[]any](filters["event_types"])
 	for _, rawType := range rawTypes {
-		eventTypes = append(eventTypes, convert[string](convert[map[string]any](rawType)["name"]))
+		types = append(types, convert[string](convert[map[string]any](rawType)["name"]))
 	}
 
 	rawAudiences := convert[[]any](filters["event_target_audience"])
 	for _, audience := range rawAudiences {
-		targetAudiences = append(targetAudiences, convert[string](convert[map[string]any](audience)["name"]))
+		audiences = append(audiences, convert[string](convert[map[string]any](audience)["name"]))
 	}
 
 	rawTopics := convert[[]any](filters["event_topic"])
 	for _, topic := range rawTopics {
-		eventTopics = append(eventTopics, convert[string](convert[map[string]any](topic)["name"]))
+		topics = append(topics, convert[string](convert[map[string]any](topic)["name"]))
 	}
 
-	return eventTypes, targetAudiences, eventTopics
+	return types, audiences, topics
 }
 
 // getDepartmentsAndTags parses the departments, and tags

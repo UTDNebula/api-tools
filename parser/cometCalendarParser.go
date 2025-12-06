@@ -152,7 +152,11 @@ func ParseCometCalendar(inDir string, outDir string) {
 	}
 
 	multiBuildingMap := make(map[string]map[string]map[string][]schema.Event)
-	buildingAbbreviations, validAbbreviations := getLocationAbbreviations(inDir)
+	// Some events have only the building name, not the abbreviation
+	buildingAbbreviations, validAbbreviations, err := getLocationAbbreviations(inDir)
+	if err != nil {
+		panic(err)
+	}
 
 	for _, event := range allEvents {
 
@@ -248,7 +252,7 @@ func ParseCometCalendar(inDir string, outDir string) {
 }
 
 // getAbbreviations dynamically retrieves the all of the locations abbreviations
-func getLocationAbbreviations(inDir string) (map[string]string, []string) {
+func getLocationAbbreviations(inDir string) (map[string]string, []string, error) {
 	// Get the locations from the map scraper
 	var mapFile []byte
 
@@ -264,20 +268,21 @@ func getLocationAbbreviations(inDir string) (map[string]string, []string) {
 			// If fail to get the locations again, it's not because location is unscraped
 			mapFile, err = os.ReadFile(inDir + "/mapLocations.json")
 			if err != nil {
-				panic(err)
+				return nil, nil, err
 			}
 		} else {
-			panic(err)
+			return nil, nil, err
 		}
 	}
+
 	var locations []schema.MapBuilding
 	if err = json.Unmarshal(mapFile, &locations); err != nil {
-		panic(err)
+		return nil, nil, err
 	}
 
 	// Process the abbreviations
-	buildingsAbbreviations := make(map[string]string, 0)
-	validAbbreviations := make([]string, 0)
+	buildingsAbbreviations := make(map[string]string, 0) // Maps building names to their abbreviations
+	validAbbreviations := make([]string, 0)              // Valid building abreviations for checking
 
 	for _, location := range locations {
 		// Trim the following acronym in the name
@@ -292,5 +297,5 @@ func getLocationAbbreviations(inDir string) (map[string]string, []string) {
 		validAbbreviations = append(validAbbreviations, abbreviation)
 	}
 
-	return buildingsAbbreviations, validAbbreviations
+	return buildingsAbbreviations, validAbbreviations, nil
 }
