@@ -1,3 +1,7 @@
+/*
+	This file contains the code for the comet calendar events parser.
+*/
+
 package parser
 
 import (
@@ -17,7 +21,7 @@ import (
 
 // Some events have only the building name, not the abbreviation
 // Maps building names to their abbreviations
-var buildingAbbreviations = map[string]string{
+var DefaultBuildings = map[string]string{
 	"Activity Center":                              "AB",
 	"Activity Center Bookstore":                    "ACB",
 	"Administration":                               "AD",
@@ -76,7 +80,7 @@ var buildingAbbreviations = map[string]string{
 }
 
 // Valid building abreviations for checking
-var validAbbreviations []string = []string{
+var DefaultValid []string = []string{
 	"AB",
 	"ACB",
 	"AD",
@@ -148,6 +152,7 @@ func ParseCometCalendar(inDir string, outDir string) {
 	}
 
 	multiBuildingMap := make(map[string]map[string]map[string][]schema.Event)
+	buildingAbbreviations, validAbbreviations := getAbbreviations(inDir)
 
 	for _, event := range allEvents {
 
@@ -240,4 +245,35 @@ func ParseCometCalendar(inDir string, outDir string) {
 	log.Print("Parsed Comet Calendar!")
 
 	utils.WriteJSON(fmt.Sprintf("%s/cometCalendar.json", outDir), result)
+}
+
+// getAbbreviations dynamically retrieves the all of the locations abbreviations
+func getAbbreviations(inDir string) (map[string]string, []string) {
+	// Get the locations from the map scraper
+	mapFile, err := os.ReadFile(inDir + "/mapLocations.json")
+	if err != nil {
+		// Fall back if we haven't scraped the locations yet
+		return DefaultBuildings, DefaultValid
+	}
+	var locations []map[string]any
+	if err = json.Unmarshal(mapFile, &locations); err != nil {
+		panic(err)
+	}
+
+	// Process the abbreviations
+	buildingsAbbrs := make(map[string]string, 0)
+	validAbbrs := make([]string, 0)
+
+	for _, location := range locations {
+		name := *utils.ConvertFromInterface[string](location["name"])
+		acronym := *utils.ConvertFromInterface[string](location["acronym"])
+
+		// Trim the tailing acronym in the name
+		trimmedName := strings.Split(name, " (")[0]
+		buildingsAbbrs[trimmedName] = acronym
+
+		validAbbrs = append(validAbbrs, acronym)
+	}
+
+	return buildingsAbbrs, validAbbrs
 }

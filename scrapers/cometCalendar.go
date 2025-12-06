@@ -1,5 +1,5 @@
 /*
-	This file contains the code for the events scraper.
+	This file contains the code for the comet calendar events scraper.
 */
 
 package scrapers
@@ -19,6 +19,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+const BASE_CAL_URL string = "https://calendar.utdallas.edu/api/2/events"
+
 // RawEvent mirrors the nested event payload returned by the calendar API.
 type RawEvent struct {
 	Event map[string]any `json:"event"`
@@ -31,7 +33,7 @@ type APICalendarResponse struct {
 	Date   map[string]string `json:"date"`
 }
 
-// ScrapeCometCalendar retrieves calendar events through the API and writes normalized JSON output.
+// ScrapeCometCalendar retrieves calendar events through the API
 func ScrapeCometCalendar(outDir string) {
 	err := os.MkdirAll(outDir, 0777)
 	if err != nil {
@@ -42,7 +44,7 @@ func ScrapeCometCalendar(outDir string) {
 
 	// Get the total number of pages
 	log.Printf("Getting the number of pages...")
-	if err := scrapeAndUnmarshal(&client, 0, &calendarData); err != nil {
+	if err := callAPIAndUnmarshal(&client, 0, &calendarData); err != nil {
 		panic(err)
 	}
 	numPages := calendarData.Page["total"]
@@ -51,20 +53,20 @@ func ScrapeCometCalendar(outDir string) {
 	var calendarEvents []schema.Event
 	for page := range numPages {
 		log.Printf("Scraping events of page %d...", page+1)
-		if err := scrapeAndUnmarshal(&client, page+1, &calendarData); err != nil {
+		if err := callAPIAndUnmarshal(&client, page+1, &calendarData); err != nil {
 			panic(err)
 		}
-
 		for _, rawEvent := range calendarData.Events {
-			startTime, endTime := parseStartAndEndTime(rawEvent)
-			eventTypes, targetAudiences, eventTopics := parseFilters(rawEvent)
-			departments, tags := parseDepartmentsAndTags(rawEvent)
-			contactInfo := parseContactInfo(rawEvent)
+			// Parse all necessary info
+			startTime, endTime := getTime(rawEvent)
+			eventTypes, targetAudiences, eventTopics := getFilters(rawEvent)
+			departments, tags := getDepartmentsAndTags(rawEvent)
+			contactInfo := getContactInfo(rawEvent)
 
 			calendarEvents = append(calendarEvents, schema.Event{
 				Id:                 primitive.NewObjectID(),
 				Summary:            convert[string](rawEvent.Event["title"]),
-				Location:           parseEventLocation(rawEvent),
+				Location:           getEventLocation(rawEvent),
 				StartTime:          startTime,
 				EndTime:            endTime,
 				Description:        convert[string](rawEvent.Event["description_text"]),
@@ -90,13 +92,18 @@ func ScrapeCometCalendar(outDir string) {
 }
 
 // scrapeAndUnmarshal fetches a calendar page and decodes it into data.
-func scrapeAndUnmarshal(client *http.Client, page int, data *APICalendarResponse) error {
+func callAPIAndUnmarshal(client *http.Client, page int, data *APICalendarResponse) error {
 	// Call API to get the byte data
-	calendarUrl := fmt.Sprintf("https://calendar.utdallas.edu/api/2/events?days=365&pp=100&page=%d", page)
+	calendarUrl := fmt.Sprintf("%s?days=365&pp=100&page=%d", BASE_CAL_URL, page)
 	request, err := http.NewRequest("GET", calendarUrl, nil)
 	if err != nil {
 		return err
 	}
+	request.Header = http.Header{
+		"Content-type": {"application/json"},
+		"Accept":       {"application/json"},
+	}
+
 	response, err := client.Do(request)
 	if err != nil {
 		return err
@@ -104,30 +111,32 @@ func scrapeAndUnmarshal(client *http.Client, page int, data *APICalendarResponse
 	if response != nil && response.StatusCode != 200 {
 		return fmt.Errorf("ERROR: Non-200 status is returned, %s", response.Status)
 	}
+	defer response.Body.Close()
 
 	// Unmarshal bytes to the response data
 	buffer := bytes.Buffer{}
 	if _, err = buffer.ReadFrom(response.Body); err != nil {
 		return err
 	}
-	response.Body.Close()
 	if err = json.Unmarshal(buffer.Bytes(), &data); err != nil {
 		return err
 	}
+
 	return nil
 }
 
-// parseStartAndEndTime parses the start and end time of the event
-func parseStartAndEndTime(event RawEvent) (time.Time, time.Time) {
+// getTime parses the start and end time of the event
+func getTime(event RawEvent) (time.Time, time.Time) {
 	instance := convert[map[string]any](
-		convert[map[string]any](convert[[]any](event.Event["event_instances"])[0])["event_instance"],
-	)
+		convert[map[string]any](
+			convert[[]any](event.Event["event_instances"])[0])["event_instance"])
 
 	// Converts RFC3339 timestamp string to time.Time
 	startTime, err := time.Parse(time.RFC3339, convert[string](instance["start"]))
 	if err != nil {
 		panic(err)
 	}
+
 	var endTime time.Time
 	if convert[string](instance["end"]) != "" {
 		endTime, err = time.Parse(time.RFC3339, convert[string](instance["end"]))
@@ -137,27 +146,30 @@ func parseStartAndEndTime(event RawEvent) (time.Time, time.Time) {
 	} else {
 		endTime = startTime
 	}
+
 	return startTime, endTime
 }
 
-func parseEventLocation(event RawEvent) string {
+// getEventLocation parses the location of the event
+func getEventLocation(event RawEvent) string {
 	building := convert[string](event.Event["location_name"])
-	room_num := convert[string](event.Event["room_number"])
-	location := strings.Trim(fmt.Sprintf("%s, %s", building, room_num), " ,")
+	room := convert[string](event.Event["room_number"])
+	location := strings.Trim(fmt.Sprintf("%s, %s", building, room), " ,")
+
 	return location
 }
 
-// Parse the event types, event topic, and event target audience
-func parseFilters(event RawEvent) ([]string, []string, []string) {
-	eventTypes := []string{}
+// getFilters parses the types, topics, and target audiences
+func getFilters(event RawEvent) ([]string, []string, []string) {
+	types := []string{}
 	targetAudiences := []string{}
-	eventTopics := []string{}
+	topics := []string{}
 
 	filters := convert[map[string]any](event.Event["filters"])
 
 	rawTypes := convert[[]any](filters["event_types"])
 	for _, rawType := range rawTypes {
-		eventTypes = append(eventTypes, convert[string](convert[map[string]any](rawType)["name"]))
+		types = append(types, convert[string](convert[map[string]any](rawType)["name"]))
 	}
 
 	rawAudiences := convert[[]any](filters["event_target_audience"])
@@ -167,13 +179,14 @@ func parseFilters(event RawEvent) ([]string, []string, []string) {
 
 	rawTopics := convert[[]any](filters["event_topic"])
 	for _, topic := range rawTopics {
-		eventTopics = append(eventTopics, convert[string](convert[map[string]any](topic)["name"]))
+		topics = append(topics, convert[string](convert[map[string]any](topic)["name"]))
 	}
-	return eventTypes, targetAudiences, eventTopics
+
+	return types, targetAudiences, topics
 }
 
-// Parse the event departments, and event tags
-func parseDepartmentsAndTags(event RawEvent) ([]string, []string) {
+// getDepartmentsAndTags parses the departments, and tags
+func getDepartmentsAndTags(event RawEvent) ([]string, []string) {
 	departments := []string{}
 	tags := []string{}
 
@@ -186,14 +199,16 @@ func parseDepartmentsAndTags(event RawEvent) ([]string, []string) {
 	for _, deparment := range rawDeparments {
 		departments = append(departments, convert[string](convert[map[string]any](deparment)["name"]))
 	}
+
 	return departments, tags
 }
 
-// Parse the contact info.
-func parseContactInfo(event RawEvent) [3]string {
+// getContactInfo parses the contact info.
+func getContactInfo(event RawEvent) [3]string {
 	// Note that some events won't have contact phone number
-	rawContactInfo := convert[map[string]any](event.Event["custom_fields"])
 	contactInfo := [3]string{}
+
+	rawContactInfo := convert[map[string]any](event.Event["custom_fields"])
 	for i, infoField := range []string{
 		"contact_information_name",
 		"contact_information_email",
@@ -201,13 +216,14 @@ func parseContactInfo(event RawEvent) [3]string {
 	} {
 		contactInfo[i] = convert[string](rawContactInfo[infoField])
 	}
+
 	return contactInfo
 }
 
 // convert() attempts to convert data into types for this scraper
 func convert[T []any | map[string]any | string](data any) T {
-	if newTypeData, ok := data.(T); ok {
-		return newTypeData
+	if newTypedData, ok := data.(T); ok {
+		return newTypedData
 	}
 	var zeroValue T
 	return zeroValue
