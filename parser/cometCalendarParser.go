@@ -12,12 +12,12 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"time"
 
+	"github.com/UTDNebula/api-tools/scrapers"
 	"github.com/UTDNebula/api-tools/utils"
 	"github.com/UTDNebula/nebula-api/api/schema"
 )
-
-// TODO: FIND A WAY TO DYNAMICALLY RETRIEVE THIS
 
 // Some events have only the building name, not the abbreviation
 // Maps building names to their abbreviations
@@ -152,7 +152,7 @@ func ParseCometCalendar(inDir string, outDir string) {
 	}
 
 	multiBuildingMap := make(map[string]map[string]map[string][]schema.Event)
-	buildingAbbreviations, validAbbreviations := getAbbreviations(inDir)
+	buildingAbbreviations, validAbbreviations := getLocationAbbreviations(inDir)
 
 	for _, event := range allEvents {
 
@@ -248,32 +248,45 @@ func ParseCometCalendar(inDir string, outDir string) {
 }
 
 // getAbbreviations dynamically retrieves the all of the locations abbreviations
-func getAbbreviations(inDir string) (map[string]string, []string) {
+func getLocationAbbreviations(inDir string) (map[string]string, []string) {
 	// Get the locations from the map scraper
+	var mapFile []byte
+
 	mapFile, err := os.ReadFile(inDir + "/mapLocations.json")
 	if err != nil {
-		// Fall back if we haven't scraped the locations yet
-		return DefaultBuildings, DefaultValid
+		if os.IsNotExist(err) {
+			// Scrape the data if the it doesn't exist yet and then get the map file
+			scrapers.ScrapeMapLocations(inDir)
+			time.Sleep(2 * time.Second)
+			ParseMapLocations(inDir, inDir)
+
+			// If fail to get the locations again, not because unscraped
+			mapFile, _ = os.ReadFile(inDir + "/mapLocations.json")
+		} else {
+			panic(err)
+		}
 	}
-	var locations []map[string]any
+	var locations []schema.MapBuilding
 	if err = json.Unmarshal(mapFile, &locations); err != nil {
 		panic(err)
 	}
 
 	// Process the abbreviations
-	buildingsAbbrs := make(map[string]string, 0)
-	validAbbrs := make([]string, 0)
+	buildingsAbbreviations := make(map[string]string, 0)
+	validAbbreviations := make([]string, 0)
 
 	for _, location := range locations {
-		name := *utils.ConvertFromInterface[string](location["name"])
-		acronym := *utils.ConvertFromInterface[string](location["acronym"])
+		// Trim the following acronym in the name
+		trimmedName := strings.Split(*location.Name, " (")[0]
+		// Fallback on the locations that have no acronyms
+		acronym := ""
+		if location.Acronym != nil {
+			acronym = *location.Acronym
+		}
 
-		// Trim the tailing acronym in the name
-		trimmedName := strings.Split(name, " (")[0]
-		buildingsAbbrs[trimmedName] = acronym
-
-		validAbbrs = append(validAbbrs, acronym)
+		buildingsAbbreviations[trimmedName] = acronym
+		validAbbreviations = append(validAbbreviations, acronym)
 	}
 
-	return buildingsAbbrs, validAbbrs
+	return buildingsAbbreviations, validAbbreviations
 }

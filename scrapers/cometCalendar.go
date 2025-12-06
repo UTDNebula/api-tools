@@ -19,7 +19,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-const BASE_CAL_URL string = "https://calendar.utdallas.edu/api/2/events"
+const CAL_URL string = "https://calendar.utdallas.edu/api/2/events"
 
 // RawEvent mirrors the nested event payload returned by the calendar API.
 type RawEvent struct {
@@ -44,7 +44,8 @@ func ScrapeCometCalendar(outDir string) {
 
 	// Get the total number of pages
 	log.Printf("Getting the number of pages...")
-	if err := callAPIAndUnmarshal(&client, 0, &calendarData); err != nil {
+
+	if err := callAndUnmarshal(&client, 0, &calendarData); err != nil {
 		panic(err)
 	}
 	numPages := calendarData.Page["total"]
@@ -53,7 +54,7 @@ func ScrapeCometCalendar(outDir string) {
 	var calendarEvents []schema.Event
 	for page := range numPages {
 		log.Printf("Scraping events of page %d...", page+1)
-		if err := callAPIAndUnmarshal(&client, page+1, &calendarData); err != nil {
+		if err := callAndUnmarshal(&client, page+1, &calendarData); err != nil {
 			panic(err)
 		}
 		for _, rawEvent := range calendarData.Events {
@@ -81,6 +82,7 @@ func ScrapeCometCalendar(outDir string) {
 				ContactPhoneNumber: contactInfo[2],
 			})
 		}
+
 		log.Printf("Scraped events of page %d successfully!\n", page+1)
 	}
 
@@ -88,13 +90,14 @@ func ScrapeCometCalendar(outDir string) {
 	if err := utils.WriteJSON(writePath, calendarEvents); err != nil {
 		panic(err)
 	}
+
 	log.Printf("Finished scraping %d events successfully!\n\n", len(calendarEvents))
 }
 
 // scrapeAndUnmarshal fetches a calendar page and decodes it into data.
-func callAPIAndUnmarshal(client *http.Client, page int, data *APICalendarResponse) error {
+func callAndUnmarshal(client *http.Client, page int, data *APICalendarResponse) error {
 	// Call API to get the byte data
-	calendarUrl := fmt.Sprintf("%s?days=365&pp=100&page=%d", BASE_CAL_URL, page)
+	calendarUrl := fmt.Sprintf("%s?days=365&pp=100&page=%d", CAL_URL, page)
 	request, err := http.NewRequest("GET", calendarUrl, nil)
 	if err != nil {
 		return err
@@ -162,7 +165,7 @@ func getEventLocation(event RawEvent) string {
 // getFilters parses the types, topics, and target audiences
 func getFilters(event RawEvent) ([]string, []string, []string) {
 	types := []string{}
-	targetAudiences := []string{}
+	audiences := []string{}
 	topics := []string{}
 
 	filters := convert[map[string]any](event.Event["filters"])
@@ -174,7 +177,7 @@ func getFilters(event RawEvent) ([]string, []string, []string) {
 
 	rawAudiences := convert[[]any](filters["event_target_audience"])
 	for _, audience := range rawAudiences {
-		targetAudiences = append(targetAudiences, convert[string](convert[map[string]any](audience)["name"]))
+		audiences = append(audiences, convert[string](convert[map[string]any](audience)["name"]))
 	}
 
 	rawTopics := convert[[]any](filters["event_topic"])
@@ -182,7 +185,7 @@ func getFilters(event RawEvent) ([]string, []string, []string) {
 		topics = append(topics, convert[string](convert[map[string]any](topic)["name"]))
 	}
 
-	return types, targetAudiences, topics
+	return types, audiences, topics
 }
 
 // getDepartmentsAndTags parses the departments, and tags
