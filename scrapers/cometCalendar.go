@@ -21,7 +21,7 @@ import (
 
 // RawEvent mirrors the nested event payload returned by the calendar API.
 type RawEvent struct {
-	Event map[string]interface{} `json:"event"`
+	Event map[string]any `json:"event"`
 }
 
 // APICalendarResponse models the calendar API pagination envelope.
@@ -37,92 +37,42 @@ func ScrapeCometCalendar(outDir string) {
 	if err != nil {
 		panic(err)
 	}
-	cli := http.Client{Timeout: 15 * time.Second}
+	client := http.Client{Timeout: 15 * time.Second}
 	var calendarData APICalendarResponse
 
 	// Get the total number of pages
 	log.Printf("Getting the number of pages...")
-	if err := scrapeAndUnmarshal(&cli, 0, &calendarData); err != nil {
+	if err := scrapeAndUnmarshal(&client, 0, &calendarData); err != nil {
 		panic(err)
 	}
 	numPages := calendarData.Page["total"]
 	log.Printf("The number of pages is %d!\n\n", numPages)
 
-	var events []schema.Event
+	var calendarEvents []schema.Event
 	for page := range numPages {
 		log.Printf("Scraping events of page %d...", page+1)
-		if err := scrapeAndUnmarshal(&cli, page+1, &calendarData); err != nil {
+		if err := scrapeAndUnmarshal(&client, page+1, &calendarData); err != nil {
 			panic(err)
 		}
 
 		for _, rawEvent := range calendarData.Events {
-			// Parse the time
-			eventInstance := toMap(toMap(toSlice(rawEvent.Event["event_instances"])[0])["event_instance"])
-			startTime := parseTime(toString(eventInstance["start"]))
-			endTime := startTime
-			if toString(eventInstance["end"]) != "" {
-				endTime = parseTime(toString(eventInstance["end"]))
-			}
+			startTime, endTime := parseStartAndEndTime(rawEvent)
+			eventTypes, targetAudiences, eventTopics := parseFilters(rawEvent)
+			departments, tags := parseDepartmentsAndTags(rawEvent)
+			contactInfo := parseContactInfo(rawEvent)
 
-			// Parse location
-			location := strings.Trim(fmt.Sprintf("%s, %s", toString(rawEvent.Event["location_name"]), toString(rawEvent.Event["room_number"])), " ,")
-
-			// Parse the event types, event topic, and event target audience
-			filters := toMap(rawEvent.Event["filters"])
-			eventTypes := []string{}
-			eventTopics := []string{}
-			targetAudiences := []string{}
-
-			rawTypes := toSlice(filters["event_types"])
-			for _, rawType := range rawTypes {
-				eventTypes = append(eventTypes, toString(toMap(rawType)["name"]))
-			}
-
-			rawAudiences := toSlice(filters["event_target_audience"])
-			for _, audience := range rawAudiences {
-				targetAudiences = append(targetAudiences, toString(toMap(audience)["name"]))
-			}
-
-			rawTopics := toSlice(filters["event_topic"])
-			for _, topic := range rawTopics {
-				eventTopics = append(eventTopics, toString(toMap(topic)["name"]))
-			}
-
-			// Parse the event departments, and tags
-			departments := []string{}
-			tags := []string{}
-
-			rawTags := toSlice(rawEvent.Event["tags"])
-			for _, tag := range rawTags {
-				tags = append(tags, tag.(string))
-			}
-
-			rawDeparments := toSlice(rawEvent.Event["departments"])
-			for _, deparment := range rawDeparments {
-				departments = append(departments, toMap(deparment)["name"].(string))
-			}
-
-			// Parse the contact info, =ote that some events won't have contact phone number
-			rawContactInfo := toMap(rawEvent.Event["custom_fields"])
-			contactInfo := [3]string{}
-			for i, infoField := range []string{
-				"contact_information_name", "contact_information_email", "contact_information_phone",
-			} {
-				contactInfo[i] = toString(rawContactInfo[infoField])
-			}
-
-			events = append(events, schema.Event{
+			calendarEvents = append(calendarEvents, schema.Event{
 				Id:                 primitive.NewObjectID(),
-				Summary:            toString(rawEvent.Event["title"]),
-				Location:           location,
+				Summary:            convert[string](rawEvent.Event["title"]),
+				Location:           parseEventLocation(rawEvent),
 				StartTime:          startTime,
 				EndTime:            endTime,
-				Description:        toString(rawEvent.Event["description_text"]),
+				Description:        convert[string](rawEvent.Event["description_text"]),
 				EventType:          eventTypes,
 				TargetAudience:     targetAudiences,
 				Topic:              eventTopics,
 				EventTags:          tags,
-				EventWebsite:       toString(rawEvent.Event["url"]),
+				EventWebsite:       convert[string](rawEvent.Event["url"]),
 				Department:         departments,
 				ContactName:        contactInfo[0],
 				ContactEmail:       contactInfo[1],
@@ -132,71 +82,133 @@ func ScrapeCometCalendar(outDir string) {
 		log.Printf("Scraped events of page %d successfully!\n", page+1)
 	}
 
-	if err := utils.WriteJSON(fmt.Sprintf("%s/cometCalendarScraped.json", outDir), events); err != nil {
+	writePath := fmt.Sprintf("%s/cometCalendarScraped.json", outDir)
+	if err := utils.WriteJSON(writePath, calendarEvents); err != nil {
 		panic(err)
 	}
-	log.Printf("Finished scraping %d events successfully!\n\n", len(events))
+	log.Printf("Finished scraping %d events successfully!\n\n", len(calendarEvents))
 }
 
 // scrapeAndUnmarshal fetches a calendar page and decodes it into data.
 func scrapeAndUnmarshal(client *http.Client, page int, data *APICalendarResponse) error {
 	// Call API to get the byte data
 	calendarUrl := fmt.Sprintf("https://calendar.utdallas.edu/api/2/events?days=365&pp=100&page=%d", page)
-	req, err := http.NewRequest("GET", calendarUrl, nil)
+	request, err := http.NewRequest("GET", calendarUrl, nil)
 	if err != nil {
 		return err
 	}
-	res, err := client.Do(req)
+	response, err := client.Do(request)
 	if err != nil {
 		return err
 	}
-	if res != nil && res.StatusCode != 200 {
-		return fmt.Errorf("ERROR: Non-200 status is returned, %s", res.Status)
+	if response != nil && response.StatusCode != 200 {
+		return fmt.Errorf("ERROR: Non-200 status is returned, %s", response.Status)
 	}
 
 	// Unmarshal bytes to the response data
 	buffer := bytes.Buffer{}
-	if _, err = buffer.ReadFrom(res.Body); err != nil {
+	if _, err = buffer.ReadFrom(response.Body); err != nil {
 		return err
 	}
-	res.Body.Close()
+	response.Body.Close()
 	if err = json.Unmarshal(buffer.Bytes(), &data); err != nil {
 		return err
 	}
 	return nil
 }
 
-// toSlice attempts to convert data into a slice of interface{}.
-func toSlice(data interface{}) []interface{} {
-	if array, ok := data.([]interface{}); ok {
-		return array
-	}
-	return nil
-}
+// parseStartAndEndTime parses the start and end time of the event
+func parseStartAndEndTime(event RawEvent) (time.Time, time.Time) {
+	instance := convert[map[string]any](
+		convert[map[string]any](convert[[]any](event.Event["event_instances"])[0])["event_instance"],
+	)
 
-// toMap attempts to convert data into a map keyed by string.
-func toMap(data interface{}) map[string]interface{} {
-	if dataMap, ok := data.(map[string]interface{}); ok {
-		return dataMap
-	}
-	return nil
-}
-
-// toString returns the string form of data or empty string when nil.
-func toString(data interface{}) string {
-	if data != nil {
-		if dataString, ok := data.(string); ok {
-			return dataString
-		}
-	}
-	return ""
-}
-
-// parseTime converts an RFC3339 timestamp string to a time.Time.
-func parseTime(stringTime string) time.Time {
-	parsedTime, err := time.Parse(time.RFC3339, stringTime)
+	// Converts RFC3339 timestamp string to time.Time
+	startTime, err := time.Parse(time.RFC3339, convert[string](instance["start"]))
 	if err != nil {
 		panic(err)
 	}
-	return parsedTime
+	var endTime time.Time
+	if convert[string](instance["end"]) != "" {
+		endTime, err = time.Parse(time.RFC3339, convert[string](instance["end"]))
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		endTime = startTime
+	}
+	return startTime, endTime
+}
+
+func parseEventLocation(event RawEvent) string {
+	building := convert[string](event.Event["location_name"])
+	room_num := convert[string](event.Event["room_number"])
+	location := strings.Trim(fmt.Sprintf("%s, %s", building, room_num), " ,")
+	return location
+}
+
+// Parse the event types, event topic, and event target audience
+func parseFilters(event RawEvent) ([]string, []string, []string) {
+	eventTypes := []string{}
+	targetAudiences := []string{}
+	eventTopics := []string{}
+
+	filters := convert[map[string]any](event.Event["filters"])
+
+	rawTypes := convert[[]any](filters["event_types"])
+	for _, rawType := range rawTypes {
+		eventTypes = append(eventTypes, convert[string](convert[map[string]any](rawType)["name"]))
+	}
+
+	rawAudiences := convert[[]any](filters["event_target_audience"])
+	for _, audience := range rawAudiences {
+		targetAudiences = append(targetAudiences, convert[string](convert[map[string]any](audience)["name"]))
+	}
+
+	rawTopics := convert[[]any](filters["event_topic"])
+	for _, topic := range rawTopics {
+		eventTopics = append(eventTopics, convert[string](convert[map[string]any](topic)["name"]))
+	}
+	return eventTypes, targetAudiences, eventTopics
+}
+
+// Parse the event departments, and event tags
+func parseDepartmentsAndTags(event RawEvent) ([]string, []string) {
+	departments := []string{}
+	tags := []string{}
+
+	rawTags := convert[[]any](event.Event["tags"])
+	for _, tag := range rawTags {
+		tags = append(tags, convert[string](tag))
+	}
+
+	rawDeparments := convert[[]any](event.Event["departments"])
+	for _, deparment := range rawDeparments {
+		departments = append(departments, convert[string](convert[map[string]any](deparment)["name"]))
+	}
+	return departments, tags
+}
+
+// Parse the contact info.
+func parseContactInfo(event RawEvent) [3]string {
+	// Note that some events won't have contact phone number
+	rawContactInfo := convert[map[string]any](event.Event["custom_fields"])
+	contactInfo := [3]string{}
+	for i, infoField := range []string{
+		"contact_information_name",
+		"contact_information_email",
+		"contact_information_phone",
+	} {
+		contactInfo[i] = convert[string](rawContactInfo[infoField])
+	}
+	return contactInfo
+}
+
+// convert() attempts to convert data into types for this scraper
+func convert[T []any | map[string]any | string](data any) T {
+	if newTypeData, ok := data.(T); ok {
+		return newTypeData
+	}
+	var zeroValue T
+	return zeroValue
 }

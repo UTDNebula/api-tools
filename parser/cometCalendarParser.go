@@ -13,6 +13,8 @@ import (
 	"github.com/UTDNebula/nebula-api/api/schema"
 )
 
+// TODO: FIND A WAY TO DYNAMICALLY RETRIEVE THIS
+
 // Some events have only the building name, not the abbreviation
 // Maps building names to their abbreviations
 var buildingAbbreviations = map[string]string{
