@@ -259,10 +259,13 @@ func getLocationAbbreviations(inDir string) (map[string]string, []string) {
 			scrapers.ScrapeMapLocations(inDir)
 			time.Sleep(2 * time.Second)
 			ParseMapLocations(inDir, inDir)
-			time.Sleep(2 * time.Second) // Probably a good idea to let it sleep before moving on?
+			time.Sleep(2 * time.Second)
 
-			// If fail to get the locations again, not because unscraped
-			mapFile, _ = os.ReadFile(inDir + "/mapLocations.json")
+			// If fail to get the locations again, it's not because location is unscraped
+			mapFile, err = os.ReadFile(inDir + "/mapLocations.json")
+			if err != nil {
+				panic(err)
+			}
 		} else {
 			panic(err)
 		}
@@ -280,13 +283,13 @@ func getLocationAbbreviations(inDir string) (map[string]string, []string) {
 		// Trim the following acronym in the name
 		trimmedName := strings.Split(*location.Name, " (")[0]
 		// Fallback on the locations that have no acronyms
-		acronym := ""
+		abbreviation := ""
 		if location.Acronym != nil {
-			acronym = *location.Acronym
+			abbreviation = *location.Acronym
 		}
 
-		buildingsAbbreviations[trimmedName] = acronym
-		validAbbreviations = append(validAbbreviations, acronym)
+		buildingsAbbreviations[trimmedName] = abbreviation
+		validAbbreviations = append(validAbbreviations, abbreviation)
 	}
 
 	return buildingsAbbreviations, validAbbreviations
