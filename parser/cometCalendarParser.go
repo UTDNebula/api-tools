@@ -12,7 +12,6 @@ import (
 	"regexp"
 	"slices"
 	"strings"
-	"time"
 
 	"github.com/UTDNebula/api-tools/scrapers"
 	"github.com/UTDNebula/api-tools/utils"
@@ -137,6 +136,7 @@ var DefaultValid []string = []string{
 	"RCW",
 }
 
+// ParseCometCalendar reformats the comet calendar data into uploadable json in Mongo
 func ParseCometCalendar(inDir string, outDir string) {
 
 	calendarFile, err := os.ReadFile(inDir + "/cometCalendarScraped.json")
@@ -251,21 +251,18 @@ func ParseCometCalendar(inDir string, outDir string) {
 	utils.WriteJSON(fmt.Sprintf("%s/cometCalendar.json", outDir), result)
 }
 
-// getAbbreviations dynamically retrieves the all of the locations abbreviations
+// getLocationAbbreviations dynamically retrieves the all of the locations abbreviations
 func getLocationAbbreviations(inDir string) (map[string]string, []string, error) {
 	// Get the locations from the map scraper
 	var mapFile []byte
-
 	mapFile, err := os.ReadFile(inDir + "/mapLocations.json")
 	if err != nil {
 		if os.IsNotExist(err) {
-			// Scrape the data if the it doesn't exist yet and then get the map file
+			// Force scrape the locations if it doesn't exist. Get the map file again
 			scrapers.ScrapeMapLocations(inDir)
-			time.Sleep(2 * time.Second)
 			ParseMapLocations(inDir, inDir)
-			time.Sleep(2 * time.Second)
 
-			// If fail to get the locations again, it's not because location is unscraped
+			// If it fails to get the locations again, it's not because location is unscraped
 			mapFile, err = os.ReadFile(inDir + "/mapLocations.json")
 			if err != nil {
 				return nil, nil, err
@@ -274,7 +271,6 @@ func getLocationAbbreviations(inDir string) (map[string]string, []string, error)
 			return nil, nil, err
 		}
 	}
-
 	var locations []schema.MapBuilding
 	if err = json.Unmarshal(mapFile, &locations); err != nil {
 		return nil, nil, err
@@ -288,7 +284,7 @@ func getLocationAbbreviations(inDir string) (map[string]string, []string, error)
 		// Trim the following acronym in the name
 		trimmedName := strings.Split(*location.Name, " (")[0]
 		// Fallback on the locations that have no acronyms
-		abbreviation := ""
+		var abbreviation string
 		if location.Acronym != nil {
 			abbreviation = *location.Acronym
 		}
