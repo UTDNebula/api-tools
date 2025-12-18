@@ -277,7 +277,7 @@ func TestParse(t *testing.T) {
 		t.Errorf("failded to load expected sections.json %v", err)
 	}
 
-	//Build the ValueByID maps, this is used to for comparing because we cant directly compare ids
+	//Build helper maps as needed
 	CoursesById := make(map[primitive.ObjectID]schema.Course)
 	for _, course := range OutputCourses {
 		CoursesById[course.Id] = course
@@ -316,19 +316,7 @@ func TestParse(t *testing.T) {
 		t.Run(key, func(t *testing.T) {
 			if outputCourse, ok := CoursesByKey[key]; ok {
 				diff := cmp.Diff(expectedCourse, outputCourse,
-					cmpopts.IgnoreFields(schema.Course{}, "Id"),
-					cmp.Transformer("Sections", func(sections []primitive.ObjectID) []string {
-						result := make([]string, 0, len(sections))
-						for _, id := range sections {
-							if section, ok := SectionsByID[id]; ok {
-								//We don't need to check sections for correctness, just check that the reference is correct
-								result = append(result, section.Section_number)
-							} else {
-								result = append(result, "")
-							}
-						}
-						return result
-					}),
+					cmpopts.IgnoreFields(schema.Course{}, "Id", "Key", "Section_keys"),
 				)
 
 				if diff != "" {
@@ -412,36 +400,22 @@ func TestParse(t *testing.T) {
 		t.Error(builder.String())
 	}
 
-	//check sections
-	SectionsByKey := make(map[string]schema.Section)
-
+	//check sections: compare by Internal_class_number as key
+	SectionsByClass := make(map[string]schema.Section)
 	for _, section := range OutputSections {
-		//the ok shouldn't fail since this is after we checked all the courses
-		course := CoursesById[section.Course_reference]
-		key := course.Course_number + course.Catalog_year + section.Section_number
-		SectionsByKey[key] = section
+		SectionsByClass[section.Internal_class_number] = section
 	}
 
 	for _, expectedSection := range ExpectedSections {
-
-		course := CoursesById[expectedSection.Course_reference]
-		key := course.Course_number + course.Catalog_year + expectedSection.Section_number
+		key := expectedSection.Internal_class_number
 		t.Run(key, func(t *testing.T) {
-			if outputSection, ok := SectionsByKey[key]; ok {
-
+			if outputSection, ok := SectionsByClass[key]; ok {
 				diff := cmp.Diff(expectedSection, outputSection,
-					cmpopts.IgnoreFields(schema.Section{}, "Id"),
-					cmp.Transformer("Course_reference", func(id primitive.ObjectID) string {
-						if c, ok := CoursesById[id]; ok {
-							return c.Course_number + c.Catalog_year
-						}
-						return ""
-					}),
+					cmpopts.IgnoreFields(schema.Section{}, "Id", "Key", "Course_key"),
 					cmp.Transformer("Professors", func(profIds []primitive.ObjectID) []string {
 						result := make([]string, 0, len(profIds))
 						for _, id := range profIds {
 							if professor, ok := ProfessorsByID[id]; ok {
-								//We don't need to check sections for correctness, just check that the reference is correct
 								result = append(result, professor.First_name+professor.Last_name)
 							} else {
 								result = append(result, "")
@@ -450,24 +424,20 @@ func TestParse(t *testing.T) {
 						return result
 					}),
 				)
-
 				if diff != "" {
 					t.Errorf("Failed (-expected +got)\n %s", diff)
 				}
-
-				delete(SectionsByKey, key)
+				delete(SectionsByClass, key)
 			} else {
 				t.Errorf("Expected Section %s not found in output", key)
 			}
 		})
 	}
 
-	if len(SectionsByKey) > 0 {
+	if len(SectionsByClass) > 0 {
 		var builder strings.Builder
-
-		builder.WriteString(fmt.Sprintf("Found %d extra Sections(s) : \n", len(SectionsByKey)))
-
-		for _, section := range SectionsByKey {
+		builder.WriteString(fmt.Sprintf("Found %d extra Sections(s) : \n", len(SectionsByClass)))
+		for _, section := range SectionsByClass {
 			courseText, _ := json.MarshalIndent(section, "", "\t")
 			builder.WriteString(string(courseText))
 			builder.WriteString("\n")

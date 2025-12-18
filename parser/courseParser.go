@@ -51,9 +51,17 @@ func parseCourse(internalCourseNumber string, session schema.AcademicSession, ro
 // Returns a pointer to the newly created schema.Course object.
 func getCourse(internalCourseNumber string, session schema.AcademicSession, rowInfo map[string]*goquery.Selection, classInfo map[string]string) *schema.Course {
 	CoursePrefix, CourseNumber := getPrefixAndNumber(classInfo)
+	catalogYear := getCatalogYear(session)
+
+	courseKey := schema.CourseKey{
+		Subject_prefix: CoursePrefix,
+		Course_number:  CourseNumber,
+		Catalog_year:   catalogYear,
+	}
 
 	course := schema.Course{
 		Id:                     primitive.NewObjectID(),
+		Key:                    courseKey,
 		Course_number:          CourseNumber,
 		Subject_prefix:         CoursePrefix,
 		Title:                  utils.TrimWhitespace(rowInfo["Course Title:"].Text()),

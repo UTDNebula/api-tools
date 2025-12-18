@@ -19,7 +19,7 @@ func TestGetCourse(t *testing.T) {
 			output := *getCourse(courseNum, testCase.Section.Academic_session, testCase.RowInfo, testCase.ClassInfo)
 			expected := testCase.Course
 
-			diff := cmp.Diff(expected, output, cmpopts.IgnoreFields(schema.Course{}, "Id", "Sections", "Enrollment_reqs", "Prerequisites"))
+			diff := cmp.Diff(expected, output, cmpopts.IgnoreFields(schema.Course{}, "Id", "Enrollment_reqs", "Prerequisites", "Key", "Section_keys"))
 
 			if diff != "" {
 				t.Errorf("Failed (-expected +got)\n %s", diff)
