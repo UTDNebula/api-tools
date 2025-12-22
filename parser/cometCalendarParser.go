@@ -1,3 +1,7 @@
+/*
+	This file contains the code for the comet calendar events parser.
+*/
+
 package parser
 
 import (
@@ -8,14 +12,16 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"time"
 
+	"github.com/UTDNebula/api-tools/scrapers"
 	"github.com/UTDNebula/api-tools/utils"
 	"github.com/UTDNebula/nebula-api/api/schema"
 )
 
 // Some events have only the building name, not the abbreviation
 // Maps building names to their abbreviations
-var buildingAbbreviations = map[string]string{
+var DefaultBuildings = map[string]string{
 	"Activity Center":                              "AB",
 	"Activity Center Bookstore":                    "ACB",
 	"Administration":                               "AD",
@@ -74,7 +80,7 @@ var buildingAbbreviations = map[string]string{
 }
 
 // Valid building abreviations for checking
-var validAbbreviations []string = []string{
+var DefaultValid []string = []string{
 	"AB",
 	"ACB",
 	"AD",
@@ -146,6 +152,11 @@ func ParseCometCalendar(inDir string, outDir string) {
 	}
 
 	multiBuildingMap := make(map[string]map[string]map[string][]schema.Event)
+	// Some events have only the building name, not the abbreviation
+	buildingAbbreviations, validAbbreviations, err := getLocationAbbreviations(inDir)
+	if err != nil {
+		panic(err)
+	}
 
 	for _, event := range allEvents {
 
@@ -181,7 +192,7 @@ func ParseCometCalendar(inDir string, outDir string) {
 
 		// If location doesn't have room number, check to see if location included a room
 		if room == "" && isValidBuilding {
-			locationParts := strings.SplitN(*location, ",", 2)
+			locationParts := strings.SplitN(*location, ", ", 2)
 			if len(locationParts) == 2 {
 				room = locationParts[1]
 			}
@@ -238,4 +249,53 @@ func ParseCometCalendar(inDir string, outDir string) {
 	log.Print("Parsed Comet Calendar!")
 
 	utils.WriteJSON(fmt.Sprintf("%s/cometCalendar.json", outDir), result)
+}
+
+// getAbbreviations dynamically retrieves the all of the locations abbreviations
+func getLocationAbbreviations(inDir string) (map[string]string, []string, error) {
+	// Get the locations from the map scraper
+	var mapFile []byte
+
+	mapFile, err := os.ReadFile(inDir + "/mapLocations.json")
+	if err != nil {
+		if os.IsNotExist(err) {
+			// Scrape the data if the it doesn't exist yet and then get the map file
+			scrapers.ScrapeMapLocations(inDir)
+			time.Sleep(2 * time.Second)
+			ParseMapLocations(inDir, inDir)
+			time.Sleep(2 * time.Second)
+
+			// If fail to get the locations again, it's not because location is unscraped
+			mapFile, err = os.ReadFile(inDir + "/mapLocations.json")
+			if err != nil {
+				return nil, nil, err
+			}
+		} else {
+			return nil, nil, err
+		}
+	}
+
+	var locations []schema.MapBuilding
+	if err = json.Unmarshal(mapFile, &locations); err != nil {
+		return nil, nil, err
+	}
+
+	// Process the abbreviations
+	buildingsAbbreviations := make(map[string]string, 0) // Maps building names to their abbreviations
+	validAbbreviations := make([]string, 0)              // Valid building abreviations for checking
+
+	for _, location := range locations {
+		// Trim the following acronym in the name
+		trimmedName := strings.Split(*location.Name, " (")[0]
+		// Fallback on the locations that have no acronyms
+		abbreviation := ""
+		if location.Acronym != nil {
+			abbreviation = *location.Acronym
+		}
+
+		buildingsAbbreviations[trimmedName] = abbreviation
+		validAbbreviations = append(validAbbreviations, abbreviation)
+	}
+
+	return buildingsAbbreviations, validAbbreviations, nil
 }

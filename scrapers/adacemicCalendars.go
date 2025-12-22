@@ -47,7 +47,7 @@ func ScrapeAcademicCalendars(outDir string) {
 
 	// Extract data from links
 	// Current
-	academicCalendars := []AcademicCalendar{AcademicCalendar{"", "", "current"}}
+	academicCalendars := []AcademicCalendar{{"", "", "current"}}
 	chromedp.Run(chromedpCtx, chromedp.TextContent("h2.wp-block-heading", &academicCalendars[0].Title, chromedp.ByQuery))
 	var currentNode []*cdp.Node
 	chromedp.Run(chromedpCtx, chromedp.Nodes("a.wp-block-button__link", &currentNode, chromedp.ByQuery))
