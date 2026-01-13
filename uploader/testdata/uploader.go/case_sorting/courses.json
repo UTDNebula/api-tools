@@ -1,0 +1,38 @@
+[
+  {
+    "_id": "67d07ee0c972c18731e23be9",
+    "subject_prefix": "ACCT",
+    "course_number": "2301",
+    "title": "Introductory Financial Accounting",
+    "school": "Naveen Jindal School of Management",
+    "credit_hours": "3",
+    "class_level": "Undergraduate",
+    "activity_type": "Lecture",
+    "catalog_year": "24",
+    "sections": []
+  },
+  {
+    "_id": "67d07ee0c972c18731e23bee",
+    "subject_prefix": "BA",
+    "course_number": "1320",
+    "title": "Business in a Global World",
+    "school": "Naveen Jindal School of Management",
+    "credit_hours": "3",
+    "class_level": "Undergraduate",
+    "activity_type": "Lecture",
+    "catalog_year": "23",
+    "sections": []
+  },
+  {
+    "_id": "67d07ee0c972c18731e23bf1",
+    "subject_prefix": "BIOL",
+    "course_number": "6111",
+    "title": "Graduate Research Presentation",
+    "school": "School of Natural Sciences and Mathematics",
+    "credit_hours": "1",
+    "class_level": "Graduate",
+    "activity_type": "Lecture",
+    "catalog_year": "24",
+    "sections": []
+  }
+]

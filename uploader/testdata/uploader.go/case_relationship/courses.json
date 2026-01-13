@@ -1,0 +1,13 @@
+[
+  {
+    "_id": "67d07ee0c972c18731e23be9",
+    "subject_prefix": "ACCT",
+    "course_number": "2301",
+    "title": "Introductory Financial Accounting",
+    "school": "Naveen Jindal School of Management",
+    "credit_hours": "3",
+    "class_level": "Undergraduate",
+    "activity_type": "Lecture",
+    "sections": ["67d07ee0c972c18731e23bea", "67d07ee0c972c18731e23bed"]
+  }
+]
