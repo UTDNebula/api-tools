@@ -46,16 +46,13 @@ func ScrapeAstra(outDir string) {
 	time.Sleep(500 * time.Millisecond)
 	cancel() // Don't need chromedp anymore
 
-	// Starting date
 	date := time.Now()
+	endDate := date.Add(time.Hour * 24 * 365)
 	// Start on previous date to make sure we have today's data, regardless of what timezone the scraper is in
 	date = date.Add(time.Hour * -24)
 
-	// Stop condition
-	lt10EventsCount := 0
-
-	// Run until 90 days of no events
-	for lt10EventsCount < 90 {
+	// Run for a year
+	for ; date.Before(endDate); date = date.Add(time.Hour * 24) {
 		formattedDate := date.Format("2006-01-02")
 		log.Printf("Scraping %s...", formattedDate)
 
@@ -85,14 +82,6 @@ func ScrapeAstra(outDir string) {
 		if numEvents >= MAX_EVENTS_PER_DAY {
 			log.Panic("ERROR: Max events per day exceeded!")
 		}
-		if numEvents < 10 {
-			lt10EventsCount += 1
-			if lt10EventsCount > 30 {
-				log.Printf("There have been %d days in a row with fewer than 10 events.", lt10EventsCount)
-			}
-		} else {
-			lt10EventsCount = 0
-		}
 
 		// Add to record
 		comma := ","
@@ -101,7 +90,6 @@ func ScrapeAstra(outDir string) {
 			firstLoop = false
 		}
 		days = fmt.Sprintf("%s%s\"%s\":%s", days, comma, formattedDate, stringBody)
-		date = date.Add(time.Hour * 24)
 	}
 
 	log.Printf("Scraped Astra up to %s!", date.Format("2006-01-02"))
