@@ -52,8 +52,15 @@ func init() {
 		panic(err)
 	}
 
-	// The correct mapping
-	indexMap = map[int]int{0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 4}
+	courseIndex := make(map[primitive.ObjectID]int)
+	for i, course := range testCourses {
+		courseIndex[course.Id] = i
+	}
+
+	indexMap = make(map[int]int, len(testSections))
+	for i, section := range testSections {
+		indexMap[i] = courseIndex[section.Course_reference]
+	}
 }
 
 // Test duplicate courses. Designed for fail cases
@@ -222,8 +229,8 @@ func TestSectionReferenceProfFail(t *testing.T) {
 		logOutput := logBuffer.String()
 
 		for _, msg := range []string{
-			"Nonexistent professor reference found for section ID ObjectID(\"67d07ee0c972c18731e23bea\")!",
-			"Referenced professor ID: ObjectID(\"67d07ee0c972c18731e23beb\")",
+			"Nonexistent professor reference found for section ID ObjectID(\"6972f54d6afb10b361a3e8c7\")!",
+			"Referenced professor ID: ObjectID(\"6972f54d6afb10b361a3e8c9\")",
 		} {
 			if !strings.Contains(logOutput, msg) {
 				t.Errorf("The function didn't log correct message. Expected \"%v\"", msg)

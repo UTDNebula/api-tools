@@ -1,5 +1,5 @@
 {
-	"_id": "67d07ee0c972c18731e23be7",
+	"_id": "6972f54d6afb10b361a3e8c1",
 	"subject_prefix": "AERO",
 	"course_number": "4320",
 	"title": "- Laboratory",
@@ -15,7 +15,7 @@
 	"corequisites": null,
 	"co_or_pre_requisites": null,
 	"sections": [
-		"67d07ee0c972c18731e23be8"
+		"6972f54d6afb10b361a3e8c2"
 	],
 	"lecture_contact_hours": "",
 	"laboratory_contact_hours": "",

@@ -1,6 +1,6 @@
 [
 	{
-		"_id": "67d07ee0c972c18731e23bee",
+		"_id": "6972f54d6afb10b361a3e8cb",
 		"subject_prefix": "BA",
 		"course_number": "1320",
 		"title": "Business in a Global World",
@@ -16,7 +16,7 @@
 		"corequisites": null,
 		"co_or_pre_requisites": null,
 		"sections": [
-			"67d07ee0c972c18731e23bef"
+			"6972f54d6afb10b361a3e8cc"
 		],
 		"lecture_contact_hours": "3",
 		"laboratory_contact_hours": "0",
@@ -25,7 +25,7 @@
 		"attributes": null
 	},
 	{
-		"_id": "67d07ee0c972c18731e23bf1",
+		"_id": "6972f54d6afb10b361a3e8ce",
 		"subject_prefix": "BIOL",
 		"course_number": "6111",
 		"title": "Graduate Research Presentation",
@@ -41,7 +41,7 @@
 		"corequisites": null,
 		"co_or_pre_requisites": null,
 		"sections": [
-			"67d07ee0c972c18731e23bf2"
+			"6972f54d6afb10b361a3e8cf"
 		],
 		"lecture_contact_hours": "1",
 		"laboratory_contact_hours": "0",
@@ -50,7 +50,7 @@
 		"attributes": null
 	},
 	{
-		"_id": "67d07ee0c972c18731e23bf4",
+		"_id": "6972f54d6afb10b361a3e8d1",
 		"subject_prefix": "AERO",
 		"course_number": "3320",
 		"title": "- Recitation",
@@ -66,7 +66,7 @@
 		"corequisites": null,
 		"co_or_pre_requisites": null,
 		"sections": [
-			"67d07ee0c972c18731e23bf5"
+			"6972f54d6afb10b361a3e8d2"
 		],
 		"lecture_contact_hours": "",
 		"laboratory_contact_hours": "",
@@ -75,7 +75,7 @@
 		"attributes": null
 	},
 	{
-		"_id": "67d07ee0c972c18731e23bf6",
+		"_id": "6972f54d6afb10b361a3e8d3",
 		"subject_prefix": "AERO",
 		"course_number": "4320",
 		"title": "- Laboratory",
@@ -91,7 +91,7 @@
 		"corequisites": null,
 		"co_or_pre_requisites": null,
 		"sections": [
-			"67d07ee0c972c18731e23bf7"
+			"6972f54d6afb10b361a3e8d4"
 		],
 		"lecture_contact_hours": "",
 		"laboratory_contact_hours": "",
@@ -100,7 +100,32 @@
 		"attributes": null
 	},
 	{
-		"_id": "67d07ee0c972c18731e23be9",
+		"_id": "6972f54d6afb10b361a3e8d5",
+		"subject_prefix": "THEA",
+		"course_number": "1310",
+		"title": "Understanding Theatre",
+		"description": "THEA 1310 - Understanding Theatre  (3 semester credit hours) Lectures, discussions, and performances designed to explore artistic, philosophical, social, historical, and psychological dimensions of the theatrical experience. Topics may include analysis of scripts, the nature of the theater compared to the other performing arts, and the nature of popular entertainments. (3-0) S",
+		"enrollment_reqs": "",
+		"school": "School of Arts, Humanities, and Technology",
+		"credit_hours": "3",
+		"class_level": "Undergraduate",
+		"activity_type": "Lecture",
+		"grading": "Graded - Undergraduate",
+		"internal_course_number": "003909",
+		"prerequisites": null,
+		"corequisites": null,
+		"co_or_pre_requisites": null,
+		"sections": [
+			"6972f54d6afb10b361a3e8d6"
+		],
+		"lecture_contact_hours": "3",
+		"laboratory_contact_hours": "0",
+		"offering_frequency": "S",
+		"catalog_year": "24",
+		"attributes": null
+	},
+	{
+		"_id": "6972f54d6afb10b361a3e8c6",
 		"subject_prefix": "ACCT",
 		"course_number": "2301",
 		"title": "Introductory Financial Accounting",
@@ -116,8 +141,8 @@
 		"corequisites": null,
 		"co_or_pre_requisites": null,
 		"sections": [
-			"67d07ee0c972c18731e23bea",
-			"67d07ee0c972c18731e23bed"
+			"6972f54d6afb10b361a3e8c7",
+			"6972f54d6afb10b361a3e8ca"
 		],
 		"lecture_contact_hours": "3",
 		"laboratory_contact_hours": "0",

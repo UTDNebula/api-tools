@@ -1,61 +1,61 @@
 {
-  "_id": "6972d72a922d8b0bc3a3bce1",
-  "section_number": "001",
-  "course_reference": "6972d72a922d8b0bc3a3bce0",
-  "section_corequisites": null,
-  "academic_session": {
-    "name": "25S",
-    "start_date": "2025-01-21T00:00:00-06:00",
-    "end_date": "2025-05-16T00:00:00-05:00"
-  },
-  "professors": [
-    "6972d72a922d8b0bc3a3bce2"
-  ],
-  "teaching_assistants": [],
-  "internal_class_number": "24043",
-  "instruction_mode": "Face-to-Face",
-  "meetings": [
-    {
-      "start_date": "2025-01-21T00:00:00-06:00",
-      "end_date": "2025-05-09T00:00:00-05:00",
-      "meeting_days": [
-        "Monday",
-        "Wednesday"
-      ],
-      "start_time": "10:00am",
-      "end_time": "11:15am",
-      "modality": "",
-      "location": {
-        "building": "FO",
-        "room": "1.202",
-        "map_uri": "https://locator.utdallas.edu/FO_1.202"
-      }
-    }
-  ],
-  "core_flags": [
-    "050",
-    "090"
-  ],
-  "syllabus_uri": "https://dox.utdallas.edu/syl154931",
-  "grade_distribution": [
-    4,
-    7,
-    9,
-    3,
-    1,
-    1,
-    0,
-    1,
-    2,
-    0,
-    0,
-    0,
-    5,
-    0,
-    0,
-    0,
-    0,
-    0
-  ],
-  "attributes": null
+	"_id": "6972f54d6afb10b361a3e8c4",
+	"section_number": "001",
+	"course_reference": "6972f54d6afb10b361a3e8c3",
+	"section_corequisites": null,
+	"academic_session": {
+		"name": "25S",
+		"start_date": "2025-01-21T00:00:00-06:00",
+		"end_date": "2025-05-16T00:00:00-05:00"
+	},
+	"professors": [
+		"6972f54d6afb10b361a3e8c5"
+	],
+	"teaching_assistants": [],
+	"internal_class_number": "24043",
+	"instruction_mode": "Face-to-Face",
+	"meetings": [
+		{
+			"start_date": "2025-01-21T00:00:00-06:00",
+			"end_date": "2025-05-09T00:00:00-05:00",
+			"meeting_days": [
+				"Monday",
+				"Wednesday"
+			],
+			"start_time": "10:00am",
+			"end_time": "11:15am",
+			"modality": "",
+			"location": {
+				"building": "FO",
+				"room": "1.202",
+				"map_uri": "https://locator.utdallas.edu/FO_1.202"
+			}
+		}
+	],
+	"core_flags": [
+		"050",
+		"090"
+	],
+	"syllabus_uri": "https://dox.utdallas.edu/syl154931",
+	"grade_distribution": [
+		4,
+		7,
+		9,
+		3,
+		1,
+		1,
+		0,
+		1,
+		2,
+		0,
+		0,
+		0,
+		5,
+		0,
+		0,
+		0,
+		0,
+		0
+	],
+	"attributes": null
 }

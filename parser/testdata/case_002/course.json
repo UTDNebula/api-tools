@@ -1,5 +1,5 @@
 {
-	"_id": "67d07ee0c972c18731e23bdf",
+  "_id": "6972f54d6afb10b361a3e8b9",
 	"subject_prefix": "BA",
 	"course_number": "1320",
 	"title": "Business in a Global World",
@@ -15,7 +15,7 @@
 	"corequisites": null,
 	"co_or_pre_requisites": null,
 	"sections": [
-		"67d07ee0c972c18731e23be0"
+      "6972f54d6afb10b361a3e8ba"
 	],
 	"lecture_contact_hours": "3",
 	"laboratory_contact_hours": "0",

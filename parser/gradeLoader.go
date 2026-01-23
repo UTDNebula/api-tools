@@ -58,6 +58,10 @@ func csvToMap(filename string) (map[string][]int, error) {
 		return nil, fmt.Errorf("error parsing %s: %v", filename, err)
 	}
 
+	if len(records) == 0 {
+		return nil, fmt.Errorf("empty CSV file '%s'", filename)
+	}
+
 	indexMap := make(map[string]int)
 	for j, col := range records[0] {
 		switch col {
