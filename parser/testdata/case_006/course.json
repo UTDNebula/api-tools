@@ -1,0 +1,25 @@
+{
+  "_id": "6972d72a922d8b0bc3a3bce0",
+  "subject_prefix": "THEA",
+  "course_number": "1310",
+  "title": "Understanding Theatre",
+  "description": "THEA 1310 - Understanding Theatre  (3 semester credit hours) Lectures, discussions, and performances designed to explore artistic, philosophical, social, historical, and psychological dimensions of the theatrical experience. Topics may include analysis of scripts, the nature of the theater compared to the other performing arts, and the nature of popular entertainments. (3-0) S",
+  "enrollment_reqs": "",
+  "school": "School of Arts, Humanities, and Technology",
+  "credit_hours": "3",
+  "class_level": "Undergraduate",
+  "activity_type": "Lecture",
+  "grading": "Graded - Undergraduate",
+  "internal_course_number": "003909",
+  "prerequisites": null,
+  "corequisites": null,
+  "co_or_pre_requisites": null,
+  "sections": [
+    "6972d72a922d8b0bc3a3bce1"
+  ],
+  "lecture_contact_hours": "3",
+  "laboratory_contact_hours": "0",
+  "offering_frequency": "S",
+  "catalog_year": "24",
+  "attributes": null
+}
