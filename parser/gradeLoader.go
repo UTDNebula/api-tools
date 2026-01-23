@@ -3,17 +3,20 @@ package parser
 import (
 	"encoding/csv"
 	"fmt"
-	"github.com/UTDNebula/api-tools/utils"
 	"log"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/UTDNebula/api-tools/utils"
 )
 
 var (
 	grades          = []string{"A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "F", "W", "P", "CR", "NC", "I"}
 	optionalColumns = []string{"W", "P", "CR", "NC", "I"}
 	requiredColumns = []string{"Section", "Subject", "Catalog Number", "A+"}
+	semesterRegex   = regexp.MustCompile(`[1-9][0-9][USF]`)
 )
 
 func loadGrades(csvDir string) (map[string]map[string][]int, error) {
@@ -23,12 +26,18 @@ func loadGrades(csvDir string) (map[string]map[string][]int, error) {
 	fileNames := utils.GetAllFilesWithExtension(csvDir, ".csv")
 	for _, name := range fileNames {
 
+		semester := semesterRegex.FindString(name)
+		if semester == "" {
+			return gradeMap, fmt.Errorf("invalid name %s, must match format {>10}{F,S,U} i.e. 22F", name)
+		}
+
 		var err error
-		gradeMap[name], err = csvToMap(name)
+		gradeMap[semester], err = csvToMap(name)
 		if err != nil {
 			return gradeMap, fmt.Errorf("error parsing %s: %v", name, err)
 		}
 	}
+
 	return gradeMap, nil
 }
 
@@ -37,6 +46,11 @@ func csvToMap(filename string) (map[string][]int, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error opening CSV file '%s': %v", filename, err)
 	}
+	defer func(file *os.File) {
+		if err := file.Close(); err != nil {
+			log.Printf("failed to close file '%s': %v", filename, err)
+		}
+	}(file)
 
 	reader := csv.NewReader(file)
 	records, err := reader.ReadAll()
@@ -87,10 +101,6 @@ func csvToMap(filename string) (map[string][]int, error) {
 		trimmedSectionNumber := strings.TrimLeft(record[sectionCol], "0")
 		distroKey := record[subjectCol] + record[catalogNumberCol] + trimmedSectionNumber
 		distroMap[distroKey] = intSlice[:]
-	}
-
-	if err := file.Close(); err != nil {
-		return nil, fmt.Errorf("failed to close file '%s': %v", filename, err)
 	}
 
 	return distroMap, nil
