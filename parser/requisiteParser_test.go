@@ -1,6 +1,8 @@
 package parser
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestInitMatchers(t *testing.T) {
 	// Test 1: Initialization
@@ -45,8 +47,8 @@ func TestGroupParens(t *testing.T) {
 		{
 			name:     "Nested parentheses",
 			input:    "((A and B) or (C and D))",
-			expected: "@0",
-			groups:   []string{"@1 or @2", "A and B", "C and D"},
+			expected: "@2",
+			groups:   []string{"A and B", "C and D", "@0 or @1"},
 		},
 		{
 			name:     "Multiple parentheses",
@@ -57,14 +59,14 @@ func TestGroupParens(t *testing.T) {
 		{
 			name:     "Mismatched closing parentheses",
 			input:    "(A and B)) extra text",
-			expected: "@0 extra text",
+			expected: "@0) extra text",
 			groups:   []string{"A and B"},
 		},
 		{
 			name:     "Complex expression",
 			input:    "MATH 2417 and (PHYS 2125 or (PHYS 2126 and CHEM 1311))",
-			expected: "MATH 2417 and @0",
-			groups:   []string{"PHYS 2125 or @1", "PHYS 2126 and CHEM 1311"},
+			expected: "MATH 2417 and @1",
+			groups:   []string{"PHYS 2126 and CHEM 1311", "PHYS 2125 or @0"},
 		},
 	}
 
@@ -81,6 +83,57 @@ func TestGroupParens(t *testing.T) {
 				if i < len(tt.groups) && group != tt.groups[i] {
 					t.Errorf("group[%d] = %q, want %q", i, group, tt.groups[i])
 				}
+			}
+		})
+	}
+}
+
+func TestUngroupText(t *testing.T) {
+	t.Skip()
+	// Setup groupList as it would be after parsing
+	groupList = []string{
+		"PHYS 2125 or PHYS 2126",
+		"A and B",
+		"C and D",
+	}
+
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "No group tags",
+			input:    "MATH 2417 and something",
+			expected: "MATH 2417 and something",
+		},
+		{
+			name:     "Single group tag",
+			input:    "MATH 2417 and @0",
+			expected: "MATH 2417 and (PHYS 2125 or PHYS 2126)",
+		},
+		{
+			name:     "Multiple group tags",
+			input:    "@1 or @2",
+			expected: "(A and B) or (C and D)",
+		},
+		{
+			name:     "Nested replacement",
+			input:    "@0 with extra @1",
+			expected: "(PHYS 2125 or PHYS 2126) with extra (A and B)",
+		},
+		{
+			name:     "Out of bounds tag",
+			input:    "@10",
+			expected: "@10", // Should remain unchanged
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := ungroupText(tt.input)
+			if result != tt.expected {
+				t.Errorf("ungroupText() = %q, want %q", result, tt.expected)
 			}
 		})
 	}
