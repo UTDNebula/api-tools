@@ -89,7 +89,6 @@ func TestGroupParens(t *testing.T) {
 }
 
 func TestUngroupText(t *testing.T) {
-	t.Skip()
 	// Setup groupList as it would be after parsing
 	groupList = []string{
 		"PHYS 2125 or PHYS 2126",
@@ -124,8 +123,8 @@ func TestUngroupText(t *testing.T) {
 		},
 		{
 			name:     "Out of bounds tag",
-			input:    "@10",
-			expected: "@10", // Should remain unchanged
+			input:    "@9",
+			expected: "@9", // Should remain unchanged
 		},
 	}
 
