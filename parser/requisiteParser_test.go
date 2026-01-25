@@ -1,7 +1,11 @@
 package parser
 
 import (
+	"reflect"
 	"testing"
+
+	"github.com/UTDNebula/nebula-api/api/schema"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func TestInitMatchers(t *testing.T) {
@@ -133,6 +137,102 @@ func TestUngroupText(t *testing.T) {
 			result := ungroupText(tt.input)
 			if result != tt.expected {
 				t.Errorf("ungroupText() = %q, want %q", result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestJoinAdjacentOthers(t *testing.T) {
+	testSectionID := primitive.NewObjectID()
+
+	tests := []struct {
+		name       string
+		input      []interface{}
+		joinString string
+		expected   []interface{}
+	}{
+		{
+			name:       "empty input",
+			input:      []interface{}{},
+			joinString: ", ",
+			expected:   []interface{}{},
+		},
+		{
+			name: "single other unchanged",
+			input: []interface{}{
+				*schema.NewOtherRequirement("Only one", ""),
+			},
+			joinString: ", ",
+			expected: []interface{}{
+				*schema.NewOtherRequirement("Only one", ""),
+			},
+		},
+		{
+			name: "adjacent others joined",
+			input: []interface{}{
+				*schema.NewOtherRequirement("First", ""),
+				*schema.NewOtherRequirement("Second", ""),
+				*schema.NewOtherRequirement("Third", ""),
+			},
+			joinString: " or ",
+			expected: []interface{}{
+				*schema.NewOtherRequirement("First or Second or Third", ""),
+			},
+		},
+		{
+			name: "others at start and end separated by non-other",
+			input: []interface{}{
+				*schema.NewOtherRequirement("Start1", ""),
+				*schema.NewOtherRequirement("Start2", ""),
+				schema.NewSectionRequirement(testSectionID),
+				*schema.NewOtherRequirement("End1", ""),
+				*schema.NewOtherRequirement("End2", ""),
+			},
+			joinString: " and ",
+			expected: []interface{}{
+				*schema.NewOtherRequirement("Start1 and Start2", ""),
+				schema.NewSectionRequirement(testSectionID),
+				*schema.NewOtherRequirement("End1 and End2", ""),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := joinAdjacentOthers(tt.input, tt.joinString)
+
+			if len(result) != len(tt.expected) {
+				t.Errorf("expected %d items, got %d", len(tt.expected), len(result))
+				return // Don't continue if lengths don't match
+			}
+
+			// Check each item
+			for i := range result {
+				switch r := result[i].(type) {
+				case schema.OtherRequirement:
+					expected, ok := tt.expected[i].(schema.OtherRequirement)
+					if !ok {
+						t.Errorf("position %d: expected OtherRequirement, got %T", i, tt.expected[i])
+						continue
+					}
+					if r.Description != expected.Description {
+						t.Errorf("position %d: description mismatch\n  got: %q\n  want: %q",
+							i, r.Description, expected.Description)
+					}
+				case *schema.SectionRequirement:
+					expected, ok := tt.expected[i].(*schema.SectionRequirement)
+					if !ok {
+						t.Errorf("position %d: expected *SectionRequirement, got %T", i, tt.expected[i])
+						continue
+					}
+					if r.SectionReference != expected.SectionReference {
+						t.Errorf("position %d: section reference mismatch", i)
+					}
+				default:
+					if !reflect.DeepEqual(result[i], tt.expected[i]) {
+						t.Errorf("position %d: item mismatch", i)
+					}
+				}
 			}
 		})
 	}
