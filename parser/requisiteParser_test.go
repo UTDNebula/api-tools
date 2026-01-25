@@ -237,3 +237,46 @@ func TestJoinAdjacentOthers(t *testing.T) {
 		})
 	}
 }
+
+func TestReqIsThrowaway(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    interface{}
+		expected bool
+	}{
+		{
+			name:     "throwaway requirement returns true",
+			input:    schema.Requirement{Type: "throwaway"},
+			expected: true,
+		},
+		{
+			name:     "non-throwaway requirement returns false",
+			input:    schema.Requirement{Type: "course"},
+			expected: false,
+		},
+		{
+			name:     "not a requirement returns false",
+			input:    "not a requirement",
+			expected: false,
+		},
+		{
+			name:     "nil returns false",
+			input:    nil,
+			expected: false,
+		},
+		{
+			name:     "other requirement type returns false",
+			input:    schema.Requirement{Type: "section"},
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := reqIsThrowaway(tt.input)
+			if result != tt.expected {
+				t.Errorf("reqIsThrowaway(%v) = %v, want %v", tt.input, result, tt.expected)
+			}
+		})
+	}
+}
