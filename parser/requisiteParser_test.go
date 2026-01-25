@@ -2,6 +2,7 @@ package parser
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/UTDNebula/nebula-api/api/schema"
@@ -276,6 +277,93 @@ func TestReqIsThrowaway(t *testing.T) {
 			result := reqIsThrowaway(tt.input)
 			if result != tt.expected {
 				t.Errorf("reqIsThrowaway(%v) = %v, want %v", tt.input, result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestMakeSubgroup(t *testing.T) {
+	tests := []struct {
+		name           string
+		group          string
+		subtext        string
+		requisite      interface{}
+		expectedGroup  string
+		expectedReqLen int
+	}{
+		{
+			name:           "basic text replacement",
+			group:          "Complete MATH 2413",
+			subtext:        "MATH 2413",
+			requisite:      schema.CourseRequirement{ClassReference: "MATH 2413"},
+			expectedGroup:  "@0",
+			expectedReqLen: 1,
+		},
+		{
+			name:           "choice requisite replacement",
+			group:          "Credit cannot be received for both courses, @0 and @1",
+			subtext:        "Credit cannot be received for both courses, @0 and @1",
+			requisite:      schema.ChoiceRequirement{},
+			expectedGroup:  "@2",
+			expectedReqLen: 3,
+		},
+		{
+			name:           "core requirement replacement",
+			group:          "Completion of an 010 core course",
+			subtext:        "Completion of an 010 core course",
+			requisite:      schema.CourseRequirement{ClassReference: "010", MinimumGrade: "B"},
+			expectedGroup:  "@0",
+			expectedReqLen: 1,
+		},
+		{
+			name:           "multiple occurrence replacement",
+			group:          "CS 2336 and CS 2336 lab",
+			subtext:        "CS 2336",
+			requisite:      schema.CourseRequirement{ClassReference: "CS 2336"},
+			expectedGroup:  "@0 and @0 lab",
+			expectedReqLen: 1,
+		},
+		{
+			name:           "subtext not found",
+			group:          "Complete CHEM 1311",
+			subtext:        "PHYS 2325",
+			requisite:      schema.CourseRequirement{ClassReference: "PHYS 2325"},
+			expectedGroup:  "Complete CHEM 1311",
+			expectedReqLen: 1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Reset global variables
+			requisiteList = []interface{}{}
+			groupList = []string{}
+
+			// Call the function
+			result := makeSubgroup(tt.group, tt.subtext, tt.requisite)
+
+			// Check the returned group
+			if result != tt.expectedGroup {
+				t.Errorf("expected group %q, got %q", tt.expectedGroup, result)
+			}
+
+			// Check the requisite list length
+			if len(requisiteList) != tt.expectedReqLen {
+				t.Errorf("expected %d requisites, got %d", tt.expectedReqLen, len(requisiteList))
+			}
+
+			// Check if requisite was added
+			if tt.subtext != "" && strings.Contains(tt.group, tt.subtext) && len(requisiteList) > 0 {
+				if requisiteList[len(requisiteList)-1] != tt.requisite {
+					t.Errorf("requisite not properly added to list")
+				}
+			}
+
+			// Check if group was added to groupList
+			if len(groupList) != 1 {
+				t.Errorf("expected 1 group in groupList, got %d", len(groupList))
+			} else if groupList[0] != result {
+				t.Errorf("groupList doesn't contain the result")
 			}
 		})
 	}
