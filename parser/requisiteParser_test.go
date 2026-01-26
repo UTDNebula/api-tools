@@ -296,14 +296,25 @@ func TestMakeSubgroup(t *testing.T) {
 			group:          "Complete MATH 2413",
 			subtext:        "MATH 2413",
 			requisite:      schema.CourseRequirement{ClassReference: "MATH 2413"},
-			expectedGroup:  "@0",
+			expectedGroup:  "Complete @0",
 			expectedReqLen: 1,
 		},
 		{
-			name:           "choice requisite replacement",
-			group:          "Credit cannot be received for both courses, @0 and @1",
-			subtext:        "Credit cannot be received for both courses, @0 and @1",
-			requisite:      schema.ChoiceRequirement{},
+			name:    "choice requisite replacement",
+			group:   "Credit cannot be received for both courses, @0 and @1",
+			subtext: "Credit cannot be received for both courses, @0 and @1",
+			requisite: schema.ChoiceRequirement{
+				Requirement: schema.Requirement{Type: "choice"},
+				Choices: &schema.CollectionRequirement{
+					Requirement: schema.Requirement{Type: "collection"},
+					Name:        "",
+					Required:    1,
+					Options: []interface{}{
+						schema.NewCourseRequirement("CSCI0190", ""),
+						schema.NewCourseRequirement("CSCI0200", ""),
+					},
+				},
+			},
 			expectedGroup:  "@2",
 			expectedReqLen: 3,
 		},
@@ -338,6 +349,14 @@ func TestMakeSubgroup(t *testing.T) {
 			// Reset global variables
 			requisiteList = []interface{}{}
 			groupList = []string{}
+
+			// For the choice requisite test, pre-populate with 2 dummy requisites
+			if tt.name == "choice requisite replacement" {
+				requisiteList = []interface{}{
+					schema.CourseRequirement{ClassReference: "DUMMY1", MinimumGrade: ""},
+					schema.CourseRequirement{ClassReference: "DUMMY2", MinimumGrade: ""},
+				}
+			}
 
 			// Call the function
 			result := makeSubgroup(tt.group, tt.subtext, tt.requisite)
