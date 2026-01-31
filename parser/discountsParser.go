@@ -38,7 +38,7 @@ func ParseDiscounts(inDir string, outDir string) {
 
 	var discounts []schema.DiscountProgram
 	var currentCategory string
-	
+
 	// Find all discount items - they're in div.cditem containers
 	content.Find("h3.cdpview, div.cditem").Each(func(i int, s *goquery.Selection) {
 		// Check if this is a category header
@@ -46,7 +46,7 @@ func ParseDiscounts(inDir string, outDir string) {
 			currentCategory = strings.TrimSpace(s.Text())
 			return
 		}
-		
+
 		// This is a discount entry
 		discount := parseDiscountItem(s, currentCategory)
 		if discount != nil && isValidDiscount(discount) {
@@ -71,16 +71,16 @@ func parseDiscountItem(s *goquery.Selection, category string) *schema.DiscountPr
 		Id:       primitive.NewObjectID(),
 		Category: category,
 	}
-	
+
 	// The structure has two columns: business info and discount info
 	cols := s.Find("div.col-sm")
 	if cols.Length() != 2 {
 		return nil
 	}
-	
+
 	// First column: business info
 	businessCol := cols.Eq(0)
-	
+
 	// Get business name from p.h5
 	businessName := businessCol.Find("p.h5").First()
 	if businessName.Length() > 0 {
@@ -95,7 +95,7 @@ func parseDiscountItem(s *goquery.Selection, category string) *schema.DiscountPr
 			discount.Business = cleanText(businessName.Text())
 		}
 	}
-	
+
 	// Extract address, phone, email from remaining paragraphs
 	var addressLines []string
 	businessCol.Find("p").Each(func(j int, p *goquery.Selection) {
@@ -103,12 +103,12 @@ func parseDiscountItem(s *goquery.Selection, category string) *schema.DiscountPr
 		if p.HasClass("h5") {
 			return
 		}
-		
+
 		text := cleanText(p.Text())
 		if text == "" {
 			return
 		}
-		
+
 		// Check for email
 		emailLink := p.Find("a[href^='mailto:']").First()
 		if emailLink.Length() > 0 {
@@ -118,13 +118,13 @@ func parseDiscountItem(s *goquery.Selection, category string) *schema.DiscountPr
 		} else if strings.Contains(text, "@") {
 			discount.Email = extractEmail(text)
 		}
-		
+
 		// If it's not email and doesn't look like a single name, treat as address
 		if !strings.Contains(text, "@") && len(text) > 10 {
 			addressLines = append(addressLines, text)
 		}
 	})
-	
+
 	// Extract phone from text nodes (they're often br-separated, not in p tags)
 	businessHTML, _ := businessCol.Html()
 	lines := strings.Split(businessHTML, "<br")
@@ -135,13 +135,13 @@ func parseDiscountItem(s *goquery.Selection, category string) *schema.DiscountPr
 		if line == "" {
 			continue
 		}
-		
+
 		// Check if it's a phone number
 		if containsPhonePattern(line) || isNumericPhone(line) {
 			discount.Phone = line
 		}
 	}
-	
+
 	// Join address lines and clean up newlines
 	if len(addressLines) > 0 {
 		addr := strings.Join(addressLines, ", ")
@@ -162,10 +162,10 @@ func parseDiscountItem(s *goquery.Selection, category string) *schema.DiscountPr
 			discountTexts = append(discountTexts, text)
 		}
 	})
-	
+
 	// Join discount texts and keep newlines for multi-paragraph descriptions
 	discount.Discount = strings.Join(discountTexts, "\n")
-	
+
 	return discount
 }
 
@@ -207,7 +207,7 @@ func isValidDiscount(d *schema.DiscountProgram) bool {
 	if d.Business == "" {
 		return false
 	}
-	
+
 	// Filter out obvious non-businesses
 	businessLower := strings.ToLower(d.Business)
 	invalidNames := []string{"business", "discount", "categories", "vendors", "contact"}
@@ -216,11 +216,11 @@ func isValidDiscount(d *schema.DiscountProgram) bool {
 			return false
 		}
 	}
-	
+
 	// Must have at least a discount or some contact info
-	hasContent := d.Discount != "" || d.Email != "" || d.Phone != "" || 
-	              d.Website != "" || d.Address != ""
-	
+	hasContent := d.Discount != "" || d.Email != "" || d.Phone != "" ||
+		d.Website != "" || d.Address != ""
+
 	return hasContent
 }
 
@@ -233,7 +233,7 @@ func containsPhonePattern(s string) bool {
 // extractEmail extracts email from text
 func extractEmail(text string) string {
 	text = strings.TrimSpace(text)
-	
+
 	// Find @ symbol and extract email
 	if idx := strings.Index(text, "@"); idx != -1 {
 		// Find start and end of email
@@ -247,7 +247,7 @@ func extractEmail(text string) string {
 		}
 		return text[start:end]
 	}
-	
+
 	return text
 }
 
@@ -266,10 +266,10 @@ func writeDiscountsJSON(filepath string, data []schema.DiscountProgram) error {
 		return err
 	}
 	defer fptr.Close()
-	
+
 	encoder := json.NewEncoder(fptr)
 	encoder.SetIndent("", "\t")
 	encoder.SetEscapeHTML(false) // Don't escape HTML characters like & to \u0026
-	
+
 	return encoder.Encode(data)
 }
