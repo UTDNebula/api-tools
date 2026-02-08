@@ -119,7 +119,7 @@ func valDuplicateSections(section1 *schema.Section, section2 *schema.Section) {
 
 // Validate section reference to professor
 func valSectionReferenceProf(section *schema.Section, profs map[schema.ProfessorKey]*schema.Professor) {
-	for _, profKey := range section.Professors {
+	for _, profKey := range section.Professor_keys {
 		professor, exists := profs[profKey]
 		// validate if the section references to some prof not in the parsed professors
 		if !exists {
@@ -129,7 +129,7 @@ func valSectionReferenceProf(section *schema.Section, profs map[schema.Professor
 		}
 
 		// validate if the referenced professor references back to section
-		if !slices.Contains(professor.Sections, section.Key) {
+		if !slices.Contains(professor.Section_keys, section.Key) {
 			log.Printf("Inconsistent professor reference found for section ID %s! The section references the professor, but not vice-versa!", section.Id)
 			log.Printf("Referenced professor ID: %s", professor.Id)
 			log.Panic("Sections failed to validate!")

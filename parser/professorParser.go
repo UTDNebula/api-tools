@@ -36,7 +36,7 @@ func parseProfessors(sectionId schema.SectionKey, rowInfo map[string]*goquery.Se
 
 		prof, profExists := Professors[profKey]
 		if profExists {
-			prof.Sections = append(prof.Sections, sectionId)
+			prof.Section_keys = append(prof.Section_keys, sectionId)
 			profRefs = append(profRefs, professorKey)
 			continue
 		}
@@ -48,7 +48,7 @@ func parseProfessors(sectionId schema.SectionKey, rowInfo map[string]*goquery.Se
 		prof.Key = professorKey
 		prof.Titles = []string{utils.TrimWhitespace(match[2])}
 		prof.Email = utils.TrimWhitespace(match[3])
-		prof.Sections = []schema.SectionKey{sectionId}
+		prof.Section_keys = []schema.SectionKey{sectionId}
 		profRefs = append(profRefs, professorKey)
 		Professors[profKey] = prof
 		ProfessorIDMap[prof.Id] = profKey
