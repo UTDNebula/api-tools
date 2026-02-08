@@ -174,7 +174,7 @@ func TestCourseReferencePass(t *testing.T) {
 // Test section reference to professor, designed for pass case
 // TestSectionReferenceProfPass ensures section professor references are mutual.
 func TestSectionReferenceProfPass(t *testing.T) {
-	// Build profIDMap & profs
+	// Build profs maps
 	profs := make(map[schema.ProfessorKey]*schema.Professor)
 
 	for _, professor := range testProfessors {
@@ -190,7 +190,6 @@ func TestSectionReferenceProfPass(t *testing.T) {
 
 	defer func() {
 		logOutput := logBuffer.String()
-
 		if logOutput != "" {
 			t.Errorf("Expected nothing printed in log")
 		}
@@ -261,7 +260,6 @@ func TestSectionReferenceCourse(t *testing.T) {
 
 	defer func() {
 		logOutput := logBuffer.String()
-
 		if logOutput != "" {
 			t.Errorf("Expected nothing printed in log")
 		}
@@ -292,6 +290,14 @@ func testDuplicateFail(objType string, ix int, t *testing.T) {
 	case "course":
 		failCourse := testCourses[ix]
 
+		failCourseKey := schema.CourseKey {
+			Subject_prefix: failCourse.Subject_prefix,
+			Course_number: failCourse.Course_number,
+			Catalog_year: failCourse.Catalog_year,
+		}
+
+		failCourse.Key = failCourseKey
+
 		// list of msgs it must print
 		expectedMsgs = []string{
 			fmt.Sprintf("Duplicate course found for %s%s!", failCourse.Subject_prefix, failCourse.Course_number),
@@ -301,6 +307,16 @@ func testDuplicateFail(objType string, ix int, t *testing.T) {
 	case "section":
 		failSection := testSections[ix]
 
+		failSectionKey := schema.SectionKey {
+			Section_number: failSection.Section_number,
+			Term: failSection.Academic_session.Name,
+			Course_number: failSection.Course_key.Course_number,
+			Catalog_year: failSection.Course_key.Catalog_year,
+			Subject_prefix: failSection.Course_key.Subject_prefix,
+		}
+
+		failSection.Key = failSectionKey
+
 		expectedMsgs = []string{
 			"Duplicate section found!",
 			fmt.Sprintf("Section 1: %v\n\nSection 2: %v", failSection, failSection),
@@ -308,6 +324,13 @@ func testDuplicateFail(objType string, ix int, t *testing.T) {
 		panicMsg = "Sections failed to validate!"
 	case "professor":
 		failProf := testProfessors[ix]
+
+		failProfKey := schema.ProfessorKey {
+			First_name: failProf.First_name,
+			Last_name: failProf.Last_name,
+		}
+
+		failProf.Key = failProfKey
 
 		expectedMsgs = []string{
 			"Duplicate professor found!",
@@ -340,11 +363,39 @@ func testDuplicateFail(objType string, ix int, t *testing.T) {
 	// Run func
 	switch objType {
 	case "course":
-		valDuplicateCourses(testCourses[ix], testCourses[ix])
+		duplicateCourse := testCourses[ix]
+
+		duplicateKey := schema.CourseKey {
+			Subject_prefix: duplicateCourse.Subject_prefix,
+			Course_number: duplicateCourse.Course_number,
+			Catalog_year: duplicateCourse.Catalog_year,
+		}
+
+		duplicateCourse.Key = duplicateKey
+		valDuplicateCourses(duplicateCourse, duplicateCourse)
 	case "section":
-		valDuplicateSections(testSections[ix], testSections[ix])
+		duplicateSection := testSections[ix]
+
+		duplicateKey := schema.SectionKey {
+			Section_number: duplicateSection.Section_number,
+			Term: duplicateSection.Academic_session.Name,
+			Course_number: duplicateSection.Course_key.Course_number,
+			Catalog_year: duplicateSection.Course_key.Catalog_year,
+			Subject_prefix: duplicateSection.Course_key.Subject_prefix,
+		}
+
+		duplicateSection.Key = duplicateKey
+		valDuplicateSections(duplicateSection, duplicateSection)
 	case "professor":
-		valDuplicateProfs(testProfessors[ix], testProfessors[ix])
+		duplicateProfessor := testProfessors[ix]
+
+		duplicateKey := schema.ProfessorKey {
+			First_name: duplicateProfessor.First_name,
+			Last_name: duplicateProfessor.Last_name,
+		}
+
+		duplicateProfessor.Key = duplicateKey
+		valDuplicateProfs(duplicateProfessor, duplicateProfessor)
 	}
 }
 
@@ -369,11 +420,64 @@ func testDuplicatePass(objType string, ix1 int, ix2 int, t *testing.T) {
 	// Choose pair of objects which are not duplicate
 	switch objType {
 	case "course":
-		valDuplicateCourses(testCourses[ix1], testCourses[ix2])
+		firstCourse := testCourses[ix1]
+		secondCourse := testCourses[ix2]
+
+		firstKey := schema.CourseKey {
+			Subject_prefix: firstCourse.Subject_prefix,
+			Course_number: firstCourse.Course_number,
+			Catalog_year: firstCourse.Catalog_year,
+		}
+
+		secondKey := schema.CourseKey {
+			Subject_prefix: secondCourse.Subject_prefix,
+			Course_number: secondCourse.Course_number,
+			Catalog_year: secondCourse.Catalog_year,
+		}
+
+		firstCourse.Key = firstKey
+		secondCourse.Key = secondKey
+		valDuplicateCourses(firstCourse, secondCourse)
 	case "section":
-		valDuplicateSections(testSections[ix1], testSections[ix2])
+		firstSection := testSections[ix1]
+		secondSection := testSections[ix2]
+
+		firstKey := schema.SectionKey {
+			Section_number: firstSection.Section_number,
+			Term: firstSection.Academic_session.Name,
+			Course_number: firstSection.Course_key.Course_number,
+			Catalog_year: firstSection.Course_key.Catalog_year,
+			Subject_prefix: firstSection.Course_key.Subject_prefix,
+		}
+
+		secondKey := schema.SectionKey {
+			Section_number: secondSection.Section_number,
+			Term: secondSection.Academic_session.Name,
+			Course_number: secondSection.Course_key.Course_number,
+			Catalog_year: secondSection.Course_key.Catalog_year,
+			Subject_prefix: secondSection.Course_key.Subject_prefix,
+		}
+
+		firstSection.Key = firstKey
+		secondSection.Key = secondKey
+		valDuplicateSections(firstSection, secondSection)
 	case "professor":
-		valDuplicateProfs(testProfessors[ix1], testProfessors[ix2])
+		firstProfessor := testProfessors[ix1]
+		secondProfessor := testProfessors[ix2]
+
+		firstKey := schema.ProfessorKey {
+			First_name: firstProfessor.First_name,
+			Last_name: firstProfessor.Last_name,
+		}
+
+		secondKey := schema.ProfessorKey {
+			First_name: secondProfessor.First_name,
+			Last_name: secondProfessor.Last_name,
+		}
+
+		firstProfessor.Key = firstKey
+		secondProfessor.Key = secondKey
+		valDuplicateProfs(firstProfessor, secondProfessor)
 	}
 }
 

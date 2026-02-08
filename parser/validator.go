@@ -110,7 +110,7 @@ func valCourseReference(course *schema.Course, sections map[schema.SectionKey]*s
 
 // Validate if the sections are duplicate
 func valDuplicateSections(section1 *schema.Section, section2 *schema.Section) {
-	if section1.Key == section2.Key && section1.Academic_session == section2.Academic_session {
+	if section1.Key == section2.Key {
 		log.Print("Duplicate section found!")
 		log.Printf("Section 1: %v\n\nSection 2: %v", section1, section2)
 		log.Panic("Sections failed to validate!")
