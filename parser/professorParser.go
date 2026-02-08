@@ -45,12 +45,13 @@ func parseProfessors(sectionId schema.SectionKey, rowInfo map[string]*goquery.Se
 		prof.Id = primitive.NewObjectID()
 		prof.First_name = firstName
 		prof.Last_name = lastName
+		prof.Key = professorKey
 		prof.Titles = []string{utils.TrimWhitespace(match[2])}
 		prof.Email = utils.TrimWhitespace(match[3])
 		prof.Sections = []schema.SectionKey{sectionId}
 		profRefs = append(profRefs, professorKey)
 		Professors[profKey] = prof
-		// ProfessorIDMap[professorKey] = profKey
+		ProfessorIDMap[prof.Id] = profKey
 	}
 	return profRefs
 }

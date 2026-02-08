@@ -6,7 +6,6 @@ import (
 
 	"github.com/UTDNebula/api-tools/utils"
 	"github.com/UTDNebula/nebula-api/api/schema"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // Main validation, putting everything together
@@ -27,6 +26,11 @@ func validate() {
 	courseByKey := make(map[schema.CourseKey]*schema.Course)
 	for _, course := range Courses {
 		courseByKey[course.Key] = course
+	}
+
+	profByKey := make(map[schema.ProfessorKey]*schema.Professor)
+	for _, professor := range Professors {
+		profByKey[professor.Key] = professor
 	}
 
 	log.Printf("\nValidating courses...")
@@ -54,7 +58,7 @@ func validate() {
 			valDuplicateSections(section1, section2)
 		}
 		// Make sure section isn't referencing any nonexistent professors, and that section-professor references are consistent both ways
-		valSectionReferenceProf(section1, Professors, ProfessorIDMap)
+		valSectionReferenceProf(section1, profByKey)
 
 		// Make sure section isn't referencing a nonexistant course
 		valSectionReferenceCourse(section1, courseByKey)
@@ -114,20 +118,20 @@ func valDuplicateSections(section1 *schema.Section, section2 *schema.Section) {
 }
 
 // Validate section reference to professor
-func valSectionReferenceProf(section *schema.Section, profs map[string]*schema.Professor, profIDMap map[primitive.ObjectID]string) {
-	for _, profID := range section.Professors {
-		professorKey, exists := profIDMap[profID]
+func valSectionReferenceProf(section *schema.Section, profs map[schema.ProfessorKey]*schema.Professor) {
+	for _, profKey := range section.Professors {
+		professor, exists := profs[profKey]
 		// validate if the section references to some prof not in the parsed professors
 		if !exists {
 			log.Printf("Nonexistent professor reference found for section ID %s!", section.Id)
-			log.Printf("Referenced professor ID: %s", profID)
+			log.Printf("Referenced professor ID: %s", professor.Id)
 			log.Panic("Sections failed to validate!")
 		}
 
 		// validate if the referenced professor references back to section
-		if !slices.Contains(profs[professorKey].Sections, section.Id) {
+		if !slices.Contains(professor.Sections, section.Key) {
 			log.Printf("Inconsistent professor reference found for section ID %s! The section references the professor, but not vice-versa!", section.Id)
-			log.Printf("Referenced professor ID: %s", profID)
+			log.Printf("Referenced professor ID: %s", professor.Id)
 			log.Panic("Sections failed to validate!")
 		}
 	}
@@ -146,7 +150,7 @@ func valSectionReferenceCourse(section *schema.Section, coursesByKey map[schema.
 
 // Validate if the professors are duplicate
 func valDuplicateProfs(prof1 *schema.Professor, prof2 *schema.Professor) {
-	if prof1.First_name == prof2.First_name && prof1.Last_name == prof2.Last_name && prof1.Profile_uri == prof2.Profile_uri {
+	if prof1.Key == prof2.Key && prof1.Profile_uri == prof2.Profile_uri {
 		log.Printf("Duplicate professor found!")
 		log.Printf("Professor 1: %v\n\nProfessor 2: %v", prof1, prof2)
 		log.Panic("Professors failed to validate!")
