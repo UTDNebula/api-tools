@@ -205,7 +205,7 @@ func TestSectionReferenceProfPass(t *testing.T) {
 
 // Test section reference to professors, designed for fail case
 // TestSectionReferenceProfFail catches missing professor back-references.
-// If we're using compound keys, this is is not needed anymore
+// If we're using compound keys, this is is not needed anymore I think
 
 // func TestSectionReferenceProfFail(t *testing.T) {
 // 	profIDMap := make(map[primitive.ObjectID]string)
@@ -260,6 +260,7 @@ func TestSectionReferenceCourse(t *testing.T) {
 
 	defer func() {
 		logOutput := logBuffer.String()
+		fmt.Printf("test: %v\n", logOutput)
 		if logOutput != "" {
 			t.Errorf("Expected nothing printed in log")
 		}

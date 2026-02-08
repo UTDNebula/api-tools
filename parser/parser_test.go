@@ -361,7 +361,7 @@ func TestParse(t *testing.T) {
 			if outputProfessor, ok := ProfessorsByKey[key]; ok {
 
 				diff := cmp.Diff(expectedProfessor, outputProfessor,
-					cmpopts.IgnoreFields(schema.Professor{}, "Id"),
+					cmpopts.IgnoreFields(schema.Professor{}, "Id", "Key", "Section_keys"),
 					cmp.Transformer("Sections", func(sections []primitive.ObjectID) []string {
 						result := make([]string, 0, len(sections))
 						for _, id := range sections {
@@ -411,7 +411,7 @@ func TestParse(t *testing.T) {
 		t.Run(key, func(t *testing.T) {
 			if outputSection, ok := SectionsByClass[key]; ok {
 				diff := cmp.Diff(expectedSection, outputSection,
-					cmpopts.IgnoreFields(schema.Section{}, "Id", "Key", "Course_key"),
+					cmpopts.IgnoreFields(schema.Section{}, "Id", "Key", "Course_key", "Professor_keys"),
 					cmp.Transformer("Professors", func(profIds []primitive.ObjectID) []string {
 						result := make([]string, 0, len(profIds))
 						for _, id := range profIds {
