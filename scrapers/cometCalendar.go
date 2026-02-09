@@ -19,7 +19,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-const CAL_URL string = "https://calendar.utdallas.edu/api/2/events"
+const COMET_CALENDAR_URL string = "https://calendar.utdallas.edu/api/2/events"
 
 // RawEvent mirrors the nested event payload returned by the calendar API.
 type RawEvent struct {
@@ -66,16 +66,16 @@ func ScrapeCometCalendar(outDir string) {
 
 			calendarEvents = append(calendarEvents, schema.Event{
 				Id:                 primitive.NewObjectID(),
-				Summary:            convert[string](rawEvent.Event["title"]),
+				Summary:            to[string](rawEvent.Event["title"]),
 				Location:           getEventLocation(rawEvent),
 				StartTime:          startTime,
 				EndTime:            endTime,
-				Description:        convert[string](rawEvent.Event["description_text"]),
+				Description:        to[string](rawEvent.Event["description_text"]),
 				EventType:          eventTypes,
 				TargetAudience:     targetAudiences,
 				Topic:              eventTopics,
 				EventTags:          tags,
-				EventWebsite:       convert[string](rawEvent.Event["url"]),
+				EventWebsite:       to[string](rawEvent.Event["url"]),
 				Department:         departments,
 				ContactName:        contactInfo[0],
 				ContactEmail:       contactInfo[1],
@@ -94,10 +94,10 @@ func ScrapeCometCalendar(outDir string) {
 	log.Printf("Finished scraping %d events successfully!\n\n", len(calendarEvents))
 }
 
-// scrapeAndUnmarshal fetches a calendar page and decodes it into data.
+// callAndUnmarshal fetches a calendar page and decodes it into data.
 func callAndUnmarshal(client *http.Client, page int, data *APICalendarResponse) error {
 	// Call API to get the byte data
-	calendarUrl := fmt.Sprintf("%s?days=365&pp=100&page=%d", CAL_URL, page)
+	calendarUrl := fmt.Sprintf("%s?days=365&pp=100&page=%d", COMET_CALENDAR_URL, page)
 	request, err := http.NewRequest("GET", calendarUrl, nil)
 	if err != nil {
 		return err
@@ -130,24 +130,20 @@ func callAndUnmarshal(client *http.Client, page int, data *APICalendarResponse) 
 
 // getTime parses the start and end time of the event
 func getTime(event RawEvent) (time.Time, time.Time) {
-	instance := convert[map[string]any](
-		convert[map[string]any](
-			convert[[]any](event.Event["event_instances"])[0])["event_instance"])
+	instance := to[map[string]any](to[map[string]any](to[[]any](event.Event["event_instances"])[0])["event_instance"])
 
 	// Converts RFC3339 timestamp string to time.Time
-	startTime, err := time.Parse(time.RFC3339, convert[string](instance["start"]))
+	startTime, err := time.Parse(time.RFC3339, to[string](instance["start"]))
 	if err != nil {
 		panic(err)
 	}
 
-	var endTime time.Time
-	if convert[string](instance["end"]) != "" {
-		endTime, err = time.Parse(time.RFC3339, convert[string](instance["end"]))
+	endTime := startTime
+	if to[string](instance["end"]) != "" {
+		endTime, err = time.Parse(time.RFC3339, to[string](instance["end"]))
 		if err != nil {
 			panic(err)
 		}
-	} else {
-		endTime = startTime
 	}
 
 	return startTime, endTime
@@ -155,10 +151,9 @@ func getTime(event RawEvent) (time.Time, time.Time) {
 
 // getEventLocation parses the location of the event
 func getEventLocation(event RawEvent) string {
-	building := convert[string](event.Event["location_name"])
-	room := convert[string](event.Event["room_number"])
+	building := to[string](event.Event["location_name"])
+	room := to[string](event.Event["room_number"])
 	location := strings.Trim(fmt.Sprintf("%s, %s", building, room), " ,")
-
 	return location
 }
 
@@ -168,21 +163,21 @@ func getFilters(event RawEvent) ([]string, []string, []string) {
 	audiences := []string{}
 	topics := []string{}
 
-	filters := convert[map[string]any](event.Event["filters"])
+	filters := to[map[string]any](event.Event["filters"])
 
-	rawTypes := convert[[]any](filters["event_types"])
+	rawTypes := to[[]any](filters["event_types"])
 	for _, rawType := range rawTypes {
-		types = append(types, convert[string](convert[map[string]any](rawType)["name"]))
+		types = append(types, to[string](to[map[string]any](rawType)["name"]))
 	}
 
-	rawAudiences := convert[[]any](filters["event_target_audience"])
+	rawAudiences := to[[]any](filters["event_target_audience"])
 	for _, audience := range rawAudiences {
-		audiences = append(audiences, convert[string](convert[map[string]any](audience)["name"]))
+		audiences = append(audiences, to[string](to[map[string]any](audience)["name"]))
 	}
 
-	rawTopics := convert[[]any](filters["event_topic"])
+	rawTopics := to[[]any](filters["event_topic"])
 	for _, topic := range rawTopics {
-		topics = append(topics, convert[string](convert[map[string]any](topic)["name"]))
+		topics = append(topics, to[string](to[map[string]any](topic)["name"]))
 	}
 
 	return types, audiences, topics
@@ -193,14 +188,14 @@ func getDepartmentsAndTags(event RawEvent) ([]string, []string) {
 	departments := []string{}
 	tags := []string{}
 
-	rawTags := convert[[]any](event.Event["tags"])
+	rawTags := to[[]any](event.Event["tags"])
 	for _, tag := range rawTags {
-		tags = append(tags, convert[string](tag))
+		tags = append(tags, to[string](tag))
 	}
 
-	rawDeparments := convert[[]any](event.Event["departments"])
+	rawDeparments := to[[]any](event.Event["departments"])
 	for _, deparment := range rawDeparments {
-		departments = append(departments, convert[string](convert[map[string]any](deparment)["name"]))
+		departments = append(departments, to[string](to[map[string]any](deparment)["name"]))
 	}
 
 	return departments, tags
@@ -211,20 +206,20 @@ func getContactInfo(event RawEvent) [3]string {
 	// Note that some events won't have contact phone number
 	contactInfo := [3]string{}
 
-	rawContactInfo := convert[map[string]any](event.Event["custom_fields"])
+	rawContactInfo := to[map[string]any](event.Event["custom_fields"])
 	for i, infoField := range []string{
 		"contact_information_name",
 		"contact_information_email",
 		"contact_information_phone",
 	} {
-		contactInfo[i] = convert[string](rawContactInfo[infoField])
+		contactInfo[i] = to[string](rawContactInfo[infoField])
 	}
 
 	return contactInfo
 }
 
-// convert() attempts to convert data into types for this scraper
-func convert[T []any | map[string]any | string](data any) T {
+// to attempts to convert data into types for this scraper, or return nil value
+func to[T []any | map[string]any | string](data any) T {
 	if newTypedData, ok := data.(T); ok {
 		return newTypedData
 	}
