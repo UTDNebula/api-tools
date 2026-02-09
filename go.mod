@@ -11,7 +11,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/valyala/fastjson v1.6.4
 	go.mongodb.org/mongo-driver v1.17.3
-	golang.org/x/net v0.43.0
+	golang.org/x/net v0.45.0
 	google.golang.org/genai v1.32.0
 )
 

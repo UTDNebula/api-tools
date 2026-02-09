@@ -121,7 +121,7 @@ func callAndUnmarshal(client *http.Client, page int, data *APICalendarResponse) 
 	if _, err = buffer.ReadFrom(response.Body); err != nil {
 		return err
 	}
-	if err = json.Unmarshal(buffer.Bytes(), &data); err != nil {
+	if err = json.Unmarshal(buffer.Bytes(), data); err != nil {
 		return err
 	}
 
