@@ -36,6 +36,8 @@ func main() {
 
 	// Flag for profile scraping
 	scrapeProfiles := flag.Bool("profiles", false, "Alongside -scrape, signifies that professor profiles should be scraped.")
+	// Flag for discount programs scraping
+	scrapeDiscounts := flag.Bool("discounts", false, "Alongside -scrape, signifies that discount programs should be scraped.")
 	// Flag for calendar scraping and parsing
 	cometCalendar := flag.Bool("cometCalendar", false, "Alongside -scrape or -parse, signifies that the Comet Calendar should be scraped/parsed.")
 	// Flag for astra scraping and parsing
@@ -104,6 +106,8 @@ func main() {
 				log.Panic("No term specified for coursebook scraping! Use -term to specify.")
 			}
 			scrapers.ScrapeCoursebook(*term, *startPrefix, *outDir, *resume)
+		case *scrapeDiscounts:
+			scrapers.ScrapeDiscounts(*outDir)
 		case *cometCalendar:
 			scrapers.ScrapeCometCalendar(*outDir)
 		case *astra:
@@ -129,6 +133,8 @@ func main() {
 			parser.ParseMapLocations(*inDir, *outDir)
 		case *academicCalendars:
 			parser.ParseAcademicCalendars(*inDir, *outDir)
+		case *scrapeDiscounts:
+			parser.ParseDiscounts(*inDir, *outDir)
 		default:
 			parser.Parse(*inDir, *outDir, *csvDir, *skipValidation)
 		}
