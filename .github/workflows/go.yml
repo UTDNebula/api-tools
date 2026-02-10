@@ -30,6 +30,9 @@ jobs:
     - name: Check
       run: make check
 
+    - name: Test
+      run: make test
+
     - name: Build
       run: make build
 
@@ -50,6 +53,9 @@ jobs:
 
     - name: Check
       run: .\build.bat check
+
+    - name: Test
+      run: .\build.bat test
 
     - name: Build
       run: .\build.bat build
