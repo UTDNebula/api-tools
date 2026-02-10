@@ -100,7 +100,7 @@ func csvToMap(csvFile *os.File, logFile *os.File) map[string][]int {
 	// optional columns
 	for _, name := range []string{"W", "P", "CR", "NC", "I"} {
 		if _, ok := indexMap[name]; !ok {
-			logFile.WriteString(fmt.Sprintf("could not find %s column\n", name))
+			fmt.Fprintf(logFile, "could not find %s column\n", name)
 		}
 	}
 
