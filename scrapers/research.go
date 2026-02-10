@@ -5,16 +5,18 @@
 package scrapers
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/UTDNebula/api-tools/utils"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -40,39 +42,46 @@ func ScrapeResearch(outDir string) {
 		panic(err)
 	}
 
+	client := newResearchHTTPClient()
+
 	var listings []ResearchListing
 
 	log.Println("Scraping research facilities and centers...")
-	facilitiesListings := scrapeFacilitiesCenters()
+	facilitiesListings := scrapeFacilitiesCenters(client)
 	listings = append(listings, facilitiesListings...)
 	log.Printf("Scraped %d facilities/centers", len(facilitiesListings))
 
 	log.Println("Scraping research labs...")
-	labsListings := scrapeLabs()
+	labsListings := scrapeLabs(client)
 	listings = append(listings, labsListings...)
 	log.Printf("Scraped %d labs", len(labsListings))
 
+	listings = mergeResearchListings(listings)
+	sort.Slice(listings, func(i, j int) bool {
+		if listings[i].Name != listings[j].Name {
+			return listings[i].Name < listings[j].Name
+		}
+		if listings[i].Link != listings[j].Link {
+			return listings[i].Link < listings[j].Link
+		}
+		return listings[i].Source < listings[j].Source
+	})
+
 	log.Printf("Total research listings scraped: %d", len(listings))
 
-	// Write to JSON
-	outPath := fmt.Sprintf("%s/research.json", outDir)
-	fptr, err := os.Create(outPath)
-	if err != nil {
-		panic(err)
-	}
-	defer fptr.Close()
-
-	encoder := json.NewEncoder(fptr)
-	encoder.SetIndent("", "\t")
-	if err := encoder.Encode(listings); err != nil {
+	if err := utils.WriteJSON(fmt.Sprintf("%s/research.json", outDir), listings); err != nil {
 		panic(err)
 	}
 
-	log.Printf("Successfully wrote research listings to %s", outPath)
+	log.Printf("Successfully wrote research listings to %s/research.json", outDir)
 }
 
-func scrapeFacilitiesCenters() []ResearchListing {
-	doc := fetchDocument(facilitiesCentersURL)
+func scrapeFacilitiesCenters(client *http.Client) []ResearchListing {
+	doc := fetchDocumentWithRetry(client, facilitiesCentersURL)
+	return parseFacilitiesCenters(doc)
+}
+
+func parseFacilitiesCenters(doc *goquery.Document) []ResearchListing {
 	var listings []ResearchListing
 
 	content := doc.Find("div.entry-content").First()
@@ -83,15 +92,18 @@ func scrapeFacilitiesCenters() []ResearchListing {
 		nodeName := goquery.NodeName(s)
 
 		if nodeName == "h2" {
-			currentSection = strings.TrimSpace(s.Text())
+			currentSection = cleanText(s.Text())
 			currentSchool = ""
 			return
 		}
 
 		if nodeName == "h3" {
 			// Skip "Related Pages"
-			text := strings.TrimSpace(s.Text())
+			text := cleanText(s.Text())
 			if text == "Related Pages" {
+				// This section does not contain research listings.
+				currentSection = ""
+				currentSchool = ""
 				return
 			}
 			currentSchool = text
@@ -100,33 +112,8 @@ func scrapeFacilitiesCenters() []ResearchListing {
 
 		if nodeName == "ul" && currentSection != "" {
 			s.Find("li").Each(func(j int, li *goquery.Selection) {
-				name := ""
-				link := ""
-				school := currentSchool
-
-				// Try to find an anchor
-				a := li.Find("a").First()
-				if a.Length() > 0 {
-					name = strings.TrimSpace(a.Text())
-					link, _ = a.Attr("href")
-				}
-
-				// If no anchor or anchor is not the primary content, use full text
-				fullText := strings.TrimSpace(li.Text())
-				if name == "" || (fullText != name && !strings.HasPrefix(fullText, name)) {
-					// Extract name from full text (everything before the anchor if embedded)
-					if name != "" && strings.Contains(fullText, name) {
-						// Name is embedded, extract prefix
-						idx := strings.Index(fullText, name)
-						if idx > 0 {
-							name = strings.TrimSpace(fullText[:idx])
-						} else {
-							name = fullText
-						}
-					} else {
-						name = fullText
-					}
-				}
+				name, link := parseLinkListItem(li, facilitiesCentersURL)
+				school := cleanText(currentSchool)
 
 				if name == "" {
 					return
@@ -138,12 +125,11 @@ func scrapeFacilitiesCenters() []ResearchListing {
 				}
 
 				listings = append(listings, ResearchListing{
-					Id:         primitive.NewObjectID(),
-					Name:       name,
-					Link:       link,
-					School:     school,
-					Professors: []string{},
-					Source:     "facilities-centers",
+					Id:     primitive.NewObjectID(),
+					Name:   name,
+					Link:   link,
+					School: school,
+					Source: "facilities-centers",
 				})
 			})
 		}
@@ -152,8 +138,12 @@ func scrapeFacilitiesCenters() []ResearchListing {
 	return listings
 }
 
-func scrapeLabs() []ResearchListing {
-	doc := fetchDocument(labsURL)
+func scrapeLabs(client *http.Client) []ResearchListing {
+	doc := fetchDocumentWithRetry(client, labsURL)
+	return parseLabs(doc)
+}
+
+func parseLabs(doc *goquery.Document) []ResearchListing {
 	var listings []ResearchListing
 
 	content := doc.Find("div.entry-content").First()
@@ -163,22 +153,19 @@ func scrapeLabs() []ResearchListing {
 		nodeName := goquery.NodeName(s)
 
 		if nodeName == "h2" {
-			currentSchool = strings.TrimSpace(s.Text())
+			currentSchool = cleanText(s.Text())
 			return
 		}
 
 		if nodeName == "ul" && currentSchool != "" {
 			s.Find("li").Each(func(j int, li *goquery.Selection) {
-				a := li.Find("a").First()
-				if a.Length() == 0 {
+				name, link := parseLinkListItem(li, labsURL)
+				if name == "" {
 					return
 				}
 
-				name := strings.TrimSpace(a.Text())
-				link, _ := a.Attr("href")
-
 				// Extract professors from parentheses
-				afterText := strings.TrimSpace(li.Clone().Children().Remove().End().Text())
+				afterText := cleanText(li.Clone().Children().Remove().End().Text())
 
 				var professors []string
 				if matches := professorsRegex.FindStringSubmatch(afterText); len(matches) > 1 {
@@ -188,11 +175,12 @@ func scrapeLabs() []ResearchListing {
 					profText = strings.ReplaceAll(profText, " & ", ",")
 					parts := strings.Split(profText, ",")
 					for _, p := range parts {
-						p = strings.TrimSpace(p)
+						p = cleanText(p)
 						if p != "" {
 							professors = append(professors, p)
 						}
 					}
+					professors = uniqueStrings(professors)
 				}
 
 				listings = append(listings, ResearchListing{
@@ -210,31 +198,168 @@ func scrapeLabs() []ResearchListing {
 	return listings
 }
 
-func fetchDocument(url string) *goquery.Document {
-	client := &http.Client{
-		Timeout: 30 * time.Second,
+func mergeResearchListings(listings []ResearchListing) []ResearchListing {
+	byKey := make(map[string]ResearchListing, len(listings))
+	for _, l := range listings {
+		l.Name = cleanText(l.Name)
+		l.School = cleanText(l.School)
+		l.Link = cleanURL(l.Link, "")
+		l.Source = cleanText(l.Source)
+		l.Professors = uniqueStrings(l.Professors)
+
+		key := strings.ToLower(l.Name) + "\n" + strings.ToLower(l.Link)
+		if existing, ok := byKey[key]; ok {
+			existing.School = mergeDelimited(existing.School, l.School, " | ")
+			existing.Source = mergeDelimited(existing.Source, l.Source, " | ")
+			existing.Professors = uniqueStrings(append(existing.Professors, l.Professors...))
+			byKey[key] = existing
+			continue
+		}
+		byKey[key] = l
 	}
 
-	req, err := http.NewRequest("GET", url, nil)
+	merged := make([]ResearchListing, 0, len(byKey))
+	for _, l := range byKey {
+		merged = append(merged, l)
+	}
+	return merged
+}
+
+func mergeDelimited(a string, b string, delim string) string {
+	a = cleanText(a)
+	b = cleanText(b)
+	if a == "" {
+		return b
+	}
+	if b == "" {
+		return a
+	}
+	if a == b {
+		return a
+	}
+	parts := uniqueStrings(strings.Split(a, delim))
+	parts = uniqueStrings(append(parts, strings.Split(b, delim)...))
+	sort.Strings(parts)
+	return strings.Join(parts, delim)
+}
+
+func uniqueStrings(values []string) []string {
+	if len(values) == 0 {
+		return nil
+	}
+	seen := make(map[string]struct{}, len(values))
+	out := make([]string, 0, len(values))
+	for _, v := range values {
+		v = cleanText(v)
+		if v == "" {
+			continue
+		}
+		if _, ok := seen[v]; ok {
+			continue
+		}
+		seen[v] = struct{}{}
+		out = append(out, v)
+	}
+	return out
+}
+
+func parseLinkListItem(li *goquery.Selection, baseURL string) (string, string) {
+	a := li.Find("a").First()
+	if a.Length() == 0 {
+		return cleanText(li.Text()), ""
+	}
+
+	name := cleanText(a.Text())
+	link, _ := a.Attr("href")
+	link = cleanURL(link, baseURL)
+	return name, link
+}
+
+func cleanText(text string) string {
+	text = strings.ReplaceAll(text, "\u00a0", " ")
+	return strings.TrimSpace(text)
+}
+
+func cleanURL(raw string, base string) string {
+	raw = cleanText(raw)
+	if raw == "" {
+		return ""
+	}
+
+	u, err := url.Parse(raw)
 	if err != nil {
-		panic(err)
+		return raw
+	}
+
+	// Resolve relative links when we have a base.
+	if base != "" && !u.IsAbs() {
+		baseURL, baseErr := url.Parse(base)
+		if baseErr == nil {
+			u = baseURL.ResolveReference(u)
+		}
+	}
+
+	u.Fragment = ""
+	// Standardize trailing slash for a cleaner output (and better de-duping).
+	if u.Path != "/" {
+		u.Path = strings.TrimRight(u.Path, "/")
+	}
+	return u.String()
+}
+
+func newResearchHTTPClient() *http.Client {
+	tr := &http.Transport{
+		MaxIdleConns:    10,
+		IdleConnTimeout: 30 * time.Second,
+	}
+	return &http.Client{
+		Transport: tr,
+		Timeout:   30 * time.Second,
+	}
+}
+
+func fetchDocumentWithRetry(client *http.Client, pageURL string) *goquery.Document {
+	var doc *goquery.Document
+	delayedRetryCallback := func(numRetries int) {
+		time.Sleep(250 * time.Millisecond * time.Duration(numRetries))
+	}
+	err := utils.Retry(func() error {
+		d, err := fetchDocument(client, pageURL)
+		if err != nil {
+			return err
+		}
+		doc = d
+		return nil
+	}, 3, delayedRetryCallback)
+	if err != nil {
+		log.Panic(err)
+	}
+	return doc
+}
+
+func fetchDocument(client *http.Client, pageURL string) (*goquery.Document, error) {
+	req, err := http.NewRequest("GET", pageURL, nil)
+	if err != nil {
+		return nil, err
 	}
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36")
+	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+	req.Header.Set("Accept-Language", "en-US,en;q=0.9")
 
 	resp, err := client.Do(req)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
-		panic(fmt.Sprintf("HTTP %d: %s", resp.StatusCode, url))
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("HTTP %d: %s", resp.StatusCode, pageURL)
 	}
 
 	doc, err := goquery.NewDocumentFromReader(resp.Body)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	return doc
+	return doc, nil
 }

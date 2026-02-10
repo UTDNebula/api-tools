@@ -224,7 +224,9 @@ func WriteJSON(filepath string, data interface{}) error {
 	defer fptr.Close()
 	encoder := json.NewEncoder(fptr)
 	encoder.SetIndent("", "\t")
-	encoder.Encode(data)
+	if err := encoder.Encode(data); err != nil {
+		return err
+	}
 	return nil
 }
 
