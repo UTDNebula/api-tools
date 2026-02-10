@@ -41,7 +41,7 @@ echo[
 
 :test
 echo Testing...
-go test ./...
+go test ./... -count=1
 if ERRORLEVEL 1 exit /b %ERRORLEVEL% :: fail if error occurred
 echo Testing complete!
 if %skip%==1 exit

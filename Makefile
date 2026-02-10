@@ -16,7 +16,7 @@ build: ./main.go
 	go build -o $(EXEC_NAME) ./main.go
 
 test:
-	go test ./...
+	go test ./... -count=1
 
 clean: $(EXEC_NAME)
 	rm $(EXEC_NAME)
