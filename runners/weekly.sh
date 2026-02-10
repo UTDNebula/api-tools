@@ -6,3 +6,8 @@
 ./api-tools -headless -verbose -scrape -academicCalendars
 ./api-tools -headless -verbose -parse -academicCalendars
 ./api-tools -headless -verbose -upload -academicCalendars
+
+# scrape and parse discount programs
+./api-tools -headless -verbose -scrape -discounts
+./api-tools -headless -verbose -parse -discounts
+# Note: Upload for discounts not yet implemented 
