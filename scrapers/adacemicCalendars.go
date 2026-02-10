@@ -41,16 +41,34 @@ func ScrapeAcademicCalendars(outDir string) {
 	}
 
 	// Go to listings page
-	chromedp.RunResponse(chromedpCtx,
+	_, err = chromedp.RunResponse(chromedpCtx,
 		chromedp.Navigate(`https://www.utdallas.edu/academics/calendar/`),
 	)
+	if err != nil {
+		panic(err)
+	}
+
+	// Selector for the scraping the calendar nodes
+	currentSel := `a.wp-block-button__link`
+	futureSel := `//h2[normalize-space(text())="Future Terms"]/following-sibling::ul[1]//a`
+	pastSel := `//h2[normalize-space(text())="Future Terms"]/following-sibling::ul[1]//a`
 
 	// Extract data from links
 	// Current
 	academicCalendars := []AcademicCalendar{{"", "", "current"}}
-	chromedp.Run(chromedpCtx, chromedp.TextContent("h2.wp-block-heading", &academicCalendars[0].Title, chromedp.ByQuery))
+	err = chromedp.Run(chromedpCtx,
+		chromedp.TextContent("h2.wp-block-heading", &academicCalendars[0].Title, chromedp.ByQuery),
+	)
+	if err != nil {
+		panic(err)
+	}
 	var currentNode []*cdp.Node
-	chromedp.Run(chromedpCtx, chromedp.Nodes("a.wp-block-button__link", &currentNode, chromedp.ByQuery))
+	err = chromedp.Run(chromedpCtx,
+		chromedp.Nodes(currentSel, &currentNode, chromedp.ByQuery),
+	)
+	if err != nil {
+		panic(err)
+	}
 	for i := 0; i < len(currentNode[0].Attributes); i += 2 {
 		if currentNode[0].Attributes[i] == "href" {
 			academicCalendars[0].Href = currentNode[0].Attributes[i+1]
@@ -59,29 +77,42 @@ func ScrapeAcademicCalendars(outDir string) {
 
 	// Future list
 	var futureNodes []*cdp.Node
-	chromedp.Run(chromedpCtx,
-		chromedp.Nodes(`//h2[normalize-space(text())="Future Terms"]/following-sibling::ul[1]//a`, &futureNodes, chromedp.BySearch),
+	err = chromedp.Run(chromedpCtx,
+		chromedp.Nodes(futureSel, &futureNodes, chromedp.BySearch),
 	)
-	academicCalendars = append(academicCalendars, extractTextAndHref(futureNodes, "future", chromedpCtx)...)
+	if err != nil {
+		panic(err)
+	}
+	newCalendars := extractTextAndHref(futureNodes, "future", chromedpCtx)
+	academicCalendars = append(academicCalendars, newCalendars...)
 
 	// Past list
 	var pastNodes []*cdp.Node
-	chromedp.Run(chromedpCtx,
-		chromedp.Nodes(`//h2[normalize-space(text())="Past Terms"]/following-sibling::div[1]//a`, &pastNodes, chromedp.BySearch),
+	err = chromedp.Run(chromedpCtx,
+		chromedp.Nodes(pastSel, &pastNodes, chromedp.BySearch),
 	)
-	academicCalendars = append(academicCalendars, extractTextAndHref(pastNodes, "past", chromedpCtx)...)
+	if err != nil {
+		panic(err)
+	}
+	newCalendars = extractTextAndHref(pastNodes, "past", chromedpCtx)
+	academicCalendars = append(academicCalendars, newCalendars...)
 
 	// Don't need ChromeDP anymore
 	cancel()
 
 	// Download all PDFs
 	for _, academicCalendar := range academicCalendars {
-		downloadPdfFromBox(academicCalendar.Href, academicCalendar.Time+"-"+academicCalendar.Title, outSubDir)
+		downloadPdfFromBox(
+			academicCalendar.Href,
+			academicCalendar.Time+"-"+academicCalendar.Title,
+			outSubDir,
+		)
 	}
 }
 
 func extractTextAndHref(nodes []*cdp.Node, time string, chromedpCtx context.Context) []AcademicCalendar {
 	output := []AcademicCalendar{}
+	var err error
 
 	// Extract href and text
 	for _, n := range nodes {
@@ -93,8 +124,12 @@ func extractTextAndHref(nodes []*cdp.Node, time string, chromedpCtx context.Cont
 			}
 		}
 		// Get inner text
-		chromedp.Run(chromedpCtx, chromedp.TextContent(fmt.Sprintf(`a[href="%s"]`, href), &text, chromedp.ByQuery))
-
+		err = chromedp.Run(chromedpCtx,
+			chromedp.TextContent(fmt.Sprintf(`a[href="%s"]`, href), &text, chromedp.ByQuery),
+		)
+		if err != nil {
+			panic(err)
+		}
 		output = append(output, AcademicCalendar{text, href, time})
 	}
 
