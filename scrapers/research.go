@@ -37,6 +37,10 @@ var professorsRegex = regexp.MustCompile(`\(([^)]+)\)`)
 
 // ScrapeResearch scrapes research listings from UTD facilities-centers and labs pages
 func ScrapeResearch(outDir string) {
+	// NOTE (review feedback): This scraper is intentionally "best-effort" against the current public listing pages.
+	// The upstream sources do not provide structured/complete research metadata (and may change without notice),
+	// so we may need to rewrite/replace this when a better research data source becomes available.
+	// Context: PR review discussion (Mike, Feb 2026) on issue #107 / PR #127.
 	err := os.MkdirAll(outDir, 0777)
 	if err != nil {
 		panic(err)
