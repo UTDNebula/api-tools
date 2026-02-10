@@ -69,6 +69,7 @@ Run the tool by changing directory using `cd` to the `api-tools` directory and r
 | `./api-tools -scrape -mazevo` | Scrapes Mazevo data. |
 | `./api-tools -scrape -organizations` | Scrapes SOC organizations. |
 | `./api-tools -scrape -profiles` | Scrapes UTD professor profiles. |
+| `./api-tools -scrape -research` | Scrapes research labs, centers, and facilities listings. |
 | `./api-tools -scrape -headless` | Runs ChromeDP in headless mode. |
 | `./api-tools -o [directory]` | Sets output directory (default: `./data`). |
 

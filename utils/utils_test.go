@@ -36,6 +36,10 @@ func TestInitChromeDp(t *testing.T) {
 
 // TestRefreshToken confirms coursebook tokens refresh under both headless settings.
 func TestRefreshToken(t *testing.T) {
+	if os.Getenv("LOGIN_NETID") == "" || os.Getenv("LOGIN_PASSWORD") == "" {
+		t.Skip("LOGIN_NETID/LOGIN_PASSWORD not set; skipping RefreshToken integration test")
+	}
+
 	// Get a chromedp context
 	ctx, cancel := InitChromeDp()
 	defer cancel()

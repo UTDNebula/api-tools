@@ -1,3 +1,7 @@
+/*
+	This file contains the code for the research labs, centers, and facilities scraper.
+*/
+
 package scrapers
 
 import (
@@ -16,12 +20,12 @@ import (
 
 // ResearchListing represents a research lab, center, or facility
 type ResearchListing struct {
-	Id          primitive.ObjectID `json:"_id"`
-	Name        string             `json:"name"`
-	Link        string             `json:"link"`
-	School      string             `json:"school,omitempty"`
-	Professors  []string           `json:"professors,omitempty"`
-	Source      string             `json:"source"`
+	Id         primitive.ObjectID `json:"_id"`
+	Name       string             `json:"name"`
+	Link       string             `json:"link"`
+	School     string             `json:"school,omitempty"`
+	Professors []string           `json:"professors,omitempty"`
+	Source     string             `json:"source"`
 }
 
 const facilitiesCentersURL = "https://www.utdallas.edu/research/facilities-centers/"
