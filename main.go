@@ -48,6 +48,7 @@ func main() {
 	mapFlag := flag.Bool("map", false, "Alongside -scrape, -parse, or -upload, signifies that the UTD map should be scraped/parsed/uploaded.")
 	// Flag for academic calendar scraping
 	academicCalendars := flag.Bool("academicCalendars", false, "Alongside -scrape, -parse, or -upload, signifies that the academic calendars should be scraped/parsed/uploaded.")
+	// Flag for degree scraping and parsing
 	degrees := flag.Bool("degrees", false, "Alongside -scrape or -parse, signifies that the degrees should be scraped/parsed.")
 
 	// Flags for parsing
