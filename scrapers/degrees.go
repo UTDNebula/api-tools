@@ -1,7 +1,7 @@
 package scrapers
 
 import (
-	"bufio"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -13,6 +13,7 @@ import (
 func ScrapeDegrees(outDir string) {
 	// Define the URL (replace with actual URL)
 	const URL = "https://academics.utdallas.edu/degrees/#filter=.alldegrees.bass"
+	const scrollHeight = 5
 
 	ctx, cancel := utils.InitChromeDp()
 	defer cancel()
@@ -35,22 +36,12 @@ func ScrapeDegrees(outDir string) {
 		log.Panicf("failed to create directory: %v", err)
 	}
 
-	// Write HTML to file
-	filename := filepath.Join(outputPath, "degrees.html")
-	file, err := os.Create(filename)
+	// Write raw HTML to file
+	outPath := fmt.Sprintf("%s/degreesScraped.html", outDir)
+	err = os.WriteFile(outPath, []byte(html), 0644)
 	if err != nil {
-		log.Panicf("failed to create file: %v", err)
-	}
-	defer file.Close()
-
-	writer := bufio.NewWriter(file)
-	defer writer.Flush()
-
-	// Write HTML content
-	_, err = writer.WriteString(html)
-	if err != nil {
-		log.Panicf("failed to write HTML: %v", err)
+		panic(err)
 	}
 
-	log.Println("Successfully scraped and saved degrees data.")
+	log.Printf("Finished scraping discount page successfully!\n\n")
 }
