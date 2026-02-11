@@ -9,7 +9,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-func ParseDegrees(inDir string) {
+func ParseDegrees(inDir string, outDir string) {
 	// Read the scraped HTML file
 	htmlPath := fmt.Sprintf("%s/discountsScraped.html", inDir)
 	htmlBytes, err := os.ReadFile(htmlPath)
