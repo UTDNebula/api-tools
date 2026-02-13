@@ -11,9 +11,8 @@ import (
 )
 
 func ScrapeDegrees(outDir string) {
-	// Define the URL (replace with actual URL)
+	// Define the URL
 	const URL = "https://academics.utdallas.edu/degrees/#filter=.alldegrees.bass"
-	const scrollHeight = 5
 
 	ctx, cancel := utils.InitChromeDp()
 	defer cancel()

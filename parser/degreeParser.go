@@ -35,6 +35,9 @@ func ParseDegrees(inDir string, outDir string) {
 	log.Println("Parsing Degrees...")
 
 	page, err := goquery.NewDocumentFromReader(strings.NewReader(string(htmlBytes)))
+	if err != nil {
+		panic(err)
+	}
 
 	// Find main content
 	content := page.Find("article .col-sm-12").First()
@@ -60,7 +63,7 @@ func ParseDegrees(inDir string, outDir string) {
 			}
 
 			cipCode := degreeLink.Find("div.cip_code")
-			stemDesignated := degreeLink.Find("div.footnote").Last() // There is only 1 element named STEM-Designated
+			stemDesignated := degreeLink.Find("div.footnote").Last() // There is either 1 element named STEM-Designated or no elements at all
 
 			degreeLevels = append(degreeLevels, DegreeLevel{
 				Level:          level,
