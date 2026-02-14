@@ -70,7 +70,7 @@ func Upload(inDir string, replace bool, staticOnly bool) {
 	buildStaticAggregation(client, ctx, "sections", "events", pipelines.EventsPipeline)
 	buildStaticAggregation(client, ctx, "courses", "trends_course_sections", pipelines.TrendsCourseSectionsPipeline)
 	buildStaticAggregation(client, ctx, "professors", "trends_prof_sections", pipelines.TrendsProfSectionsPipeline)
-	buildStaticAggregation(client, ctx, "courses", "trends_course_and_prof_sections", pipelines.TrendsCourseProfSectionsPipeline)
+	buildStaticAggregation(client, ctx, "courses", "trends_course_and_prof_sections", pipelines.TrendsCombinedSectionsPipeline)
 
 	log.Print("Done building static aggregations!")
 }
