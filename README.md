@@ -60,9 +60,11 @@ Run the tool by changing directory using `cd` to the `api-tools` directory and r
 
 | Command | Description |
 |---------|-------------|
+| `./api-tools -scrape -academicCalendars` | Scrapes academic calendar PDFs. |
 | `./api-tools -scrape -astra` | Scrapes Astra data. |
-| `./api-tools -scrape -calendar` | Scrapes calendar data. |
+| `./api-tools -scrape -cometCalendar` | Scrapes Comet Calendar data. |
 | `./api-tools -scrape -coursebook -term 24F` | Scrapes coursebook data for Fall 2024.<br>• Use `-resume` to continue from last prefix.<br>• Use `-startprefix [prefix]` to begin at a specific course prefix. |
+| `./api-tools -scrape -discounts` | Scrapes discount programs. |
 | `./api-tools -scrape -map` | Scrapes UTD Map data. |
 | `./api-tools -scrape -mazevo` | Scrapes Mazevo data. |
 | `./api-tools -scrape -organizations` | Scrapes SOC organizations. |
@@ -74,9 +76,11 @@ Run the tool by changing directory using `cd` to the `api-tools` directory and r
 
 | Command | Description |
 |---------|-------------|
+| `./api-tools -parse -academicCalendars` | Parses academic calendar PDFs. |
 | `./api-tools -parse -astra` | Parses Astra data. |
-| `./api-tools -parse -calendar` | Parses calendar data. |
+| `./api-tools -parse -cometCalendar` | Parses Comet Calendar data. |
 | `./api-tools -parse -csv [directory]` | Outputs grade data CSVs (default: `./grade-data`). |
+| `./api-tools -parse -discounts` | Parses discount programs HTML. |
 | `./api-tools -parse -map` | Parses UTD Map data. |
 | `./api-tools -parse -mazevo` | Parses Mazevo data. |
 | `./api-tools -parse -skipv` | Skips post-parse validation (**use with caution**). |
@@ -85,7 +89,8 @@ Run the tool by changing directory using `cd` to the `api-tools` directory and r
 ### Upload Mode:
 | Command | Description |
 |---------|-------------|
-| `./api-tools -upload -events` | Uploads Astra and Mazevo data. |
+| `./api-tools -upload -academicCalendars` | Uploads academic calendars. |
+| `./api-tools -upload -events` | Uploads Astra, Mazevo, and Comet Calendar data. |
 | `./api-tools -upload -map` | Uploads UTD Map data. |
 | `./api-tools -upload -replace` | Replaces old data instead of merging. |
 | `./api-tools -upload -static` | Uploads only static aggregations. |

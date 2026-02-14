@@ -1,3 +1,7 @@
+/*
+	This file contains the code for the comet calendar events parser.
+*/
+
 package parser
 
 import (
@@ -9,128 +13,12 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/UTDNebula/api-tools/scrapers"
 	"github.com/UTDNebula/api-tools/utils"
 	"github.com/UTDNebula/nebula-api/api/schema"
 )
 
-// Some events have only the building name, not the abbreviation
-// Maps building names to their abbreviations
-var buildingAbbreviations = map[string]string{
-	"Activity Center":                              "AB",
-	"Activity Center Bookstore":                    "ACB",
-	"Administration":                               "AD",
-	"Edith and Peter O’Donnell Jr. Athenaeum":      "APC",
-	"Edith O'Donnell Arts and Technology Building": "ATC",
-	"Lloyd V. Berkner Hall":                        "BE",
-	"Bioengineering and Sciences Building":         "BSB",
-	"Classroom Building":                           "CB",
-	"Callier Center Richardson":                    "CR",
-	"Callier Center Addition":                      "CRA",
-	"Davidson-Gundy Alumni Center":                 "DGA",
-	"Dining Hall West":                             "DHW",
-	"Engineering and Computer Science North":       "ECSN",
-	"Engineering and Computer Science South":       "ECSS",
-	"Engineering and Computer Science West":        "ECSW",
-	"Energy Plant":                                 "EP",
-	"Founders Annex":                               "FA",
-	"Facilities Management":                        "FM",
-	"Founders North":                               "FN",
-	"Founders Building":                            "FO",
-	"Cecil H. Green Hall":                          "GR",
-	"Karl Hoblitzelle Hall":                        "HH",
-	"Erik Jonsson Academic Center":                 "JO",
-	"Naveen Jindal School of Management":           "JSOM",
-	"Eugene McDermott Library":                     "MC",
-	"Modular Lab 1":                                "ML1",
-	"Modular Lab 2":                                "ML2",
-	"North Office Building":                        "NB",
-	"North Lab":                                    "NL",
-	"Police":                                       "PD",
-	"Physics Annex":                                "PHA",
-	"Physics Building":                             "PHY",
-	"Natural Science and Engineering Research Lab": "RL",
-	"Research and Operations Center":               "ROC",
-	"Research and Operations Center West":          "ROW",
-	"Service Building":                             "SB",
-	"Sciences Building":                            "SCI",
-	"Safety and Grounds":                           "SG",
-	"Student Learning Center":                      "SLC",
-	"Student Services Building Addition":           "SSA",
-	"Student Services Building":                    "SSB",
-	"Student Union":                                "SU",
-	"Student Union Food Court":                     "SUFC",
-	"Synergy Park North":                           "SPN",
-	"Synergy Park North 2":                         "SP2",
-	"University Theatre":                           "TH",
-	"Visitor Center":                               "VC",
-	"Waterview Science and Technology Center":      "WSTC",
-	"Andromeda Hall & University Housing Office":   "RHA",
-	"Capella Hall":                                 "RHC",
-	"Helix Hall":                                   "RHH",
-	"Sirius Hall":                                  "RHS",
-	"Vega Hall":                                    "RHV",
-	"Recreation Center West":                       "RCW",
-	"SP/N Gallery":                                 "SP2",
-}
-
-// Valid building abreviations for checking
-var validAbbreviations []string = []string{
-	"AB",
-	"ACB",
-	"AD",
-	"APC",
-	"ATC",
-	"BE",
-	"BSB",
-	"CB",
-	"CR",
-	"CRA",
-	"DGA",
-	"DHW",
-	"ECSN",
-	"ECSS",
-	"ECSW",
-	"EP",
-	"FA",
-	"FM",
-	"FN",
-	"FO",
-	"GR",
-	"HH",
-	"JO",
-	"JSOM",
-	"MC",
-	"ML1",
-	"ML2",
-	"NB",
-	"NL",
-	"PD",
-	"PHA",
-	"PHY",
-	"RL",
-	"ROC",
-	"ROW",
-	"SB",
-	"SCI",
-	"SG",
-	"SLC",
-	"SSA",
-	"SSB",
-	"SU",
-	"SUFC",
-	"SPN",
-	"SP2",
-	"TH",
-	"VC",
-	"WSTC",
-	"RHA",
-	"RHC",
-	"RHH",
-	"RHS",
-	"RHV",
-	"RCW",
-}
-
+// ParseCometCalendar reformats the comet calendar data into uploadable json in Mongo
 func ParseCometCalendar(inDir string, outDir string) {
 
 	calendarFile, err := os.ReadFile(inDir + "/cometCalendarScraped.json")
@@ -146,6 +34,11 @@ func ParseCometCalendar(inDir string, outDir string) {
 	}
 
 	multiBuildingMap := make(map[string]map[string]map[string][]schema.Event)
+	// Some events have only the building name, not the abbreviation
+	buildingAbbreviations, validAbbreviations, err := getLocationAbbreviations(inDir)
+	if err != nil {
+		panic(err)
+	}
 
 	for _, event := range allEvents {
 
@@ -238,4 +131,49 @@ func ParseCometCalendar(inDir string, outDir string) {
 	log.Print("Parsed Comet Calendar!")
 
 	utils.WriteJSON(fmt.Sprintf("%s/cometCalendar.json", outDir), result)
+}
+
+// getLocationAbbreviations dynamically retrieves the all of the locations abbreviations
+func getLocationAbbreviations(inDir string) (map[string]string, []string, error) {
+	// Get the locations from the map scraper
+	var mapFile []byte
+	mapFile, err := os.ReadFile(inDir + "/mapLocations.json")
+	if err != nil {
+		if os.IsNotExist(err) {
+			// Force scrape the locations if it doesn't exist. Get the map file again
+			scrapers.ScrapeMapLocations(inDir)
+			ParseMapLocations(inDir, inDir)
+
+			// If it fails to get the locations again, it's not because location is unscraped
+			mapFile, err = os.ReadFile(inDir + "/mapLocations.json")
+			if err != nil {
+				return nil, nil, err
+			}
+		} else {
+			return nil, nil, err
+		}
+	}
+	var locations []schema.MapBuilding
+	if err = json.Unmarshal(mapFile, &locations); err != nil {
+		return nil, nil, err
+	}
+
+	// Process the abbreviations
+	buildingsAbbreviations := make(map[string]string, 0) // Maps building names to their abbreviations
+	validAbbreviations := make([]string, 0)              // Valid building abreviations for checking
+
+	for _, location := range locations {
+		// Trim the following acronym in the name
+		trimmedName := strings.Split(*location.Name, " (")[0]
+		// Fallback on the locations that have no acronyms
+		var abbreviation string
+		if location.Acronym != nil {
+			abbreviation = *location.Acronym
+		}
+
+		buildingsAbbreviations[trimmedName] = abbreviation
+		validAbbreviations = append(validAbbreviations, abbreviation)
+	}
+
+	return buildingsAbbreviations, validAbbreviations, nil
 }

@@ -1,0 +1,25 @@
+[
+  {
+    "_id": "67d07ee0c972c18731e23bee",
+    "subject_prefix": "BA",
+    "course_number": "1320",
+    "title": "Business in a Global World",
+    "description": "BA 1320 - Business in a Global World  (3 semester credit hours) This course provides a primer on the impacts of globalization on business.",
+    "enrollment_reqs": "BA 1320 Repeat Restriction",
+    "school": "Naveen Jindal School of Management",
+    "credit_hours": "3",
+    "class_level": "Undergraduate",
+    "activity_type": "Lecture",
+    "grading": "Graded - Undergraduate",
+    "internal_course_number": "015444",
+    "prerequisites": null,
+    "corequisites": null,
+    "co_or_pre_requisites": null,
+    "sections": ["67d07ee0c972c18731e23bef"],
+    "lecture_contact_hours": "3",
+    "laboratory_contact_hours": "0",
+    "offering_frequency": "S",
+    "catalog_year": "24",
+    "attributes": null
+  }
+]
