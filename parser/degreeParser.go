@@ -8,12 +8,13 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/UTDNebula/api-tools/utils"
 )
 
-type Program struct {
+type AcademicProgram struct {
 	Title           string   `bson:"name" json:"name"`
 	School          string   `bson:"school" json:"school"`
-	DegreeOptions   []Degree `bson:"degree_levels" json:"degree_levels"`
+	DegreeOptions   []Degree `bson:"degree_options" json:"degree_options"`
 	AreasOfInterest []string `bson:"areas_of_interest" json:"areas_of_interest"`
 }
 
@@ -33,6 +34,7 @@ func ParseDegrees(inDir string, outDir string) {
 	if err != nil {
 		log.Fatalf("could not read HTML file: %v", err)
 	}
+	utils.VPrintf("Read %d bytes from %s", len(htmlBytes), htmlPath)
 
 	// Parse the document
 	page, err := goquery.NewDocumentFromReader(strings.NewReader(string(htmlBytes)))
@@ -45,17 +47,20 @@ func ParseDegrees(inDir string, outDir string) {
 	if content.Length() == 0 {
 		log.Fatalf("failed to find content area")
 	}
+	utils.VPrintf("Found main content area")
 
 	// Generate all possible combinations of degree filters
 	// This is done to cover all degrees from different schools e.g. ECS, NSM, etc
 	allProgramHTMLs := generateAllCombinations()
+	utils.VPrintf("Generated %d program combinations to search", len(allProgramHTMLs))
 
-	var allPrograms []Program
+	var allPrograms []AcademicProgram
 	for _, programHTML := range allProgramHTMLs {
 		content.Find(programHTML).Each(func(i int, s *goquery.Selection) {
 			extractProgram(s, &allPrograms)
 		})
 	}
+	utils.VPrintf("Extracted %d programs", len(allPrograms))
 
 	// Convert to JSON
 	marshalled, err := json.MarshalIndent(allPrograms, "", "\t")
@@ -74,12 +79,14 @@ func ParseDegrees(inDir string, outDir string) {
 	if err != nil {
 		log.Fatalf("could not write to output file: %v", err)
 	}
+	utils.VPrintf("Successfully wrote degrees to %s/degrees.json", outDir)
 }
 
-func extractProgram(selection *goquery.Selection, programs *[]Program) {
+func extractProgram(selection *goquery.Selection, programs *[]AcademicProgram) {
 	header := selection.Find("div > h3").Parent()
 	title := header.Find("h3")
 	school := header.Find("div.school")
+	utils.VPrintf("Extracting program: %s (%s)", strings.TrimSpace(title.Text()), strings.TrimSpace(school.Text()))
 
 	var degrees []Degree
 	selection.Find("div.degrees > a.footnote").Each(func(j int, degreeLink *goquery.Selection) {
@@ -114,17 +121,19 @@ func extractProgram(selection *goquery.Selection, programs *[]Program) {
 			JointProgram:   strings.Contains(strings.TrimSpace(footnote.Text()), "Joint Program"),
 		})
 	})
+	utils.VPrintf("  Found %d degrees", len(degrees))
 
 	// Extracts a list of tags that correlate to what might interest a student
 	// Example for Computer Science: Artificial intelligence, AI, computer science, software, robotics, computer vision, digital forensics
 	areasOfInterest := selection.Find("div.areas_of_interest.d-none").First()
 
-	newProgram := Program{
+	newProgram := AcademicProgram{
 		Title:           strings.TrimSpace(title.Text()),
 		School:          strings.TrimSpace(school.Text()),
 		DegreeOptions:   degrees,
 		AreasOfInterest: strings.Split(strings.TrimSpace(areasOfInterest.Text()), ", "),
 	}
+	utils.VPrintf("  Areas of interest: %d topics", len(newProgram.AreasOfInterest))
 
 	*programs = append(*programs, newProgram)
 }
