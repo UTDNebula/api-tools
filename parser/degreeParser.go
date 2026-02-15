@@ -10,14 +10,14 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-type Degree struct {
-	Title           string        `bson:"name" json:"name"`
-	School          string        `bson:"school" json:"school"`
-	DegreeLevels    []DegreeLevel `bson:"degree_levels" json:"degree_levels"`
-	AreasOfInterest []string      `bson:"areas_of_interest" json:"areas_of_interest"`
+type Program struct {
+	Title           string   `bson:"name" json:"name"`
+	School          string   `bson:"school" json:"school"`
+	DegreeOptions   []Degree `bson:"degree_levels" json:"degree_levels"`
+	AreasOfInterest []string `bson:"areas_of_interest" json:"areas_of_interest"`
 }
 
-type DegreeLevel struct {
+type Degree struct {
 	Level          string `bson:"level" json:"level"`
 	PublicUrl      string `bson:"public_url" json:"public_url"`
 	CipCode        string `bson:"cip_code" json:"cip_code"`
@@ -45,62 +45,70 @@ func ParseDegrees(inDir string, outDir string) {
 		panic("failed to find content area")
 	}
 
-	var degreeLevels []DegreeLevel
-	content.Find("div .element-item.all.alldegrees.allschools.academic.bass.masters").Each(func(i int, s *goquery.Selection) {
-		header := s.Find("div > h3").Parent()
-		title := header.Find("h3")
-		school := header.Find("div.school")
+	programHTML := GenerateAllCombinations()
 
-		s.Find("div.degrees > a.footnote").Each(func(j int, degreeLink *goquery.Selection) {
-			level, exists := degreeLink.Attr("alt")
-			if !exists {
-				log.Println("error parsing alt value:")
-			}
+	var allPrograms []Program
+	for _, program := range programHTML {
+		content.Find(program).Each(func(i int, s *goquery.Selection) {
+			header := s.Find("div > h3").Parent()
+			title := header.Find("h3")
+			school := header.Find("div.school")
+			var degrees []Degree
+			s.Find("div.degrees > a.footnote").Each(func(j int, degreeLink *goquery.Selection) {
 
-			urlForDegree, exists := degreeLink.Attr("href")
-			if !exists {
-				log.Println("error parsing href value:")
-			}
+				level, exists := degreeLink.Attr("alt")
+				if !exists {
+					log.Println("error parsing alt value:")
+				}
 
-			cipCode := degreeLink.Find("div.cip_code")
-			stemDesignated := degreeLink.Find("div.footnote").Last() // There is either 1 element named STEM-Designated or no elements at all
+				urlForDegree, exists := degreeLink.Attr("href")
+				if !exists {
+					log.Println("error parsing href value:")
+				}
 
-			degreeLevels = append(degreeLevels, DegreeLevel{
-				Level:          level,
-				PublicUrl:      strings.TrimSpace(urlForDegree),
-				CipCode:        strings.TrimSpace(cipCode.Text()),
-				StemDesignated: isNotBlank(strings.TrimSpace(stemDesignated.Text())),
+				cipCode := degreeLink.Find("div.cip_code")
+				stemDesignated := degreeLink.Find("div.footnote").Last() // There is either 1 element named STEM-Designated or no elements at all
+
+				degrees = append(degrees, Degree{
+					Level:          level,
+					PublicUrl:      strings.TrimSpace(urlForDegree),
+					CipCode:        strings.TrimSpace(cipCode.Text()),
+					StemDesignated: isNotBlank(strings.TrimSpace(stemDesignated.Text())),
+				})
 			})
+
+			areasOfInterest := s.Find("div.areas_of_interest.d-none").First()
+
+			newProgram := Program{
+				Title:           strings.TrimSpace(title.Text()),
+				School:          strings.TrimSpace(school.Text()),
+				DegreeOptions:   degrees,
+				AreasOfInterest: parseAreasOfInterest(areasOfInterest.Text()),
+			}
+
+			allPrograms = append(allPrograms, newProgram)
 		})
+	}
 
-		areasOfInterest := s.Find("div.areas_of_interest.d-none").First()
+	marshalled, err := json.MarshalIndent(allPrograms, "", "\t")
+	if err != nil {
+		panic("could not convert degree to JSON format")
+	}
 
-		d := Degree{
-			Title:           strings.TrimSpace(title.Text()),
-			School:          strings.TrimSpace(school.Text()),
-			DegreeLevels:    degreeLevels,
-			AreasOfInterest: parseAreasOfInterest(areasOfInterest.Text()),
-		}
+	/* Debug */
+	log.Print(string(marshalled))
 
-		marshalled, err := json.MarshalIndent(d, "", "\t")
-		if err != nil {
-			panic("could not convert degree to JSON format")
-		}
+	/* Write to output File */
+	outFile, err := os.Create(fmt.Sprintf("%s/degrees.json", outDir))
+	if err != nil {
+		log.Fatalf("could not create output file: %s", err)
+	}
+	defer outFile.Close()
 
-		/* Debug */
-		log.Print(string(marshalled))
-
-		/* Write to output File */
-		outFile, err := os.Create(fmt.Sprintf("%s/degrees.json", outDir))
-		if err != nil {
-			log.Fatalf("could not create output file: %s", err)
-		}
-
-		_, err = outFile.Write(marshalled)
-		if err != nil {
-			log.Fatalf("could not write to output file: %s", err)
-		}
-	})
+	_, err = outFile.Write(marshalled)
+	if err != nil {
+		log.Fatalf("could not write to output file: %s", err)
+	}
 }
 
 func isNotBlank(s string) bool {
@@ -108,16 +116,18 @@ func isNotBlank(s string) bool {
 }
 
 func parseAreasOfInterest(tags string) []string {
-	return strings.Split(strings.TrimSpace(tags), ",")
+	return strings.Split(strings.TrimSpace(tags), ", ")
 }
 
 // Generate all possible combinations of filters
-/*
-func GenerateAllCombinations() []map[string]string {
-	schools := []string{"bass", "jindal", ""}
-	levels := []string{"bachelors", "masters", ""}
-	depts := []string{"academic", ""}
+func GenerateAllCombinations() []string {
+	schools := []string{"bass", "jindal", "nsm", "ecs", "bbs", "epps"}
 
-	var combinations []map[string]string
+	var combinations []string
+
+	for _, s := range schools {
+		combinations = append(combinations, fmt.Sprintf("div .element-item.all.alldegrees.allschools.academic.%s", s))
+	}
+
+	return combinations
 }
-*/
