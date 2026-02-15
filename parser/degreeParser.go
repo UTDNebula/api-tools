@@ -90,9 +90,9 @@ func extractProgram(selection *goquery.Selection, programs *[]AcademicProgram) {
 
 	var degrees []Degree
 	selection.Find("div.degrees > a.footnote").Each(func(j int, degreeLink *goquery.Selection) {
-		// The alt attribute represents the Degree Level
+		// The alt attribute represents the Degree Option
 		// Examples: BS, MS, PHD
-		level, exists := degreeLink.Attr("alt")
+		degreeOption, exists := degreeLink.Attr("alt")
 		if !exists {
 			log.Println("error parsing alt value:")
 			return
@@ -110,11 +110,11 @@ func extractProgram(selection *goquery.Selection, programs *[]AcademicProgram) {
 		cipCode := degreeLink.Find("div.cip_code")
 
 		// Extracts the footnote from the degree HTML
-		// Relevant footnotes are STEM-Designated and Joint Program
+		// Relevant footnotes are 'STEM-Designated' and 'Joint Program'
 		footnote := degreeLink.Find("div.footnote")
 
 		degrees = append(degrees, Degree{
-			Level:          level,
+			Level:          degreeOption,
 			PublicUrl:      strings.TrimSpace(urlForDegree),
 			CipCode:        strings.TrimSpace(cipCode.Text()),
 			StemDesignated: strings.Contains(strings.TrimSpace(footnote.Text()), "STEM-Designated"),
@@ -138,15 +138,15 @@ func extractProgram(selection *goquery.Selection, programs *[]AcademicProgram) {
 	*programs = append(*programs, newProgram)
 }
 
-// Generates a list of all possible HTML endpoints for a degree from the HTML Page.
-// Each endpoint corresponds to a specific school, combining it with common CSS selectors used in the document structure.
+// Generates a list of all possible HTML endpoints for a degree from the HTML Page
+// Each endpoint corresponds to a specific school, combining it with common CSS selectors used in the document structure
 func generateAllCombinations() []string {
-	// List of schools for which we need to generate combination selectors.
+	// List of schools for which we need to generate combination selectors
 	schools := []string{"bass", "jindal", "nsm", "ecs", "bbs", "epps"}
 
 	var combinations []string
 
-	// Loop through each school and generate the corresponding HTML selector.
+	// Loop through each school and generate the corresponding HTML selector
 	for _, s := range schools {
 		combinations = append(combinations, fmt.Sprintf("div .element-item.all.alldegrees.allschools.academic.%s", s))
 	}
