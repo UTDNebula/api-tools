@@ -22,6 +22,7 @@ type Degree struct {
 	PublicUrl      string `bson:"public_url" json:"public_url"`
 	CipCode        string `bson:"cip_code" json:"cip_code"`
 	StemDesignated bool   `bson:"stem_designated" json:"stem_designated"`
+	JointProgram   bool   `bson:"joint_program" json:"joint_program"`
 }
 
 func ParseDegrees(inDir string, outDir string) {
@@ -45,11 +46,11 @@ func ParseDegrees(inDir string, outDir string) {
 		panic("failed to find content area")
 	}
 
-	programHTML := GenerateAllCombinations()
+	programsHTML := GenerateAllCombinations()
 
 	var allPrograms []Program
-	for _, program := range programHTML {
-		content.Find(program).Each(func(i int, s *goquery.Selection) {
+	for _, programHTML := range programsHTML {
+		content.Find(programHTML).Each(func(i int, s *goquery.Selection) {
 			header := s.Find("div > h3").Parent()
 			title := header.Find("h3")
 			school := header.Find("div.school")
@@ -67,13 +68,14 @@ func ParseDegrees(inDir string, outDir string) {
 				}
 
 				cipCode := degreeLink.Find("div.cip_code")
-				stemDesignated := degreeLink.Find("div.footnote").Last() // There is either 1 element named STEM-Designated or no elements at all
+				footnote := degreeLink.Find("div.footnote") // There is either 1 element named STEM-Designated or no elements at all
 
 				degrees = append(degrees, Degree{
 					Level:          level,
 					PublicUrl:      strings.TrimSpace(urlForDegree),
 					CipCode:        strings.TrimSpace(cipCode.Text()),
-					StemDesignated: isNotBlank(strings.TrimSpace(stemDesignated.Text())),
+					StemDesignated: strings.Contains(strings.TrimSpace(footnote.Text()), "STEM-Designated"),
+					JointProgram:   strings.Contains(strings.TrimSpace(footnote.Text()), "Joint Program"),
 				})
 			})
 
@@ -109,10 +111,6 @@ func ParseDegrees(inDir string, outDir string) {
 	if err != nil {
 		log.Fatalf("could not write to output file: %s", err)
 	}
-}
-
-func isNotBlank(s string) bool {
-	return s != "" && len(strings.TrimSpace(s)) > 0
 }
 
 func parseAreasOfInterest(tags string) []string {
