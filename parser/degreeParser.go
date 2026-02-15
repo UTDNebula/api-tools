@@ -25,104 +25,119 @@ type Degree struct {
 	JointProgram   bool   `bson:"joint_program" json:"joint_program"`
 }
 
+// Parses scarped degree HTML and outputs the data in JSON
 func ParseDegrees(inDir string, outDir string) {
 	// Read the scraped HTML file
 	htmlPath := fmt.Sprintf("%s/degreesScraped.html", inDir)
 	htmlBytes, err := os.ReadFile(htmlPath)
 	if err != nil {
-		panic(err)
+		log.Fatalf("could not read HTML file: %v", err)
 	}
 
-	log.Println("Parsing Degrees...")
-
+	// Parse the document
 	page, err := goquery.NewDocumentFromReader(strings.NewReader(string(htmlBytes)))
 	if err != nil {
-		panic(err)
+		log.Fatalf("failed to parse HTML: %v", err)
 	}
 
 	// Find main content
 	content := page.Find("article .col-sm-12").First()
 	if content.Length() == 0 {
-		panic("failed to find content area")
+		log.Fatalf("failed to find content area")
 	}
 
-	programsHTML := GenerateAllCombinations()
+	// Generate all possible combinations of degree filters
+	// This is done to cover all degrees from different schools e.g. ECS, NSM, etc
+	allProgramHTMLs := generateAllCombinations()
 
 	var allPrograms []Program
-	for _, programHTML := range programsHTML {
+	for _, programHTML := range allProgramHTMLs {
 		content.Find(programHTML).Each(func(i int, s *goquery.Selection) {
-			header := s.Find("div > h3").Parent()
-			title := header.Find("h3")
-			school := header.Find("div.school")
-			var degrees []Degree
-			s.Find("div.degrees > a.footnote").Each(func(j int, degreeLink *goquery.Selection) {
-
-				level, exists := degreeLink.Attr("alt")
-				if !exists {
-					log.Println("error parsing alt value:")
-				}
-
-				urlForDegree, exists := degreeLink.Attr("href")
-				if !exists {
-					log.Println("error parsing href value:")
-				}
-
-				cipCode := degreeLink.Find("div.cip_code")
-				footnote := degreeLink.Find("div.footnote") // There is either 1 element named STEM-Designated or no elements at all
-
-				degrees = append(degrees, Degree{
-					Level:          level,
-					PublicUrl:      strings.TrimSpace(urlForDegree),
-					CipCode:        strings.TrimSpace(cipCode.Text()),
-					StemDesignated: strings.Contains(strings.TrimSpace(footnote.Text()), "STEM-Designated"),
-					JointProgram:   strings.Contains(strings.TrimSpace(footnote.Text()), "Joint Program"),
-				})
-			})
-
-			areasOfInterest := s.Find("div.areas_of_interest.d-none").First()
-
-			newProgram := Program{
-				Title:           strings.TrimSpace(title.Text()),
-				School:          strings.TrimSpace(school.Text()),
-				DegreeOptions:   degrees,
-				AreasOfInterest: parseAreasOfInterest(areasOfInterest.Text()),
-			}
-
-			allPrograms = append(allPrograms, newProgram)
+			extractProgram(s, &allPrograms)
 		})
 	}
 
+	// Convert to JSON
 	marshalled, err := json.MarshalIndent(allPrograms, "", "\t")
 	if err != nil {
-		panic("could not convert degree to JSON format")
+		log.Fatalf("could not convert programs to JSON format: %v", err)
 	}
 
-	/* Debug */
-	log.Print(string(marshalled))
-
-	/* Write to output File */
+	// Write to output file
 	outFile, err := os.Create(fmt.Sprintf("%s/degrees.json", outDir))
 	if err != nil {
-		log.Fatalf("could not create output file: %s", err)
+		log.Fatalf("could not create output file: %v", err)
 	}
 	defer outFile.Close()
 
 	_, err = outFile.Write(marshalled)
 	if err != nil {
-		log.Fatalf("could not write to output file: %s", err)
+		log.Fatalf("could not write to output file: %v", err)
 	}
 }
 
-func parseAreasOfInterest(tags string) []string {
-	return strings.Split(strings.TrimSpace(tags), ", ")
+func extractProgram(selection *goquery.Selection, programs *[]Program) {
+	header := selection.Find("div > h3").Parent()
+	title := header.Find("h3")
+	school := header.Find("div.school")
+
+	var degrees []Degree
+	selection.Find("div.degrees > a.footnote").Each(func(j int, degreeLink *goquery.Selection) {
+		// The alt attribute represents the Degree Level
+		// Examples: BS, MS, PHD
+		level, exists := degreeLink.Attr("alt")
+		if !exists {
+			log.Println("error parsing alt value:")
+			return
+		}
+
+		// Extracts the URL to the degree's page.
+		urlForDegree, exists := degreeLink.Attr("href")
+		if !exists {
+			log.Println("Error parsing href value:")
+			return
+		}
+
+		// Extracts Classification of Instructional Programs Codes
+		// These codes provide a standardized system for reporting data about academic programs across different colleges and universities
+		cipCode := degreeLink.Find("div.cip_code")
+
+		// Extracts the footnote from the degree HTML
+		// Relevant footnotes are STEM-Designated and Joint Program
+		footnote := degreeLink.Find("div.footnote")
+
+		degrees = append(degrees, Degree{
+			Level:          level,
+			PublicUrl:      strings.TrimSpace(urlForDegree),
+			CipCode:        strings.TrimSpace(cipCode.Text()),
+			StemDesignated: strings.Contains(strings.TrimSpace(footnote.Text()), "STEM-Designated"),
+			JointProgram:   strings.Contains(strings.TrimSpace(footnote.Text()), "Joint Program"),
+		})
+	})
+
+	// Extracts a list of tags that correlate to what might interest a student
+	// Example for Computer Science: Artificial intelligence, AI, computer science, software, robotics, computer vision, digital forensics
+	areasOfInterest := selection.Find("div.areas_of_interest.d-none").First()
+
+	newProgram := Program{
+		Title:           strings.TrimSpace(title.Text()),
+		School:          strings.TrimSpace(school.Text()),
+		DegreeOptions:   degrees,
+		AreasOfInterest: strings.Split(strings.TrimSpace(areasOfInterest.Text()), ", "),
+	}
+
+	*programs = append(*programs, newProgram)
 }
 
-// Generate all possible combinations of filters
-func GenerateAllCombinations() []string {
+// Generates a list of all possible HTML endpoints for a degree from the HTML Page.
+// Each endpoint corresponds to a specific school, combining it with common CSS selectors used in the document structure.
+func generateAllCombinations() []string {
+	// List of schools for which we need to generate combination selectors.
 	schools := []string{"bass", "jindal", "nsm", "ecs", "bbs", "epps"}
 
 	var combinations []string
 
+	// Loop through each school and generate the corresponding HTML selector.
 	for _, s := range schools {
 		combinations = append(combinations, fmt.Sprintf("div .element-item.all.alldegrees.allschools.academic.%s", s))
 	}
