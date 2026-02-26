@@ -77,7 +77,7 @@ var TrendsProfSectionsPipeline = mongo.Pipeline{
 }
 
 // TrendsCourseProfSectionsPipeline links combination of professor and course to the sections for trends-specific aggregation.
-var TrendsCourseProfSectionsPipeline = mongo.Pipeline{
+var TrendsCombinedSectionsPipeline = mongo.Pipeline{
 	bson.D{
 		{Key: "$lookup",
 			Value: bson.D{
@@ -130,16 +130,18 @@ var TrendsCourseProfSectionsPipeline = mongo.Pipeline{
 			Value: bson.D{
 				{Key: "_id",
 					Value: bson.D{
-						{Key: "$concat",
-							Value: bson.A{
-								"$subject_prefix",
-								"$course_number",
-								" ",
-								"$professors.first_name",
-								" ",
-								"$professors.last_name",
+						{Key: "course",
+							Value: bson.D{
+								{Key: "$concat",
+									Value: bson.A{
+										"$subject_prefix",
+										"$course_number",
+									},
+								},
 							},
 						},
+						{Key: "first_name", Value: "$professors.first_name"},
+						{Key: "last_name", Value: "$professors.last_name"},
 					},
 				},
 				{Key: "sections", Value: bson.D{{Key: "$addToSet", Value: "$sections"}}},
