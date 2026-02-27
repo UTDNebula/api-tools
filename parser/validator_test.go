@@ -319,7 +319,7 @@ func TestSectionReferenceProfFail(t *testing.T) {
 	defer func() {
 		logOutput := logBuffer.String()
 		for _, msg := range []string{
-			"Nonexistent professor reference found for section ID ObjectID(\"67d07ee0c972c18731e23bea\")!",
+			"Nonexistent professor reference found for section key {ACCT 2301 24 25S 003}!",
 			"Referenced professor key: {Naim Bugra Ozel}",
 		} {
 			if !strings.Contains(logOutput, msg) {

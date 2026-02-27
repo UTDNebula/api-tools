@@ -123,7 +123,7 @@ func valSectionReferenceProf(section *schema.Section, profs map[schema.Professor
 		professor, exists := profs[profKey]
 		// validate if the section references to some prof not in the parsed professors
 		if !exists {
-			log.Printf("Nonexistent professor reference found for section ID %s!", section.Id)
+			log.Printf("Nonexistent professor reference found for section key %s!", section.Key)
 			log.Printf("Referenced professor key: %v", profKey)
 			log.Panic("Sections failed to validate!")
 		}
