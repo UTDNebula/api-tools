@@ -35,9 +35,17 @@ func loadProfiles(inDir string) {
 		if err != nil {
 			panic(err)
 		}
-		professorKey := prof.First_name + prof.Last_name
-		Professors[professorKey] = &prof
-		ProfessorIDMap[prof.Id] = professorKey
+
+		profKey := prof.First_name + prof.Last_name
+
+		professorKey := schema.ProfessorKey {
+			First_name: prof.First_name,
+			Last_name: prof.Last_name,
+		}
+
+		prof.Key = professorKey
+		Professors[profKey] = &prof
+		ProfessorIDMap[prof.Id] = profKey
 	}
 
 	// Read closing bracket
