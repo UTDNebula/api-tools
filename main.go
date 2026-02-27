@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -16,7 +17,7 @@ import (
 
 func main() {
 	// Load environment variables
-	godotenv.Load()
+	godotenv.Load() // TODO: I Don't think this does anything
 
 	// Setup flags
 
@@ -85,8 +86,8 @@ func main() {
 	}
 
 	defer logFile.Close()
-	// Set logging output destination to a SplitWriter that writes to both the log file and stdout
-	log.SetOutput(utils.NewSplitWriter(logFile, os.Stdout))
+	// Set logging output destination to a SplitWriter that writes to both the log file and stderr
+	log.SetOutput(utils.NewSplitWriter(logFile, os.Stdout)) // TODO: Switch to stderr
 	// Do verbose logging if verbose flag specified
 	if *verbose {
 		log.SetFlags(log.Ltime | log.Lmicroseconds | log.Lshortfile | utils.Lverbose)
@@ -103,9 +104,16 @@ func main() {
 			scrapers.ScrapeProfiles(*outDir)
 		case *scrapeCoursebook:
 			if *term == "" {
-				log.Panic("No term specified for coursebook scraping! Use -term to specify.")
+				log.Fatalf("No term specified for coursebook scraping! Use -term to specify.")
 			}
-			scrapers.ScrapeCoursebook(*term, *startPrefix, *outDir, *resume)
+			// TODO Handle Errors, give flag to retry on panic, and a retry count for non panics, how long to wait for retry
+			err := scrapers.ScrapeCoursebook(*term, *startPrefix, *outDir, *resume)
+			if errors.Is(err, &scrapers.SetupError{}) {
+				log.Fatalf("Coursebook Scraping Setup Failed: %v", err)
+			} else if err != nil {
+				log.Fatalf("Coursebook Scraping Failed: %v", err)
+			}
+
 		case *scrapeDiscounts:
 			scrapers.ScrapeDiscounts(*outDir)
 		case *cometCalendar:
