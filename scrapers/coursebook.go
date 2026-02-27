@@ -40,7 +40,7 @@ type SetupError struct {
 }
 
 func (e *SetupError) Error() string {
-	return fmt.Sprintf("%s", e.Message)
+	return e.Message
 }
 
 // ScrapeCoursebook scrapes utd coursebook for the provided term (semester)
@@ -337,10 +337,10 @@ func (s *coursebookScraper) req(queryStr string, retries int, reqName string) (s
 		coursebookHeaders, err := utils.RefreshToken(s.chromedpCtx)
 		if err != nil {
 			// TODO: Since this is in a retry, perhaps we should implement this differently
-			utils.VPrintf("[Token Refresh Failed] Failed to refresh token during retry for request %s: %v", reqName, err) 
+			utils.VPrintf("[Token Refresh Failed] Failed to refresh token during retry for request %s: %v", reqName, err)
 		}
 		s.coursebookHeaders = coursebookHeaders
-		
+
 		s.reqRetries++
 
 		//back off exponentially
