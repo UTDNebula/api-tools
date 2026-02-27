@@ -2,11 +2,9 @@ module github.com/UTDNebula/api-tools
 
 go 1.24.0
 
-replace github.com/UTDNebula/nebula-api/api v0.0.0-20251202050932-54b3ff061b27 => ..\nebula-api\api
-
 require (
 	github.com/PuerkitoBio/goquery v1.8.1
-	github.com/UTDNebula/nebula-api/api v0.0.0-20251202050932-54b3ff061b27 //points to the compound-key branch of the nebula-api.
+	github.com/UTDNebula/nebula-api/api v0.0.0-20260226052950-dbe2edfa3cfe //points to the compound-key branch of the nebula-api.
 	github.com/chromedp/cdproto v0.0.0-20250120090109-d38428e4d9c8
 	github.com/chromedp/chromedp v0.12.1
 	github.com/google/go-cmp v0.7.0
