@@ -11,21 +11,6 @@ import (
 	"github.com/UTDNebula/api-tools/utils"
 )
 
-type AcademicProgram struct {
-	Title           string   `bson:"name" json:"name"`
-	School          string   `bson:"school" json:"school"`
-	DegreeOptions   []Degree `bson:"degree_options" json:"degree_options"`
-	AreasOfInterest []string `bson:"areas_of_interest" json:"areas_of_interest"`
-}
-
-type Degree struct {
-	Level          string `bson:"level" json:"level"`
-	PublicUrl      string `bson:"public_url" json:"public_url"`
-	CipCode        string `bson:"cip_code" json:"cip_code"`
-	StemDesignated bool   `bson:"stem_designated" json:"stem_designated"`
-	JointProgram   bool   `bson:"joint_program" json:"joint_program"`
-}
-
 // Parses scarped degree HTML and outputs the data in JSON
 func ParseDegrees(inDir string, outDir string) {
 	// Read the scraped HTML file
@@ -54,7 +39,7 @@ func ParseDegrees(inDir string, outDir string) {
 	allProgramHTMLs := generateAllCombinations()
 	utils.VPrintf("Generated %d program combinations to search", len(allProgramHTMLs))
 
-	var allPrograms []AcademicProgram
+	var allPrograms []schema.AcademicProgram
 	for _, programHTML := range allProgramHTMLs {
 		content.Find(programHTML).Each(func(i int, s *goquery.Selection) {
 			extractProgram(s, &allPrograms)
@@ -82,13 +67,13 @@ func ParseDegrees(inDir string, outDir string) {
 	utils.VPrintf("Successfully wrote degrees to %s/degrees.json", outDir)
 }
 
-func extractProgram(selection *goquery.Selection, programs *[]AcademicProgram) {
+func extractProgram(selection *goquery.Selection, programs *[]schema.AcademicProgram) {
 	header := selection.Find("div > h3").Parent()
 	title := header.Find("h3")
 	school := header.Find("div.school")
 	utils.VPrintf("Extracting program: %s (%s)", strings.TrimSpace(title.Text()), strings.TrimSpace(school.Text()))
 
-	var degrees []Degree
+	var degrees []schema.Degree
 	selection.Find("div.degrees > a.footnote").Each(func(j int, degreeLink *goquery.Selection) {
 		// The alt attribute represents the Degree Option
 		// Examples: BS, MS, PHD
@@ -113,7 +98,7 @@ func extractProgram(selection *goquery.Selection, programs *[]AcademicProgram) {
 		// Relevant footnotes are 'STEM-Designated' and 'Joint Program'
 		footnote := degreeLink.Find("div.footnote")
 
-		degrees = append(degrees, Degree{
+		degrees = append(degrees, schema.Degree{
 			Level:          degreeOption,
 			PublicUrl:      strings.TrimSpace(urlForDegree),
 			CipCode:        strings.TrimSpace(cipCode.Text()),
@@ -127,7 +112,7 @@ func extractProgram(selection *goquery.Selection, programs *[]AcademicProgram) {
 	// Example for Computer Science: Artificial intelligence, AI, computer science, software, robotics, computer vision, digital forensics
 	areasOfInterest := selection.Find("div.areas_of_interest.d-none").First()
 
-	newProgram := AcademicProgram{
+	newProgram := schema.AcademicProgram{
 		Title:           strings.TrimSpace(title.Text()),
 		School:          strings.TrimSpace(school.Text()),
 		DegreeOptions:   degrees,
