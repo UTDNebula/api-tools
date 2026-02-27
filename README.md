@@ -90,6 +90,7 @@ Run the tool by changing directory using `cd` to the `api-tools` directory and r
 | Command | Description |
 |---------|-------------|
 | `./api-tools -upload -academicCalendars` | Uploads academic calendars. |
+| `./api-tools -upload -discounts` | Uploads discount programs. |
 | `./api-tools -upload -events` | Uploads Astra, Mazevo, and Comet Calendar data. |
 | `./api-tools -upload -map` | Uploads UTD Map data. |
 | `./api-tools -upload -replace` | Replaces old data instead of merging. |
