@@ -114,10 +114,11 @@ func extractProgram(selection *goquery.Selection, programs *[]schema.AcademicPro
 	areasOfInterest := selection.Find("div.areas_of_interest.d-none").First()
 
 	newProgram := schema.AcademicProgram{
-		Title:           strings.TrimSpace(title.Text()),
-		School:          strings.TrimSpace(school.Text()),
-		DegreeOptions:   degrees,
-		AreasOfInterest: strings.Split(strings.TrimSpace(areasOfInterest.Text()), ", "),
+		Title:         strings.TrimSpace(title.Text()),
+		School:        strings.TrimSpace(school.Text()),
+		DegreeOptions: degrees,
+		// Normalize to lowercase and split comma-separated values
+		AreasOfInterest: strings.Split(strings.TrimSpace(strings.ToLower(areasOfInterest.Text())), ", "),
 	}
 	utils.VPrintf("  Areas of interest: %d topics", len(newProgram.AreasOfInterest))
 
