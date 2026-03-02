@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 
 	"github.com/UTDNebula/api-tools/utils"
 	"github.com/chromedp/chromedp"
@@ -26,13 +25,6 @@ func ScrapeDegrees(outDir string) {
 	)
 	if err != nil {
 		log.Panicf("failed to scrape: %v", err)
-	}
-
-	// Ensure the output directory exists
-	outputPath := filepath.Join(outDir, "degrees")
-	err = os.MkdirAll(outputPath, os.ModePerm)
-	if err != nil {
-		log.Panicf("failed to create directory: %v", err)
 	}
 
 	// Write raw HTML to file
