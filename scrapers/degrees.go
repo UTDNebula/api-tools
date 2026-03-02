@@ -3,7 +3,6 @@ package scrapers
 import (
 	"fmt"
 	"log"
-	"os"
 
 	"github.com/UTDNebula/api-tools/utils"
 	"github.com/chromedp/chromedp"
@@ -29,10 +28,7 @@ func ScrapeDegrees(outDir string) {
 
 	// Write raw HTML to file
 	outPath := fmt.Sprintf("%s/degreesScraped.html", outDir)
-	err = os.WriteFile(outPath, []byte(html), 0644)
-	if err != nil {
-		panic(err)
-	}
+	utils.WriteJSON(outPath, html)
 
 	log.Printf("Finished scraping discount page successfully!\n\n")
 }
