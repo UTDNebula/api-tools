@@ -21,7 +21,7 @@ func ScrapeDegrees(outDir string) {
 	err := chromedp.Run(ctx,
 		chromedp.Navigate(URL),
 		chromedp.WaitVisible("body", chromedp.ByQuery),
-		chromedp.InnerHTML("article .col-sm-12", &html),
+		chromedp.OuterHTML("article .col-sm-12", &html),
 	)
 	if err != nil {
 		log.Panicf("failed to scrape: %v", err)
