@@ -18,14 +18,14 @@ func ParseDegrees(inDir string, outDir string) {
 	htmlPath := fmt.Sprintf("%s/degreesScraped.html", inDir)
 	htmlBytes, err := os.ReadFile(htmlPath)
 	if err != nil {
-		log.Fatalf("could not read HTML file: %v", err)
+		log.Fatalf("Could not read HTML file: %v", err)
 	}
 	utils.VPrintf("Read %d bytes from %s", len(htmlBytes), htmlPath)
 
 	// Parse the document
 	page, err := goquery.NewDocumentFromReader(strings.NewReader(string(htmlBytes)))
 	if err != nil {
-		log.Fatalf("failed to parse HTML: %v", err)
+		log.Fatalf("Failed to parse HTML: %v", err)
 	}
 
 	// Find main content
@@ -79,8 +79,9 @@ func extractProgram(selection *goquery.Selection, programs *[]schema.AcademicPro
 			return
 		}
 
-		// Extracts Classification of Instructional Programs Codes
-		// These codes provide a standardized system for reporting data about academic programs across different colleges and universities
+		// Extracts Classification of Instructional Programs Codes.
+		// These codes provide a standardized system for reporting data about
+		// academic programs across different colleges and universities.
 		cipCode := degreeLink.Find("div.cip_code")
 
 		// Extracts the footnote from the degree HTML
@@ -98,7 +99,7 @@ func extractProgram(selection *goquery.Selection, programs *[]schema.AcademicPro
 	utils.VPrintf("  Found %d degrees", len(degrees))
 
 	// Extracts a list of tags that correlate to what might interest a student
-	// Example for Computer Science: Artificial intelligence, AI, computer science, software, robotics, computer vision, digital forensics
+	// Example for Computer Science: Artificial intelligence, AI, computer science, software, robotics,
 	areasOfInterest := selection.Find("div.areas_of_interest.d-none").First()
 
 	newProgram := schema.AcademicProgram{
@@ -114,7 +115,9 @@ func extractProgram(selection *goquery.Selection, programs *[]schema.AcademicPro
 }
 
 // Generates a list of all possible HTML endpoints for a degree from the HTML Page
-// Each endpoint corresponds to a specific school, combining it with common CSS selectors used in the document structure
+//
+// Each endpoint corresponds to a specific school,
+// combining it with common CSS selectors used in the document structure
 func generateAllCombinations() []string {
 	// List of schools for which we need to generate combination selectors
 	schools := []string{"bass", "jindal", "nsm", "ecs", "bbs", "epps"}
@@ -122,8 +125,9 @@ func generateAllCombinations() []string {
 	var combinations []string
 
 	// Loop through each school and generate the corresponding HTML selector
+	baseEndpoint := "div .element-item.all.alldegrees.allschools.academic."
 	for _, s := range schools {
-		combinations = append(combinations, fmt.Sprintf("div .element-item.all.alldegrees.allschools.academic.%s", s))
+		combinations = append(combinations, fmt.Sprintf("%s%s", baseEndpoint, s))
 	}
 
 	return combinations
