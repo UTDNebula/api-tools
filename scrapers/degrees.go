@@ -3,6 +3,7 @@ package scrapers
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/UTDNebula/api-tools/utils"
 	"github.com/chromedp/chromedp"
@@ -10,7 +11,7 @@ import (
 
 func ScrapeDegrees(outDir string) {
 	// Define the URL
-	const URL = "https://academics.utdallas.edu/degrees/#filter=.alldegrees.bass"
+	const URL = "https://academics.utdallas.edu/degrees/"
 
 	ctx, cancel := utils.InitChromeDp()
 	defer cancel()
@@ -28,7 +29,10 @@ func ScrapeDegrees(outDir string) {
 
 	// Write raw HTML to file
 	outPath := fmt.Sprintf("%s/degreesScraped.html", outDir)
-	utils.WriteJSON(outPath, html)
+	err = os.WriteFile(outPath, []byte(html), 0644)
+	if err != nil {
+		panic(err)
+	}
 
 	log.Printf("Finished scraping discount page successfully!\n\n")
 }

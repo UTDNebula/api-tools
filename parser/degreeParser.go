@@ -53,18 +53,11 @@ func ParseDegrees(inDir string, outDir string) {
 	if err != nil {
 		log.Fatalf("could not convert programs to JSON format: %v", err)
 	}
+	log.Println(marshalled)
 
 	// Write to output file
-	outFile, err := os.Create(fmt.Sprintf("%s/degrees.json", outDir))
-	if err != nil {
-		log.Fatalf("could not create output file: %v", err)
-	}
-	defer outFile.Close()
+	utils.WriteJSON(fmt.Sprintf("%s/degrees.json", outDir), marshalled)
 
-	_, err = outFile.Write(marshalled)
-	if err != nil {
-		log.Fatalf("could not write to output file: %v", err)
-	}
 	utils.VPrintf("Successfully wrote degrees to %s/degrees.json", outDir)
 }
 
@@ -78,11 +71,12 @@ func extractProgram(selection *goquery.Selection, programs *[]schema.AcademicPro
 	selection.Find("div.degrees > a.footnote").Each(func(j int, degreeLink *goquery.Selection) {
 		// The alt attribute represents the Degree Option
 		// Examples: BS, MS, PHD
-		degreeOption, exists := degreeLink.Attr("alt")
+		degreeLevel, exists := degreeLink.Attr("alt")
 		if !exists {
 			log.Println("error parsing alt value:")
 			return
 		}
+		degreeLevel = degreeLevel[:3]
 
 		// Extracts the URL to the degree's page.
 		urlForDegree, exists := degreeLink.Attr("href")
@@ -100,7 +94,7 @@ func extractProgram(selection *goquery.Selection, programs *[]schema.AcademicPro
 		footnote := degreeLink.Find("div.footnote")
 
 		degrees = append(degrees, schema.Degree{
-			Level:          degreeOption,
+			Level:          degreeLevel,
 			PublicUrl:      strings.TrimSpace(urlForDegree),
 			CipCode:        strings.TrimSpace(cipCode.Text()),
 			StemDesignated: strings.Contains(strings.TrimSpace(footnote.Text()), "STEM-Designated"),
