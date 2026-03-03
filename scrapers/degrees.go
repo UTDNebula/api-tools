@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 
 	"github.com/UTDNebula/api-tools/utils"
 	"github.com/chromedp/chromedp"
@@ -12,7 +11,7 @@ import (
 
 func ScrapeDegrees(outDir string) {
 	// Define the URL
-	const URL = "https://academics.utdallas.edu/degrees/#filter=.alldegrees.bass"
+	const URL = "https://academics.utdallas.edu/degrees/"
 
 	ctx, cancel := utils.InitChromeDp()
 	defer cancel()
@@ -22,17 +21,10 @@ func ScrapeDegrees(outDir string) {
 	err := chromedp.Run(ctx,
 		chromedp.Navigate(URL),
 		chromedp.WaitVisible("body", chromedp.ByQuery),
-		chromedp.OuterHTML("html", &html, chromedp.ByQuery),
+		chromedp.OuterHTML("article .col-sm-12", &html),
 	)
 	if err != nil {
 		log.Panicf("failed to scrape: %v", err)
-	}
-
-	// Ensure the output directory exists
-	outputPath := filepath.Join(outDir, "degrees")
-	err = os.MkdirAll(outputPath, os.ModePerm)
-	if err != nil {
-		log.Panicf("failed to create directory: %v", err)
 	}
 
 	// Write raw HTML to file

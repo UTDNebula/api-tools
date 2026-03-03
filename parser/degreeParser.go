@@ -1,10 +1,10 @@
 package parser
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
@@ -29,7 +29,7 @@ func ParseDegrees(inDir string, outDir string) {
 	}
 
 	// Find main content
-	content := page.Find("article .col-sm-12").First()
+	content := page.Find(".col-sm-12").First()
 	if content.Length() == 0 {
 		log.Fatalf("failed to find content area")
 	}
@@ -48,23 +48,9 @@ func ParseDegrees(inDir string, outDir string) {
 	}
 	utils.VPrintf("Extracted %d programs", len(allPrograms))
 
-	// Convert to JSON
-	marshalled, err := json.MarshalIndent(allPrograms, "", "\t")
-	if err != nil {
-		log.Fatalf("could not convert programs to JSON format: %v", err)
-	}
-
 	// Write to output file
-	outFile, err := os.Create(fmt.Sprintf("%s/degrees.json", outDir))
-	if err != nil {
-		log.Fatalf("could not create output file: %v", err)
-	}
-	defer outFile.Close()
+	utils.WriteJSON(filepath.Join(outDir, "degrees.json"), allPrograms)
 
-	_, err = outFile.Write(marshalled)
-	if err != nil {
-		log.Fatalf("could not write to output file: %v", err)
-	}
 	utils.VPrintf("Successfully wrote degrees to %s/degrees.json", outDir)
 }
 
@@ -76,13 +62,15 @@ func extractProgram(selection *goquery.Selection, programs *[]schema.AcademicPro
 
 	var degrees []schema.Degree
 	selection.Find("div.degrees > a.footnote").Each(func(j int, degreeLink *goquery.Selection) {
-		// The alt attribute represents the Degree Option
-		// Examples: BS, MS, PHD
-		degreeOption, exists := degreeLink.Attr("alt")
+		// The alt attribute represents the Degree Level
+		// Example: BS in Buisness Administration
+		degreeLevel, exists := degreeLink.Attr("alt")
 		if !exists {
 			log.Println("error parsing alt value:")
 			return
 		}
+		// Normalize Degree Level to just represent Level. Ex: BS, BA, PhD, etc
+		degreeLevel = strings.TrimSpace(degreeLevel[:3])
 
 		// Extracts the URL to the degree's page.
 		urlForDegree, exists := degreeLink.Attr("href")
@@ -100,7 +88,7 @@ func extractProgram(selection *goquery.Selection, programs *[]schema.AcademicPro
 		footnote := degreeLink.Find("div.footnote")
 
 		degrees = append(degrees, schema.Degree{
-			Level:          degreeOption,
+			Level:          degreeLevel,
 			PublicUrl:      strings.TrimSpace(urlForDegree),
 			CipCode:        strings.TrimSpace(cipCode.Text()),
 			StemDesignated: strings.Contains(strings.TrimSpace(footnote.Text()), "STEM-Designated"),
@@ -114,10 +102,11 @@ func extractProgram(selection *goquery.Selection, programs *[]schema.AcademicPro
 	areasOfInterest := selection.Find("div.areas_of_interest.d-none").First()
 
 	newProgram := schema.AcademicProgram{
-		Title:           strings.TrimSpace(title.Text()),
-		School:          strings.TrimSpace(school.Text()),
-		DegreeOptions:   degrees,
-		AreasOfInterest: strings.Split(strings.TrimSpace(areasOfInterest.Text()), ", "),
+		Title:         strings.TrimSpace(title.Text()),
+		School:        strings.TrimSpace(school.Text()),
+		DegreeOptions: degrees,
+		// Normalize to lowercase and split comma-separated values
+		AreasOfInterest: strings.Split(strings.TrimSpace(strings.ToLower(areasOfInterest.Text())), ", "),
 	}
 	utils.VPrintf("  Areas of interest: %d topics", len(newProgram.AreasOfInterest))
 
