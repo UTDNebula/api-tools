@@ -1,10 +1,10 @@
 package parser
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
@@ -27,8 +27,9 @@ func ParseDegrees(inDir string, outDir string) {
 	if err != nil {
 		log.Fatalf("failed to parse HTML: %v", err)
 	}
+
 	// Find main content
-	content := page.Find("article .col-sm-12").First()
+	content := page.Find(".col-sm-12").First()
 	if content.Length() == 0 {
 		log.Fatalf("failed to find content area")
 	}
@@ -47,14 +48,8 @@ func ParseDegrees(inDir string, outDir string) {
 	}
 	utils.VPrintf("Extracted %d programs", len(allPrograms))
 
-	// Convert to JSON
-	marshalled, err := json.MarshalIndent(allPrograms, "", "\t")
-	if err != nil {
-		log.Fatalf("could not convert programs to JSON format: %v", err)
-	}
-
 	// Write to output file
-	utils.WriteJSON(fmt.Sprintf("%s/degrees.json", outDir), marshalled)
+	utils.WriteJSON(filepath.Join(outDir, "degrees.json"), allPrograms)
 
 	utils.VPrintf("Successfully wrote degrees to %s/degrees.json", outDir)
 }
