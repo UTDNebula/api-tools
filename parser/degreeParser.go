@@ -27,7 +27,6 @@ func ParseDegrees(inDir string, outDir string) {
 	if err != nil {
 		log.Fatalf("failed to parse HTML: %v", err)
 	}
-
 	// Find main content
 	content := page.Find("article .col-sm-12").First()
 	if content.Length() == 0 {
@@ -68,14 +67,15 @@ func extractProgram(selection *goquery.Selection, programs *[]schema.AcademicPro
 
 	var degrees []schema.Degree
 	selection.Find("div.degrees > a.footnote").Each(func(j int, degreeLink *goquery.Selection) {
-		// The alt attribute represents the Degree Option
-		// Examples: BS, MS, PHD
+		// The alt attribute represents the Degree Level
+		// Example: BS in Buisness Administration
 		degreeLevel, exists := degreeLink.Attr("alt")
 		if !exists {
 			log.Println("error parsing alt value:")
 			return
 		}
-		degreeLevel = degreeLevel[:3]
+		// Normalize Degree Level to just represent Level. Ex: BS, BA, PhD, etc
+		degreeLevel = strings.TrimSpace(degreeLevel[:3])
 
 		// Extracts the URL to the degree's page.
 		urlForDegree, exists := degreeLink.Attr("href")
