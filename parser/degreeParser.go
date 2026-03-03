@@ -53,7 +53,6 @@ func ParseDegrees(inDir string, outDir string) {
 	if err != nil {
 		log.Fatalf("could not convert programs to JSON format: %v", err)
 	}
-	log.Println(marshalled)
 
 	// Write to output file
 	utils.WriteJSON(fmt.Sprintf("%s/degrees.json", outDir), marshalled)
