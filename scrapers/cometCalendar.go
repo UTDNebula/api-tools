@@ -131,11 +131,15 @@ func ScrapeCometCalendar(outDir string) {
 	log.Printf("Finished scraping %d events successfully!\n\n", len(calendarEvents))
 }
 
-// callAndUnmarshal fetches a calendar page and decodes it into data.
+// callAndUnmarshal fetches a calendar page from the production API and decodes it into data.
 func callAndUnmarshal(client *http.Client, page int, data *APICalendarResponse) error {
-	// Call API to get the byte data
-	calendarUrl := fmt.Sprintf("%s?days=365&pp=100&page=%d", COMET_CALENDAR_URL, page)
-	request, err := http.NewRequest("GET", calendarUrl, nil)
+	return callAndUnmarshalFromURL(client, COMET_CALENDAR_URL, page, data)
+}
+
+// callAndUnmarshalFromURL fetches a calendar page from baseURL and decodes it into data.
+func callAndUnmarshalFromURL(client *http.Client, baseURL string, page int, data *APICalendarResponse) error {
+	calendarURL := fmt.Sprintf("%s?days=365&pp=100&page=%d", baseURL, page)
+	request, err := http.NewRequest("GET", calendarURL, nil)
 	if err != nil {
 		return err
 	}
@@ -153,7 +157,6 @@ func callAndUnmarshal(client *http.Client, page int, data *APICalendarResponse) 
 	}
 	defer response.Body.Close()
 
-	// Unmarshal bytes to the response data
 	buffer := bytes.Buffer{}
 	if _, err = buffer.ReadFrom(response.Body); err != nil {
 		return err

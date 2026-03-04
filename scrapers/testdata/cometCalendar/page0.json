@@ -1,0 +1,40 @@
+{
+  "events": [
+    {
+      "event": {
+        "title": "Nebula Testing Workshop",
+        "url": "https://calendar.utdallas.edu/event/nebula_testing_workshop",
+        "room_number": "2.406",
+        "location_name": "SSA",
+        "tags": ["Engineering", "Career"],
+        "description_text": "Learn how we test scrapers with fixtures.",
+        "event_instances": [
+          {
+            "event_instance": {
+              "start": "2026-03-01T12:00:00-06:00",
+              "end": "2026-03-01T13:00:00-06:00"
+            }
+          }
+        ],
+        "filters": {
+          "event_target_audience": [{ "name": "Students", "id": 1 }],
+          "event_topic": [{ "name": "Technology", "id": 2 }],
+          "event_types": [{ "name": "Workshop", "id": 3 }]
+        },
+        "custom_fields": {
+          "contact_information_name": "Nebula Team",
+          "contact_information_email": "team@utdnebula.com",
+          "contact_information_phone": "972-000-0000"
+        },
+        "departments": [{ "name": "Engineering", "id": 11 }]
+      }
+    }
+  ],
+  "page": {
+    "total": 3
+  },
+  "date": {
+    "from": "2026-03-01",
+    "to": "2027-03-01"
+  }
+}

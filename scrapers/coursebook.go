@@ -268,15 +268,23 @@ func (s *coursebookScraper) getSectionIdsForPrefix(prefix string) ([]string, err
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch sections: %s", err)
 		}
-		sectionRegexp := utils.Regexpf(`View details for section (%s%s\.\w+\.%s)`, prefix[3:], utils.R_COURSE_CODE, utils.R_TERM_CODE)
-		matches := sectionRegexp.FindAllStringSubmatch(content, -1)
-		for _, match := range matches {
-			sections = append(sections, match[1])
-		}
+		sections = append(sections, extractSectionIDs(prefix, content)...)
 	}
 
 	s.prefixIdsCache[prefix] = sections
 	return sections, nil
+}
+
+// extractSectionIDs parses search response content and returns all matched section IDs.
+func extractSectionIDs(prefix string, content string) []string {
+	sectionRegexp := utils.Regexpf(`View details for section (%s%s\.\w+\.%s)`, prefix[3:], utils.R_COURSE_CODE, utils.R_TERM_CODE)
+	matches := sectionRegexp.FindAllStringSubmatch(content, -1)
+
+	sections := make([]string, 0, len(matches))
+	for _, match := range matches {
+		sections = append(sections, match[1])
+	}
+	return sections
 }
 
 // req utility function for making calling the coursebook api

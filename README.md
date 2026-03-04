@@ -40,6 +40,17 @@ Additionally, you can run build (on Windows) and make (on MacOS/Linux) with the 
   - `test`: Test run to see if the executable works after building
   - `build`: Builds the executble and makes it ready for use.
 
+### Scraper Unit Testing Methodology
+
+Scrapers depend on external websites/APIs, so unit tests should avoid live network calls and instead replay representative samples.
+
+- Store captured payloads/HTML fixtures in `scrapers/testdata/`.
+- Keep request parsing/normalization logic in helper functions that can be invoked directly from tests.
+- For HTTP scrapers, use `httptest.Server` to serve fixture payloads and validate request query/header behavior.
+- Keep end-to-end scraping against real sources as manual/integration checks, not unit tests.
+
+This keeps tests deterministic, fast, and resilient to external website changes while still validating scraper logic.
+
 ### Usage
 
 The `api-tools` command line interface supports three main modes: scraping, parsing and uploading data to the Nebula API.
