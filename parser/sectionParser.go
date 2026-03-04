@@ -48,30 +48,30 @@ func parseSection(rowInfo map[string]*goquery.Selection, classInfo map[string]st
 	id := primitive.NewObjectID()
 
 	// Build compound keys
-	courseKey := courseRef.Key
-
-	if (courseKey == schema.CourseKey{}) {
-		courseKey = schema.CourseKey{
-			Subject_prefix: courseRef.Subject_prefix,
-			Course_number:  courseRef.Course_number,
-			Catalog_year:   courseRef.Catalog_year,
-		}
-	}
-	sectionKey := schema.SectionKey{
+	courseKey := schema.CourseKey{
 		Subject_prefix: courseRef.Subject_prefix,
 		Course_number:  courseRef.Course_number,
 		Catalog_year:   courseRef.Catalog_year,
-		Term:           session.Name,
+	}
+
+	courseSectionKey := schema.CourseSectionKey{
 		Section_number: sectionNumber,
+		Term: session.Name,
+	}
+
+	profSectionKey := schema.ProfSectionKey{
+		Subject_prefix: courseRef.Subject_prefix,
+		Course_number:  courseRef.Course_number,
+		Section_number: sectionNumber,
+		Term:           session.Name,
 	}
 
 	section := schema.Section{
 		Id:                    id,
-		Key:                   sectionKey,
 		Section_number:        sectionNumber,
-		Course_key:            courseKey,
+		Course:                courseKey,
 		Academic_session:      session,
-		Professor_keys:        parseProfessors(sectionKey, rowInfo),
+		Professors:            parseProfessors(profSectionKey, rowInfo),
 		Teaching_assistants:   getTeachingAssistants(rowInfo),
 		Internal_class_number: classNum,
 		Instruction_mode:      getInstructionMode(classInfo),
@@ -85,7 +85,7 @@ func parseSection(rowInfo map[string]*goquery.Selection, classInfo map[string]st
 	Sections[section.Id] = &section
 
 	// Append new section to course's section listing
-	courseRef.Section_keys = append(courseRef.Section_keys, sectionKey)
+	courseRef.Sections = append(courseRef.Sections, courseSectionKey)
 }
 
 // getInternalClassAndCourseNum returns a sections internal course and class number,
