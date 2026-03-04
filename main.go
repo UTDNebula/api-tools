@@ -49,7 +49,7 @@ func main() {
 	// Flag for academic calendar scraping
 	academicCalendars := flag.Bool("academicCalendars", false, "Alongside -scrape, -parse, or -upload, signifies that the academic calendars should be scraped/parsed/uploaded.")
 	// Flag for degree scraping and parsing
-	degrees := flag.Bool("degrees", false, "Alongside -scrape or -parse, signifies that the degrees should be scraped/parsed.")
+	degrees := flag.Bool("degrees", false, "Alongside -scrape, -parse, or -upload. Signifies that the degrees should be scraped/parsed/uploaded.")
 
 	// Flags for parsing
 	parse := flag.Bool("parse", false, "Puts the tool into parsing mode.")
@@ -154,6 +154,8 @@ func main() {
 			uploader.UploadAcademicCalendars(*inDir)
 		case *scrapeDiscounts:
 			uploader.UploadDiscounts(*inDir)
+		case *degrees:
+			uploader.UploadDegrees(*inDir)
 		default:
 			uploader.Upload(*inDir, *replace, *staticOnly)
 		}

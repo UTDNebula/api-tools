@@ -49,7 +49,10 @@ func ParseDegrees(inDir string, outDir string) {
 	utils.VPrintf("Extracted %d programs", len(allPrograms))
 
 	// Write to output file
-	utils.WriteJSON(filepath.Join(outDir, "degrees.json"), allPrograms)
+	err = utils.WriteJSON(filepath.Join(outDir, "degrees.json"), allPrograms)
+	if err != nil {
+		log.Fatal("Failed to upload json")
+	}
 
 	utils.VPrintf("Successfully wrote degrees to %s/degrees.json", outDir)
 }
@@ -103,11 +106,10 @@ func extractProgram(selection *goquery.Selection, programs *[]schema.AcademicPro
 	areasOfInterest := selection.Find("div.areas_of_interest.d-none").First()
 
 	newProgram := schema.AcademicProgram{
-		Title:         strings.TrimSpace(title.Text()),
-		School:        strings.TrimSpace(school.Text()),
-		DegreeOptions: degrees,
-		// Normalize to lowercase and split comma-separated values
-		AreasOfInterest: strings.Split(strings.TrimSpace(strings.ToLower(areasOfInterest.Text())), ", "),
+		Title:           strings.TrimSpace(title.Text()),
+		School:          strings.TrimSpace(school.Text()),
+		DegreeOptions:   degrees,
+		AreasOfInterest: parseAreasOfInterest(areasOfInterest.Text()),
 	}
 	utils.VPrintf("  Areas of interest: %d topics", len(newProgram.AreasOfInterest))
 
@@ -131,4 +133,12 @@ func generateAllCombinations() []string {
 	}
 
 	return combinations
+}
+
+func parseAreasOfInterest(areasOfInterest string) []string {
+	trimmed := strings.TrimSpace(areasOfInterest)
+	if trimmed == "" {
+		return []string{}
+	}
+	return strings.Split(trimmed, ", ")
 }
