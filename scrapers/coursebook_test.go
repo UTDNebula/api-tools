@@ -27,6 +27,17 @@ func TestExtractSectionIDs_FromFixture(t *testing.T) {
 	}
 }
 
+func TestExtractSectionIDs_NoMatches(t *testing.T) {
+	t.Parallel()
+
+	content := `<html><body><div>View details for section cs1337.001.25S</div></body></html>`
+	ids := extractSectionIDs("cp_acct", content)
+
+	if len(ids) != 0 {
+		t.Errorf("expected no ids, got %v", ids)
+	}
+}
+
 func TestGetMissingIdsForPrefix_NoDirectory(t *testing.T) {
 	t.Parallel()
 

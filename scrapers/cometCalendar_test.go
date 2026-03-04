@@ -81,6 +81,25 @@ func TestCallAndUnmarshalFromURL_Non200(t *testing.T) {
 	}
 }
 
+func TestCallAndUnmarshalFromURL_InvalidJSON(t *testing.T) {
+	t.Parallel()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if _, err := w.Write([]byte(`{"events":[`)); err != nil {
+			t.Fatalf("failed to write invalid response: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	client := http.Client{Timeout: 2 * time.Second}
+	var calendarData APICalendarResponse
+
+	if err := callAndUnmarshalFromURL(&client, server.URL, 1, &calendarData); err == nil {
+		t.Fatal("expected json unmarshal error, got nil")
+	}
+}
+
 func TestGetTime(t *testing.T) {
 	t.Parallel()
 
