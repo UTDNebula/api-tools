@@ -49,6 +49,11 @@ Scrapers depend on external websites/APIs, so unit tests should avoid live netwo
 - For HTTP scrapers, use `httptest.Server` to serve fixture payloads and validate request query/header behavior.
 - Keep end-to-end scraping against real sources as manual/integration checks, not unit tests.
 
+When choosing scraper samples, include at least:
+- A representative success payload from production-like data.
+- A sparse or empty payload (to verify no-data handling).
+- A malformed payload or non-200 response (to verify error handling).
+
 This keeps tests deterministic, fast, and resilient to external website changes while still validating scraper logic.
 
 ### Usage

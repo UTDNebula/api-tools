@@ -65,6 +65,36 @@ func TestCallAndUnmarshalFromURL_Success(t *testing.T) {
 	}
 }
 
+func TestCallAndUnmarshalFromURL_EmptyPayload(t *testing.T) {
+	t.Parallel()
+
+	payload, err := os.ReadFile(filepath.Join("testdata", "cometCalendar", "page-empty.json"))
+	if err != nil {
+		t.Fatalf("failed to load empty fixture: %v", err)
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if _, err := w.Write(payload); err != nil {
+			t.Fatalf("failed to write fixture response: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	client := http.Client{Timeout: 2 * time.Second}
+	var calendarData APICalendarResponse
+
+	if err := callAndUnmarshalFromURL(&client, server.URL, 1, &calendarData); err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if got := len(calendarData.Events); got != 0 {
+		t.Fatalf("expected 0 events, got %d", got)
+	}
+	if got := calendarData.Page["total"]; got != 0 {
+		t.Fatalf("expected page.total=0, got %d", got)
+	}
+}
+
 func TestCallAndUnmarshalFromURL_Non200(t *testing.T) {
 	t.Parallel()
 
