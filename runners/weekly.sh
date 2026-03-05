@@ -7,6 +7,12 @@
 ./api-tools -headless -verbose -parse -academicCalendars
 ./api-tools -headless -verbose -upload -academicCalendars
 
-# scrape and parse discount programs
-#./api-tools -headless -verbose -scrape -discounts
-#./api-tools -headless -verbose -parse -discounts
+# scrape, parse, and upload discount programs
+./api-tools -headless -verbose -scrape -discounts
+./api-tools -headless -verbose -parse -discounts
+./api-tools -headless -verbose -upload -discounts
+
+# scrape, parse, and upload degrees
+./api-tools -headless -verbose -scrape -degrees
+./api-tools -headless -verbose -parse -degrees
+./api-tools -headless -verbose -upload -degrees

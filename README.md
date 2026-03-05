@@ -65,9 +65,9 @@ Run the tool by changing directory using `cd` to the `api-tools` directory and r
 | `./api-tools -scrape -cometCalendar` | Scrapes Comet Calendar data. |
 | `./api-tools -scrape -coursebook -term 24F` | Scrapes coursebook data for Fall 2024.<br>• Use `-resume` to continue from last prefix.<br>• Use `-startprefix [prefix]` to begin at a specific course prefix. |
 | `./api-tools -scrape -discounts` | Scrapes discount programs. |
+| `./api-tools -scrape -degrees` | Scrapes degrees data |
 | `./api-tools -scrape -map` | Scrapes UTD Map data. |
 | `./api-tools -scrape -mazevo` | Scrapes Mazevo data. |
-| `./api-tools -scrape -organizations` | Scrapes SOC organizations. |
 | `./api-tools -scrape -profiles` | Scrapes UTD professor profiles. |
 | `./api-tools -scrape -headless` | Runs ChromeDP in headless mode. |
 | `./api-tools -o [directory]` | Sets output directory (default: `./data`). |
@@ -81,6 +81,7 @@ Run the tool by changing directory using `cd` to the `api-tools` directory and r
 | `./api-tools -parse -cometCalendar` | Parses Comet Calendar data. |
 | `./api-tools -parse -csv [directory]` | Outputs grade data CSVs (default: `./grade-data`). |
 | `./api-tools -parse -discounts` | Parses discount programs HTML. |
+| `./api-tools -parse -degrees` | Parses degrees from HTML. |
 | `./api-tools -parse -map` | Parses UTD Map data. |
 | `./api-tools -parse -mazevo` | Parses Mazevo data. |
 | `./api-tools -parse -skipv` | Skips post-parse validation (**use with caution**). |
@@ -90,6 +91,7 @@ Run the tool by changing directory using `cd` to the `api-tools` directory and r
 | Command | Description |
 |---------|-------------|
 | `./api-tools -upload -academicCalendars` | Uploads academic calendars. |
+| `./api-tools -upload -discounts` | Uploads discount programs. |
 | `./api-tools -upload -events` | Uploads Astra, Mazevo, and Comet Calendar data. |
 | `./api-tools -upload -map` | Uploads UTD Map data. |
 | `./api-tools -upload -replace` | Replaces old data instead of merging. |

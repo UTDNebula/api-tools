@@ -5,7 +5,6 @@
 package scrapers
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"os"
@@ -25,29 +24,14 @@ func ScrapeDiscounts(outDir string) {
 		panic(err)
 	}
 
-	// Create a custom chromedp context with suppressed error logging
-	opts := append(chromedp.DefaultExecAllocatorOptions[:],
-		chromedp.Flag("headless", utils.Headless),
-		chromedp.Flag("no-sandbox", true),
-		chromedp.Flag("disable-dev-shm-usage", true),
-		chromedp.Flag("disable-gpu", true),
-		chromedp.Flag("log-level", "3"),             // Suppress most logs (0=verbose, 3=fatal only)
-		chromedp.Flag("disable-web-security", true), // Bypass CORS and security restrictions
-		chromedp.Flag("disable-features", "IsolateOrigins,site-per-process,PrivateNetworkAccessPermissionPrompt"),
-	)
-
-	allocCtx, allocCancel := chromedp.NewExecAllocator(context.Background(), opts...)
-	defer allocCancel()
-
-	// Create context with discarded logger
-	ctx, cancel := chromedp.NewContext(allocCtx, chromedp.WithLogf(func(string, ...interface{}) {}))
+	chromedpCtx, cancel := utils.InitChromeDp()
 	defer cancel()
 
 	log.Println("Loading discount page...")
 	// Navigate to the discount page
-	if err := chromedp.Run(ctx,
+	if _, err := chromedp.RunResponse(chromedpCtx,
 		chromedp.Navigate(discountUrl),
-		chromedp.WaitReady("body"),
+		chromedp.WaitReady("body", chromedp.ByQuery),
 	); err != nil {
 		panic(err)
 	}
@@ -57,7 +41,7 @@ func ScrapeDiscounts(outDir string) {
 
 	// Get the HTML content
 	var html string
-	if err := chromedp.Run(ctx, chromedp.InnerHTML("body", &html)); err != nil {
+	if err := chromedp.Run(chromedpCtx, chromedp.InnerHTML("body", &html)); err != nil {
 		panic(err)
 	}
 
@@ -67,5 +51,5 @@ func ScrapeDiscounts(outDir string) {
 		panic(err)
 	}
 
-	log.Printf("Finished scraping discount page successfully!\n\n")
+	log.Printf("Scraped discounts successfully!\n")
 }

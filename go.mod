@@ -4,7 +4,7 @@ go 1.24.0
 
 require (
 	github.com/PuerkitoBio/goquery v1.8.1
-	github.com/UTDNebula/nebula-api/api v0.0.0-20260131073542-6daccd60e469
+	github.com/UTDNebula/nebula-api/api v0.0.0-20260226225356-d9b9e35d3052
 	github.com/chromedp/cdproto v0.0.0-20250120090109-d38428e4d9c8
 	github.com/chromedp/chromedp v0.12.1
 	github.com/google/go-cmp v0.7.0
