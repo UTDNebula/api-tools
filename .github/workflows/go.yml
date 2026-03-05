@@ -31,6 +31,9 @@ jobs:
       run: make check
 
     - name: Test
+      env:
+        LOGIN_NETID: ${{ secrets.LOGIN_NETID }}
+        LOGIN_PASSWORD: ${{ secrets.LOGIN_PASSWORD }}
       run: make test
 
     - name: Build
@@ -55,6 +58,9 @@ jobs:
       run: .\build.bat check
 
     - name: Test
+      env:
+        LOGIN_NETID: ${{ secrets.LOGIN_NETID }}
+        LOGIN_PASSWORD: ${{ secrets.LOGIN_PASSWORD }}
       run: .\build.bat test
 
     - name: Build
