@@ -65,7 +65,6 @@ func extractProgram(selection *goquery.Selection, programs *[]schema.AcademicPro
 
 	var degrees []schema.Degree
 	selection.Find("div.degrees > a.footnote").Each(func(j int, degreeLink *goquery.Selection) {
-		// The alt attribute represents the Degree Level
 		// Example: BS in Buisness Administration
 		degreeLevel, exists := degreeLink.Attr("alt")
 		if !exists {
@@ -83,8 +82,7 @@ func extractProgram(selection *goquery.Selection, programs *[]schema.AcademicPro
 		}
 
 		// Extracts Classification of Instructional Programs Codes.
-		// These codes provide a standardized system for reporting data about
-		// academic programs across different colleges and universities.
+		// These codes represents academic programs across different colleges and universities.
 		cipCode := degreeLink.Find("div.cip_code")
 
 		// Extracts the footnote from the degree HTML
@@ -102,7 +100,7 @@ func extractProgram(selection *goquery.Selection, programs *[]schema.AcademicPro
 	utils.VPrintf("  Found %d degrees", len(degrees))
 
 	// Extracts a list of tags that correlate to what might interest a student
-	// Example for Computer Science: Artificial intelligence, AI, computer science, software, robotics,
+	// Example for Computer Science: Artificial intelligence, AI, computer science, etc.
 	areasOfInterest := selection.Find("div.areas_of_interest.d-none").First()
 
 	newProgram := schema.AcademicProgram{
@@ -126,17 +124,17 @@ func generateAllCombinations() []string {
 
 	var combinations []string
 
-	// Loop through each school and generate the corresponding HTML selector
-	baseEndpoint := "div .element-item.all.alldegrees.allschools.academic."
+	// Generate HTML selector for each schools
+	baseSel := "div .element-item.all.alldegrees.allschools.academic."
 	for _, s := range schools {
-		combinations = append(combinations, fmt.Sprintf("%s%s", baseEndpoint, s))
+		combinations = append(combinations, fmt.Sprintf("%s%s", baseSel, s))
 	}
 
 	return combinations
 }
 
 func parseAreasOfInterest(areasOfInterest string) []string {
-	trimmed := strings.TrimSpace(areasOfInterest)
+	trimmed := strings.TrimSpace(strings.ToLower(areasOfInterest))
 	if trimmed == "" {
 		return []string{}
 	}
