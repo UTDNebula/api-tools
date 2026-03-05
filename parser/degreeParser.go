@@ -14,7 +14,6 @@ import (
 
 // Parses scarped degree HTML and outputs the data in JSON
 func ParseDegrees(inDir string, outDir string) {
-	// Read the scraped HTML file
 	htmlPath := fmt.Sprintf("%s/degreesScraped.html", inDir)
 	htmlBytes, err := os.ReadFile(htmlPath)
 	if err != nil {
@@ -22,13 +21,11 @@ func ParseDegrees(inDir string, outDir string) {
 	}
 	utils.VPrintf("Read %d bytes from %s", len(htmlBytes), htmlPath)
 
-	// Parse the document
 	page, err := goquery.NewDocumentFromReader(strings.NewReader(string(htmlBytes)))
 	if err != nil {
 		log.Fatalf("Failed to parse HTML: %v", err)
 	}
 
-	// Find main content
 	content := page.Find(".col-sm-12").First()
 	if content.Length() == 0 {
 		log.Fatalf("failed to find content area")
@@ -36,7 +33,6 @@ func ParseDegrees(inDir string, outDir string) {
 	utils.VPrintf("Found main content area")
 
 	// Generate all possible combinations of degree filters
-	// This is done to cover all degrees from different schools e.g. ECS, NSM, etc
 	allProgramHTMLs := generateAllCombinations()
 	utils.VPrintf("Generated %d program combinations to search", len(allProgramHTMLs))
 
@@ -46,7 +42,6 @@ func ParseDegrees(inDir string, outDir string) {
 			extractProgram(s, &allPrograms)
 		})
 	}
-	utils.VPrintf("Extracted %d programs", len(allPrograms))
 
 	// Write to output file
 	err = utils.WriteJSON(filepath.Join(outDir, "degrees.json"), allPrograms)
@@ -54,9 +49,10 @@ func ParseDegrees(inDir string, outDir string) {
 		log.Fatal("Failed to upload json")
 	}
 
-	utils.VPrintf("Successfully wrote degrees to %s/degrees.json", outDir)
+	utils.VPrintf("Successfully parsed %d degrees to %s/degrees.json", len(allPrograms), outDir)
 }
 
+// extractProgram parses the list of program to each degree
 func extractProgram(selection *goquery.Selection, programs *[]schema.AcademicProgram) {
 	header := selection.Find("div > h3").Parent()
 	title := header.Find("h3")
@@ -64,14 +60,14 @@ func extractProgram(selection *goquery.Selection, programs *[]schema.AcademicPro
 	utils.VPrintf("Extracting program: %s (%s)", strings.TrimSpace(title.Text()), strings.TrimSpace(school.Text()))
 
 	var degrees []schema.Degree
+
 	selection.Find("div.degrees > a.footnote").Each(func(j int, degreeLink *goquery.Selection) {
-		// Example: BS in Buisness Administration
+		// Ex: BS, BA, PhD, etc
 		degreeLevel, exists := degreeLink.Attr("alt")
 		if !exists {
 			log.Println("error parsing alt value:")
 			return
 		}
-		// Normalize Degree Level to just represent Level. Ex: BS, BA, PhD, etc
 		degreeLevel = strings.TrimSpace(degreeLevel[:3])
 
 		// Extracts the URL to the degree's page.
@@ -82,10 +78,8 @@ func extractProgram(selection *goquery.Selection, programs *[]schema.AcademicPro
 		}
 
 		// Extracts Classification of Instructional Programs Codes.
-		// These codes represents academic programs across different colleges and universities.
 		cipCode := degreeLink.Find("div.cip_code")
 
-		// Extracts the footnote from the degree HTML
 		// Relevant footnotes are 'STEM-Designated' and 'Joint Program'
 		footnote := degreeLink.Find("div.footnote")
 
@@ -100,7 +94,6 @@ func extractProgram(selection *goquery.Selection, programs *[]schema.AcademicPro
 	utils.VPrintf("  Found %d degrees", len(degrees))
 
 	// Extracts a list of tags that correlate to what might interest a student
-	// Example for Computer Science: Artificial intelligence, AI, computer science, etc.
 	areasOfInterest := selection.Find("div.areas_of_interest.d-none").First()
 
 	newProgram := schema.AcademicProgram{
@@ -114,12 +107,8 @@ func extractProgram(selection *goquery.Selection, programs *[]schema.AcademicPro
 	*programs = append(*programs, newProgram)
 }
 
-// Generates a list of all possible HTML endpoints for a degree from the HTML Page
-//
-// Each endpoint corresponds to a specific school,
-// combining it with common CSS selectors used in the document structure
+// generateAllCombinations gets a list of all possible sel for a degree from the HTML
 func generateAllCombinations() []string {
-	// List of schools for which we need to generate combination selectors
 	schools := []string{"bass", "jindal", "nsm", "ecs", "bbs", "epps"}
 
 	var combinations []string
@@ -133,6 +122,7 @@ func generateAllCombinations() []string {
 	return combinations
 }
 
+// parseAreasOfInterest parses string to array
 func parseAreasOfInterest(areasOfInterest string) []string {
 	trimmed := strings.TrimSpace(strings.ToLower(areasOfInterest))
 	if trimmed == "" {
