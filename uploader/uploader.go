@@ -94,6 +94,21 @@ func UploadData[T any](client *mongo.Client, ctx context.Context, fptr *os.File,
 		// Get collection
 		collection := getCollection(client, fileName)
 
+		// If we inserted discounts, text-index the collection so we can search for keywords
+		if fileName == "discounts" {
+			_, err := collection.Indexes().CreateOne(ctx, mongo.IndexModel{
+				Keys: bson.D{
+					{Key: "category", Value: "text"},
+					{Key: "business", Value: "text"},
+					{Key: "address", Value: "text"},
+					{Key: "discount", Value: "text"},
+				},
+			})
+			if err != nil {
+				log.Panic(err)
+			}
+		}
+
 		// Delete all documents from collection
 		_, err := collection.DeleteMany(ctx, bson.D{})
 		if err != nil {
@@ -101,7 +116,7 @@ func UploadData[T any](client *mongo.Client, ctx context.Context, fptr *os.File,
 		}
 
 		// Convert your documents to []interface{}
-		docsInterface := make([]interface{}, len(docs))
+		docsInterface := make([]any, len(docs))
 		for i := range docs {
 			docsInterface[i] = docs[i]
 		}
@@ -137,7 +152,7 @@ func UploadData[T any](client *mongo.Client, ctx context.Context, fptr *os.File,
 				log.Panic(err)
 			}
 
-			var sorted []interface{}
+			var sorted []any
 			cursor.All(ctx, &sorted)
 
 			opts := options.InsertMany().SetOrdered(false)
@@ -229,7 +244,7 @@ func buildStaticAggregation(client *mongo.Client, ctx context.Context, collectio
 	defer cursor.Close(ctx)
 
 	output := getCollection(client, outputCollection)
-	var results []interface{}
+	var results []any
 	if err := cursor.All(ctx, &results); err != nil {
 		log.Panic(err)
 	}
