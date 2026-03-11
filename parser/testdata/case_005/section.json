@@ -1,7 +1,11 @@
 {
 	"_id": "67d07ee0c972c18731e23be8",
 	"section_number": "002",
-	"course_reference": "67d07ee0c972c18731e23be7",
+	"course_key": {
+		"subject_prefix": "AERO",
+		"course_number": "4320",
+		"catalog_year": "24"
+	},
 	"section_corequisites": null,
 	"academic_session": {
 		"name": "25S",

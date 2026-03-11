@@ -17,7 +17,12 @@
 		"image_uri": "",
 		"office_hours": null,
 		"sections": [
-			"67d07ee0c972c18731e23be0"
+			{
+				"subject_prefix": "BA",
+				"course_number": "1320",
+				"section_number": "501",
+				"term": "25S"
+			}
 		]
 	}
 ]

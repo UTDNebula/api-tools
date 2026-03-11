@@ -1,7 +1,11 @@
 {
 	"_id": "67d07ee0c972c18731e23bd8",
 	"section_number": "003",
-	"course_reference": "67d07ee0c972c18731e23bd7",
+	"course_key": {
+		"subject_prefix": "ACCT",
+		"course_number": "2301",
+		"catalog_year": "24"
+	},
 	"section_corequisites": null,
 	"academic_session": {
 		"name": "25S",
@@ -9,8 +13,14 @@
 		"end_date": "2025-05-16T00:00:00-05:00"
 	},
 	"professors": [
-		"67d07ee0c972c18731e23bd9",
-		"67d07ee0c972c18731e23bda"
+		{
+			"first_name": "Naim Bugra",
+			"last_name": "Ozel"
+		},
+		{
+			"first_name": "Jieying",
+			"last_name": "Zhang"
+		}
 	],
 	"teaching_assistants": [
 		{

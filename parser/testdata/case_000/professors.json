@@ -17,7 +17,12 @@
 		"image_uri": "",
 		"office_hours": null,
 		"sections": [
-			"67d07ee0c972c18731e23bd8"
+			{
+				"subject_prefix": "ACCT",
+				"course_number": "2301",
+				"section_number": "003",
+				"term": "25S"
+			}
 		]
 	},
 	{
@@ -38,7 +43,12 @@
 		"image_uri": "",
 		"office_hours": null,
 		"sections": [
-			"67d07ee0c972c18731e23bd8"
+			{
+				"subject_prefix": "ACCT",
+				"course_number": "2301",
+				"section_number": "003",
+				"term": "25S"
+			}
 		]
 	}
 ]

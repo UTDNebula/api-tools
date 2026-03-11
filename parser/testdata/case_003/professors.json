@@ -17,7 +17,12 @@
 		"image_uri": "",
 		"office_hours": null,
 		"sections": [
-			"67d07ee0c972c18731e23be3"
+			{
+				"subject_prefix": "BIOL",
+				"course_number": "6111",
+				"section_number": "016",
+				"term": "25S"
+			}
 		]
 	}
 ]
