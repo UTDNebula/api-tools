@@ -42,7 +42,6 @@ func parseSection(rowInfo map[string]*goquery.Selection, classInfo map[string]st
 	classNum, courseNum := getInternalClassAndCourseNum(classInfo)
 	session := getAcademicSession(rowInfo)
 	courseRef := parseCourse(courseNum, session, rowInfo, classInfo)
-
 	sectionNumber := getSectionNumber(classInfo)
 
 	id := primitive.NewObjectID()
