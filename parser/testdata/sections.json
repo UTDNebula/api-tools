@@ -2,7 +2,11 @@
 	{
 		"_id": "67d07ee0c972c18731e23bef",
 		"section_number": "501",
-		"course_reference": "67d07ee0c972c18731e23bee",
+		"course_key": {
+			"subject_prefix": "BA",
+			"course_number": "1320",
+			"catalog_year": "24"
+		},
 		"section_corequisites": null,
 		"academic_session": {
 			"name": "25S",
@@ -10,7 +14,10 @@
 			"end_date": "2025-05-16T00:00:00-05:00"
 		},
 		"professors": [
-			"67d07ee0c972c18731e23bf0"
+			{
+				"first_name": "Peter",
+				"last_name": "Lewin"
+			}
 		],
 		"teaching_assistants": [
 			{
@@ -51,7 +58,11 @@
 	{
 		"_id": "67d07ee0c972c18731e23bf2",
 		"section_number": "016",
-		"course_reference": "67d07ee0c972c18731e23bf1",
+		"course_key": {
+			"subject_prefix": "BIOL",
+			"course_number": "6111",
+			"catalog_year": "24"
+		},
 		"section_corequisites": null,
 		"academic_session": {
 			"name": "25S",
@@ -59,7 +70,10 @@
 			"end_date": "2025-05-16T00:00:00-05:00"
 		},
 		"professors": [
-			"67d07ee0c972c18731e23bf3"
+			{
+				"first_name": "Tian",
+				"last_name": "Hong"
+			}
 		],
 		"teaching_assistants": [],
 		"internal_class_number": "29611",
@@ -89,7 +103,11 @@
 	{
 		"_id": "67d07ee0c972c18731e23bf5",
 		"section_number": "201",
-		"course_reference": "67d07ee0c972c18731e23bf4",
+		"course_key": {
+			"subject_prefix": "AERO",
+			"course_number": "3320",
+			"catalog_year": "24"
+		},
 		"section_corequisites": null,
 		"academic_session": {
 			"name": "25S",
@@ -125,7 +143,11 @@
 	{
 		"_id": "67d07ee0c972c18731e23bf7",
 		"section_number": "002",
-		"course_reference": "67d07ee0c972c18731e23bf6",
+		"course_key": {
+			"subject_prefix": "AERO",
+			"course_number": "4320",
+			"catalog_year": "24"
+		},
 		"section_corequisites": null,
 		"academic_session": {
 			"name": "25S",
@@ -176,7 +198,11 @@
 	{
 		"_id": "67d07ee0c972c18731e23bea",
 		"section_number": "003",
-		"course_reference": "67d07ee0c972c18731e23be9",
+		"course_key": {
+			"subject_prefix": "ACCT",
+			"course_number": "2301",
+			"catalog_year": "24"
+		},
 		"section_corequisites": null,
 		"academic_session": {
 			"name": "25S",
@@ -184,8 +210,14 @@
 			"end_date": "2025-05-16T00:00:00-05:00"
 		},
 		"professors": [
-			"67d07ee0c972c18731e23beb",
-			"67d07ee0c972c18731e23bec"
+			{
+				"first_name": "Naim Bugra",
+				"last_name": "Ozel"
+			},
+			{
+				"first_name": "Jieying",
+				"last_name": "Zhang"
+			}
 		],
 		"teaching_assistants": [
 			{
@@ -229,7 +261,11 @@
 	{
 		"_id": "67d07ee0c972c18731e23bed",
 		"section_number": "001",
-		"course_reference": "67d07ee0c972c18731e23be9",
+		"course_key": {
+			"subject_prefix": "ACCT",
+			"course_number": "2301",
+			"catalog_year": "24"
+		},
 		"section_corequisites": null,
 		"academic_session": {
 			"name": "25S",
@@ -237,8 +273,14 @@
 			"end_date": "2025-05-16T00:00:00-05:00"
 		},
 		"professors": [
-			"67d07ee0c972c18731e23bec",
-			"67d07ee0c972c18731e23beb"
+			{
+				"first_name": "Jieying",
+				"last_name": "Zhang"
+			},
+			{
+				"first_name": "Naim Bugra",
+				"last_name": "Ozel"
+			}
 		],
 		"teaching_assistants": [
 			{

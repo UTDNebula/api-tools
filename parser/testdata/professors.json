@@ -17,8 +17,18 @@
 		"image_uri": "",
 		"office_hours": null,
 		"sections": [
-			"67d07ee0c972c18731e23bea",
-			"67d07ee0c972c18731e23bed"
+			{
+				"subject_prefix": "ACCT",
+				"course_number": "2301",
+				"section_number": "003",
+				"term": "25S"
+			},
+			{
+				"subject_prefix": "ACCT",
+				"course_number": "2301",
+				"section_number": "001",
+				"term": "25S"
+			}
 		]
 	},
 	{
@@ -39,8 +49,18 @@
 		"image_uri": "",
 		"office_hours": null,
 		"sections": [
-			"67d07ee0c972c18731e23bea",
-			"67d07ee0c972c18731e23bed"
+			{
+				"subject_prefix": "ACCT",
+				"course_number": "2301",
+				"section_number": "003",
+				"term": "25S"
+			},
+			{
+				"subject_prefix": "ACCT",
+				"course_number": "2301",
+				"section_number": "001",
+				"term": "25S"
+			}
 		]
 	},
 	{
@@ -61,7 +81,12 @@
 		"image_uri": "",
 		"office_hours": null,
 		"sections": [
-			"67d07ee0c972c18731e23bef"
+			{
+				"subject_prefix": "BA",
+				"course_number": "1320",
+				"section_number": "501",
+				"term": "25S"
+			}
 		]
 	},
 	{
@@ -82,7 +107,12 @@
 		"image_uri": "",
 		"office_hours": null,
 		"sections": [
-			"67d07ee0c972c18731e23bf2"
+			{
+				"subject_prefix": "BIOL",
+				"course_number": "6111",
+				"section_number": "016",
+				"term": "25S"
+			}
 		]
 	}
 ]

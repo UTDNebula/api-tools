@@ -10,7 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func parseProfessors(sectionId schema.SectionKey, rowInfo map[string]*goquery.Selection) []schema.ProfessorKey {
+func parseProfessors(sectionKey schema.ProfSectionKey, rowInfo map[string]*goquery.Selection) []schema.ProfessorKey {
 	professorText := utils.TrimWhitespace(rowInfo["Instructor(s):"].Text())
 	professorMatches := personRegexp.FindAllStringSubmatch(professorText, -1)
 	var profRefs []schema.ProfessorKey = make([]schema.ProfessorKey, 0, len(professorMatches))
@@ -36,7 +36,7 @@ func parseProfessors(sectionId schema.SectionKey, rowInfo map[string]*goquery.Se
 
 		prof, profExists := Professors[profKey]
 		if profExists {
-			prof.Section_keys = append(prof.Section_keys, sectionId)
+			prof.Sections = append(prof.Sections, sectionKey)
 			profRefs = append(profRefs, professorKey)
 			continue
 		}
@@ -45,10 +45,9 @@ func parseProfessors(sectionId schema.SectionKey, rowInfo map[string]*goquery.Se
 		prof.Id = primitive.NewObjectID()
 		prof.First_name = firstName
 		prof.Last_name = lastName
-		prof.Key = professorKey
 		prof.Titles = []string{utils.TrimWhitespace(match[2])}
 		prof.Email = utils.TrimWhitespace(match[3])
-		prof.Section_keys = []schema.SectionKey{sectionId}
+		prof.Sections = []schema.ProfSectionKey{sectionKey}
 		profRefs = append(profRefs, professorKey)
 		Professors[profKey] = prof
 		ProfessorIDMap[prof.Id] = profKey

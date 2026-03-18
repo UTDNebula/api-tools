@@ -1,7 +1,11 @@
 {
 	"_id": "67d07ee0c972c18731e23be0",
 	"section_number": "501",
-	"course_reference": "67d07ee0c972c18731e23bdf",
+	"course_key": {
+		"subject_prefix": "BA",
+		"course_number": "1320",
+		"catalog_year": "24"
+	},
 	"section_corequisites": null,
 	"academic_session": {
 		"name": "25S",
@@ -9,7 +13,10 @@
 		"end_date": "2025-05-16T00:00:00-05:00"
 	},
 	"professors": [
-		"67d07ee0c972c18731e23be1"
+		{
+			"first_name": "Peter",
+			"last_name": "Lewin"
+		}
 	],
 	"teaching_assistants": [
 		{

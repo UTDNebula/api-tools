@@ -15,7 +15,10 @@
 	"corequisites": null,
 	"co_or_pre_requisites": null,
 	"sections": [
-		"67d07ee0c972c18731e23bdc"
+		{
+			"section_number": "001",
+			"term": "25S"
+		}
 	],
 	"lecture_contact_hours": "3",
 	"laboratory_contact_hours": "0",

@@ -53,15 +53,8 @@ func getCourse(internalCourseNumber string, session schema.AcademicSession, rowI
 	CoursePrefix, CourseNumber := getPrefixAndNumber(classInfo)
 	catalogYear := getCatalogYear(session)
 
-	courseKey := schema.CourseKey{
-		Subject_prefix: CoursePrefix,
-		Course_number:  CourseNumber,
-		Catalog_year:   catalogYear,
-	}
-
 	course := schema.Course{
 		Id:                     primitive.NewObjectID(),
-		Key:                    courseKey,
 		Course_number:          CourseNumber,
 		Subject_prefix:         CoursePrefix,
 		Title:                  utils.TrimWhitespace(rowInfo["Course Title:"].Text()),
@@ -72,7 +65,7 @@ func getCourse(internalCourseNumber string, session schema.AcademicSession, rowI
 		Activity_type:          classInfo["Activity Type:"],
 		Grading:                classInfo["Grading:"],
 		Internal_course_number: internalCourseNumber,
-		Catalog_year:           getCatalogYear(session),
+		Catalog_year:           catalogYear,
 	}
 
 	// Try to get lecture/lab contact hours and offering frequency from course description
