@@ -50,6 +50,12 @@ func ParseCometCalendar(inDir string, outDir string) {
 		// Get building and room
 		location := utils.ConvertFromInterface[string](event.Location)
 
+		// Standardize SSA Auditorium locations
+		if location != nil && (strings.Contains(*location, "SSA 13.330") || strings.Contains(*location, "SSA Auditorium")) {
+			standardized := "SSA Auditorium"
+			location = &standardized
+		}
+
 		// Regexp to match building abbreviations and room numbers
 		buildingRegexp := regexp.MustCompile(`[A-Z]{2,4}`)
 		roomRegexp := regexp.MustCompile(`([0-9]{1,2}\.[0-9]{3})([A-Z])?`)
