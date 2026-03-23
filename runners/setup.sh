@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ "$ENVIRONMENT" = "prod" ]; then
+if [ "$ENVIRONMENT" = "gcp" ]; then
   # auth with service account
   gcloud secrets versions access latest --secret="$SERVICE_ACCOUNT_SECRET_NAME" > service_account.json
   gcloud auth activate-service-account --key-file=service_account.json

@@ -36,16 +36,20 @@ func main() {
 
 	// Flag for profile scraping
 	scrapeProfiles := flag.Bool("profiles", false, "Alongside -scrape, signifies that professor profiles should be scraped.")
-	// Flag for soc scraping
-	scrapeOrganizations := flag.Bool("organizations", false, "Alongside -scrape, signifies that SOC organizations should be scraped.")
+	// Flag for discount programs scraping, parsing, and uploading
+	scrapeDiscounts := flag.Bool("discounts", false, "Alongside -scrape, -parse, or -upload, signifies that discount programs should be scraped/parsed/uploaded.")
 	// Flag for calendar scraping and parsing
-	calendar := flag.Bool("calendar", false, "Alongside -scrape or -parse, signifies that calendar should be scraped.")
+	cometCalendar := flag.Bool("cometCalendar", false, "Alongside -scrape or -parse, signifies that the Comet Calendar should be scraped/parsed.")
 	// Flag for astra scraping and parsing
 	astra := flag.Bool("astra", false, "Alongside -scrape or -parse, signifies that Astra should be scraped/parsed.")
 	// Flag for mazevo scraping and parsing
 	mazevo := flag.Bool("mazevo", false, "Alongside -scrape or -parse, signifies that Mazevo should be scraped/parsed.")
 	// Flag for map scraping, parsing, and uploading
 	mapFlag := flag.Bool("map", false, "Alongside -scrape, -parse, or -upload, signifies that the UTD map should be scraped/parsed/uploaded.")
+	// Flag for academic calendar scraping
+	academicCalendars := flag.Bool("academicCalendars", false, "Alongside -scrape, -parse, or -upload, signifies that the academic calendars should be scraped/parsed/uploaded.")
+	// Flag for degree scraping and parsing
+	degrees := flag.Bool("degrees", false, "Alongside -scrape, -parse, or -upload. Signifies that the degrees should be scraped/parsed/uploaded.")
 
 	// Flags for parsing
 	parse := flag.Bool("parse", false, "Puts the tool into parsing mode.")
@@ -56,7 +60,7 @@ func main() {
 	upload := flag.Bool("upload", false, "Puts the tool into upload mode.")
 	replace := flag.Bool("replace", false, "Alongside -upload, specifies that uploaded data should replace existing data rather than being merged.")
 	staticOnly := flag.Bool("static", false, "Alongside -upload, specifies that we should only build and upload the static aggregations.")
-	events := flag.Bool("events", false, "Alongside -upload, signifies that Astra and Mazevo should be uploaded.")
+	events := flag.Bool("events", false, "Alongside -upload, signifies that Astra, Mazevo, and the Comet Calendar should be uploaded.")
 
 	// Flags for logging
 	verbose := flag.Bool("verbose", false, "Enables verbose logging, good for debugging purposes.")
@@ -104,29 +108,39 @@ func main() {
 				log.Panic("No term specified for coursebook scraping! Use -term to specify.")
 			}
 			scrapers.ScrapeCoursebook(*term, *startPrefix, *outDir, *resume)
-		case *scrapeOrganizations:
-			scrapers.ScrapeOrganizations(*outDir)
-		case *calendar:
-			scrapers.ScrapeCalendar(*outDir)
+		case *scrapeDiscounts:
+			scrapers.ScrapeDiscounts(*outDir)
+		case *cometCalendar:
+			scrapers.ScrapeCometCalendar(*outDir)
 		case *astra:
 			scrapers.ScrapeAstra(*outDir)
 		case *mazevo:
 			scrapers.ScrapeMazevo(*outDir)
 		case *mapFlag:
 			scrapers.ScrapeMapLocations(*outDir)
+		case *academicCalendars:
+			scrapers.ScrapeAcademicCalendars(*outDir)
+		case *degrees:
+			scrapers.ScrapeDegrees(*outDir)
 		default:
 			log.Panic("You must specify which type of scraping you would like to perform with one of the scraping flags!")
 		}
 	case *parse:
 		switch {
-		case *calendar:
-			parser.ParseCalendar(*inDir, *outDir)
+		case *cometCalendar:
+			parser.ParseCometCalendar(*inDir, *outDir)
 		case *astra:
 			parser.ParseAstra(*inDir, *outDir)
 		case *mazevo:
 			parser.ParseMazevo(*inDir, *outDir)
 		case *mapFlag:
 			parser.ParseMapLocations(*inDir, *outDir)
+		case *academicCalendars:
+			parser.ParseAcademicCalendars(*inDir, *outDir)
+		case *scrapeDiscounts:
+			parser.ParseDiscounts(*inDir, *outDir)
+		case *degrees:
+			parser.ParseDegrees(*inDir, *outDir)
 		default:
 			parser.Parse(*inDir, *outDir, *csvDir, *skipValidation)
 		}
@@ -136,6 +150,12 @@ func main() {
 			uploader.UploadEvents(*inDir)
 		case *mapFlag:
 			uploader.UploadMapLocations(*inDir)
+		case *academicCalendars:
+			uploader.UploadAcademicCalendars(*inDir)
+		case *scrapeDiscounts:
+			uploader.UploadDiscounts(*inDir)
+		case *degrees:
+			uploader.UploadDegrees(*inDir)
 		default:
 			uploader.Upload(*inDir, *replace, *staticOnly)
 		}

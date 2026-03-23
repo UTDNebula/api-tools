@@ -60,12 +60,14 @@ Run the tool by changing directory using `cd` to the `api-tools` directory and r
 
 | Command | Description |
 |---------|-------------|
+| `./api-tools -scrape -academicCalendars` | Scrapes academic calendar PDFs. |
 | `./api-tools -scrape -astra` | Scrapes Astra data. |
-| `./api-tools -scrape -calendar` | Scrapes calendar data. |
+| `./api-tools -scrape -cometCalendar` | Scrapes Comet Calendar data. |
 | `./api-tools -scrape -coursebook -term 24F` | Scrapes coursebook data for Fall 2024.<br>• Use `-resume` to continue from last prefix.<br>• Use `-startprefix [prefix]` to begin at a specific course prefix. |
+| `./api-tools -scrape -discounts` | Scrapes discount programs. |
+| `./api-tools -scrape -degrees` | Scrapes degrees data |
 | `./api-tools -scrape -map` | Scrapes UTD Map data. |
 | `./api-tools -scrape -mazevo` | Scrapes Mazevo data. |
-| `./api-tools -scrape -organizations` | Scrapes SOC organizations. |
 | `./api-tools -scrape -profiles` | Scrapes UTD professor profiles. |
 | `./api-tools -scrape -headless` | Runs ChromeDP in headless mode. |
 | `./api-tools -o [directory]` | Sets output directory (default: `./data`). |
@@ -74,9 +76,12 @@ Run the tool by changing directory using `cd` to the `api-tools` directory and r
 
 | Command | Description |
 |---------|-------------|
+| `./api-tools -parse -academicCalendars` | Parses academic calendar PDFs. |
 | `./api-tools -parse -astra` | Parses Astra data. |
-| `./api-tools -parse -calendar` | Parses calendar data. |
+| `./api-tools -parse -cometCalendar` | Parses Comet Calendar data. |
 | `./api-tools -parse -csv [directory]` | Outputs grade data CSVs (default: `./grade-data`). |
+| `./api-tools -parse -discounts` | Parses discount programs HTML. |
+| `./api-tools -parse -degrees` | Parses degrees from HTML. |
 | `./api-tools -parse -map` | Parses UTD Map data. |
 | `./api-tools -parse -mazevo` | Parses Mazevo data. |
 | `./api-tools -parse -skipv` | Skips post-parse validation (**use with caution**). |
@@ -85,7 +90,9 @@ Run the tool by changing directory using `cd` to the `api-tools` directory and r
 ### Upload Mode:
 | Command | Description |
 |---------|-------------|
-| `./api-tools -upload -events` | Uploads Astra and Mazevo data. |
+| `./api-tools -upload -academicCalendars` | Uploads academic calendars. |
+| `./api-tools -upload -discounts` | Uploads discount programs. |
+| `./api-tools -upload -events` | Uploads Astra, Mazevo, and Comet Calendar data. |
 | `./api-tools -upload -map` | Uploads UTD Map data. |
 | `./api-tools -upload -replace` | Replaces old data instead of merging. |
 | `./api-tools -upload -static` | Uploads only static aggregations. |
@@ -98,8 +105,8 @@ Docker is used for automated running on Google Cloud Platform. More info [here](
 
 To build the container for local testing first make sure all scripts in the `runners` folder have LF line endings then run:
 ```
-docker build --target dev -t my-runner:local .
-docker run --rm -e ENVIRONMENT=dev -e RUNNER_SCRIPT_NAME=daily.sh my-runner:local
+docker build --target local -t my-runner:local .
+docker run --rm -e ENVIRONMENT=local -e RUNNER_SCRIPT_NAME=daily.sh my-runner:local
 ```
 
 ## Questions?

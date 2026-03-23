@@ -1,0 +1,179 @@
+/*
+	This file contains the code for the comet calendar events parser.
+*/
+
+package parser
+
+import (
+	"encoding/json"
+	"fmt"
+	"log"
+	"os"
+	"regexp"
+	"slices"
+	"strings"
+
+	"github.com/UTDNebula/api-tools/scrapers"
+	"github.com/UTDNebula/api-tools/utils"
+	"github.com/UTDNebula/nebula-api/api/schema"
+)
+
+// ParseCometCalendar reformats the comet calendar data into uploadable json in Mongo
+func ParseCometCalendar(inDir string, outDir string) {
+
+	calendarFile, err := os.ReadFile(inDir + "/cometCalendarScraped.json")
+	if err != nil {
+		panic(err)
+	}
+
+	var allEvents []schema.Event
+
+	err = json.Unmarshal(calendarFile, &allEvents)
+	if err != nil {
+		panic(err)
+	}
+
+	multiBuildingMap := make(map[string]map[string]map[string][]schema.Event)
+	// Some events have only the building name, not the abbreviation
+	buildingAbbreviations, validAbbreviations, err := getLocationAbbreviations(inDir)
+	if err != nil {
+		panic(err)
+	}
+
+	for _, event := range allEvents {
+
+		// Get date
+		dateTime := event.StartTime
+		dateTimeString := dateTime.String()
+		date := dateTimeString[:10]
+
+		// Get building and room
+		location := utils.ConvertFromInterface[string](event.Location)
+
+		// Regexp to match building abbreviations and room numbers
+		buildingRegexp := regexp.MustCompile(`[A-Z]{2,4}`)
+		roomRegexp := regexp.MustCompile(`([0-9]{1,2}\.[0-9]{3})([A-Z])?`)
+
+		building := buildingRegexp.FindString(*location)
+		room := roomRegexp.FindString(*location)
+
+		// buildingRegexp might capture something that isn't a valid building abbreviation (e.g., UTD)
+		isValidBuilding := slices.Contains(validAbbreviations, building)
+
+		// If location doesn't have building abbreviation or buildingRegexp captured an invalid abbreviation,
+		// check for the full building name
+		lowercaseLocation := strings.ToLower(*location)
+		if building == "" || !isValidBuilding {
+			for key := range buildingAbbreviations {
+				if strings.Contains(lowercaseLocation, strings.ToLower(key)) {
+					building = buildingAbbreviations[key]
+					isValidBuilding = true
+				}
+			}
+		}
+
+		// If location doesn't have room number, check to see if location included a room
+		if room == "" && isValidBuilding {
+			locationParts := strings.SplitN(*location, ", ", 2)
+			if len(locationParts) == 2 {
+				room = locationParts[1]
+			}
+		}
+
+		// If building is still empty string or invalid abbreviation, then location was initally an empty string
+		// or location was a place off campus
+		if building == "" || !isValidBuilding {
+			building = "Other"
+		}
+
+		// If room is still empty string, then location was initally an empty string, or
+		// location did not include a room, or location was a place off campus
+		if room == "" {
+			room = "Other"
+		}
+
+		if _, exists := multiBuildingMap[date]; !exists {
+			multiBuildingMap[date] = make(map[string]map[string][]schema.Event)
+		}
+
+		if _, exists := multiBuildingMap[date][building]; !exists {
+			multiBuildingMap[date][building] = make(map[string][]schema.Event)
+		}
+
+		multiBuildingMap[date][building][room] = append(multiBuildingMap[date][building][room], event)
+	}
+
+	var result []schema.MultiBuildingEvents[schema.Event]
+
+	for date, buildings := range multiBuildingMap {
+		var singleBuildings []schema.SingleBuildingEvents[schema.Event]
+		for building, rooms := range buildings {
+			var roomEvents []schema.RoomEvents[schema.Event]
+			for room, events := range rooms {
+				roomEvents = append(roomEvents, schema.RoomEvents[schema.Event]{
+					Room:   strings.TrimSpace(room),
+					Events: events,
+				})
+			}
+
+			singleBuildings = append(singleBuildings, schema.SingleBuildingEvents[schema.Event]{
+				Building: strings.TrimSpace(building),
+				Rooms:    roomEvents,
+			})
+		}
+
+		result = append(result, schema.MultiBuildingEvents[schema.Event]{
+			Date:      date,
+			Buildings: singleBuildings,
+		})
+	}
+
+	log.Print("Parsed Comet Calendar!")
+
+	utils.WriteJSON(fmt.Sprintf("%s/cometCalendar.json", outDir), result)
+}
+
+// getLocationAbbreviations dynamically retrieves the all of the locations abbreviations
+func getLocationAbbreviations(inDir string) (map[string]string, []string, error) {
+	// Get the locations from the map scraper
+	var mapFile []byte
+	mapFile, err := os.ReadFile(inDir + "/mapLocations.json")
+	if err != nil {
+		if os.IsNotExist(err) {
+			// Force scrape the locations if it doesn't exist. Get the map file again
+			scrapers.ScrapeMapLocations(inDir)
+			ParseMapLocations(inDir, inDir)
+
+			// If it fails to get the locations again, it's not because location is unscraped
+			mapFile, err = os.ReadFile(inDir + "/mapLocations.json")
+			if err != nil {
+				return nil, nil, err
+			}
+		} else {
+			return nil, nil, err
+		}
+	}
+	var locations []schema.MapBuilding
+	if err = json.Unmarshal(mapFile, &locations); err != nil {
+		return nil, nil, err
+	}
+
+	// Process the abbreviations
+	buildingsAbbreviations := make(map[string]string, 0) // Maps building names to their abbreviations
+	validAbbreviations := make([]string, 0)              // Valid building abreviations for checking
+
+	for _, location := range locations {
+		// Trim the following acronym in the name
+		trimmedName := strings.Split(*location.Name, " (")[0]
+		// Fallback on the locations that have no acronyms
+		var abbreviation string
+		if location.Acronym != nil {
+			abbreviation = *location.Acronym
+		}
+
+		buildingsAbbreviations[trimmedName] = abbreviation
+		validAbbreviations = append(validAbbreviations, abbreviation)
+	}
+
+	return buildingsAbbreviations, validAbbreviations, nil
+}

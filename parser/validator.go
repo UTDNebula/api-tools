@@ -21,14 +21,12 @@ func validate() {
 	log.Printf("\nValidating courses...")
 	courseKeys := utils.GetMapKeys(Courses)
 	for i := range len(courseKeys) {
-		course1 := Courses[courseKeys[i]]
 		// Check for duplicate courses by comparing course_number, subject_prefix, and catalog_year as a compound key
 		for j := i + 1; j < len(courseKeys); j++ {
-			course2 := Courses[courseKeys[j]]
-			valDuplicateCourses(course1, course2)
+			valDuplicateCourses(Courses[courseKeys[i]], Courses[courseKeys[j]])
 		}
 		// Make sure course isn't referencing any nonexistent sections, and that course-section references are consistent both ways
-		valCourseReference(course1, Sections)
+		valCourseReference(Courses[courseKeys[i]], Sections)
 	}
 	courseKeys = nil
 	log.Print("No invalid courses!")
@@ -36,17 +34,16 @@ func validate() {
 	log.Print("Validating sections...")
 	sectionKeys := utils.GetMapKeys(Sections)
 	for i := range len(sectionKeys) {
-		section1 := Sections[sectionKeys[i]]
-		// Check for duplicate sections by comparing section_number, course_reference, and academic_session as a compound key
+		// Check for duplicate sections by comparing
+		// section_number, course_reference, and academic_session as a compound key
 		for j := i + 1; j < len(sectionKeys); j++ {
-			section2 := Sections[sectionKeys[j]]
-			valDuplicateSections(section1, section2)
+			valDuplicateSections(Sections[sectionKeys[i]], Sections[sectionKeys[j]])
 		}
 		// Make sure section isn't referencing any nonexistent professors, and that section-professor references are consistent both ways
-		valSectionReferenceProf(section1, Professors, ProfessorIDMap)
+		valSectionReferenceProf(Sections[sectionKeys[i]], Professors, ProfessorIDMap)
 
 		// Make sure section isn't referencing a nonexistant course
-		valSectionReferenceCourse(section1, CourseIDMap)
+		valSectionReferenceCourse(Sections[sectionKeys[i]], CourseIDMap)
 	}
 	sectionKeys = nil
 	log.Printf("No invalid sections!")
@@ -55,10 +52,8 @@ func validate() {
 	profKeys := utils.GetMapKeys(Professors)
 	// Check for duplicate professors by comparing first_name, last_name, and sections as a compound key
 	for i := range len(profKeys) {
-		prof1 := Professors[profKeys[i]]
 		for j := i + 1; j < len(profKeys); j++ {
-			prof2 := Professors[profKeys[j]]
-			valDuplicateProfs(prof1, prof2)
+			valDuplicateProfs(Professors[profKeys[i]], Professors[profKeys[j]])
 		}
 	}
 	log.Printf("No invalid professors!")
@@ -66,7 +61,8 @@ func validate() {
 
 // Validate if the courses are duplicate
 func valDuplicateCourses(course1 *schema.Course, course2 *schema.Course) {
-	if course1.Catalog_year == course2.Catalog_year && course1.Course_number == course2.Course_number &&
+	if course1.Catalog_year == course2.Catalog_year &&
+		course1.Course_number == course2.Course_number &&
 		course1.Subject_prefix == course2.Subject_prefix {
 		log.Printf("Duplicate course found for %s%s!", course1.Subject_prefix, course1.Course_number)
 		log.Printf("Course 1: %v\n\nCourse 2: %v", course1, course2)
@@ -87,8 +83,17 @@ func valCourseReference(course *schema.Course, sections map[primitive.ObjectID]*
 
 		// validate if the ref sections references back to the course
 		if section.Course_reference != course.Id {
-			log.Printf("Inconsistent section reference found for %s%s! The course references the section, but not vice-versa!", course.Subject_prefix, course.Course_number)
-			log.Printf("Referenced section ID: %s\nCourse ID: %s\nSection course reference: %s", sectionID, course.Id, section.Course_reference)
+			log.Printf(
+				"Inconsistent section reference found for %s%s! The course references the section, but not vice-versa!",
+				course.Subject_prefix,
+				course.Course_number,
+			)
+			log.Printf(
+				"Referenced section ID: %s\nCourse ID: %s\nSection course reference: %s",
+				sectionID,
+				course.Id,
+				section.Course_reference,
+			)
 			log.Panic("Courses failed to validate!")
 		}
 	}
@@ -96,7 +101,8 @@ func valCourseReference(course *schema.Course, sections map[primitive.ObjectID]*
 
 // Validate if the sections are duplicate
 func valDuplicateSections(section1 *schema.Section, section2 *schema.Section) {
-	if section1.Section_number == section2.Section_number && section1.Course_reference == section2.Course_reference &&
+	if section1.Section_number == section2.Section_number &&
+		section1.Course_reference == section2.Course_reference &&
 		section1.Academic_session == section2.Academic_session {
 		log.Print("Duplicate section found!")
 		log.Printf("Section 1: %v\n\nSection 2: %v", section1, section2)
@@ -105,7 +111,9 @@ func valDuplicateSections(section1 *schema.Section, section2 *schema.Section) {
 }
 
 // Validate section reference to professor
-func valSectionReferenceProf(section *schema.Section, profs map[string]*schema.Professor, profIDMap map[primitive.ObjectID]string) {
+func valSectionReferenceProf(
+	section *schema.Section, profs map[string]*schema.Professor, profIDMap map[primitive.ObjectID]string,
+) {
 	for _, profID := range section.Professors {
 		professorKey, exists := profIDMap[profID]
 		// validate if the section references to some prof not in the parsed professors
@@ -117,7 +125,10 @@ func valSectionReferenceProf(section *schema.Section, profs map[string]*schema.P
 
 		// validate if the referenced professor references back to section
 		if !slices.Contains(profs[professorKey].Sections, section.Id) {
-			log.Printf("Inconsistent professor reference found for section ID %s! The section references the professor, but not vice-versa!", section.Id)
+			log.Printf(
+				"Inconsistent professor reference found for section ID %s! The section references the professor, but not vice-versa!",
+				section.Id,
+			)
 			log.Printf("Referenced professor ID: %s", profID)
 			log.Panic("Sections failed to validate!")
 		}
@@ -137,7 +148,9 @@ func valSectionReferenceCourse(section *schema.Section, courseIDMap map[primitiv
 
 // Validate if the professors are duplicate
 func valDuplicateProfs(prof1 *schema.Professor, prof2 *schema.Professor) {
-	if prof1.First_name == prof2.First_name && prof1.Last_name == prof2.Last_name && prof1.Profile_uri == prof2.Profile_uri {
+	if prof1.First_name == prof2.First_name &&
+		prof1.Last_name == prof2.Last_name &&
+		prof1.Profile_uri == prof2.Profile_uri {
 		log.Printf("Duplicate professor found!")
 		log.Printf("Professor 1: %v\n\nProfessor 2: %v", prof1, prof2)
 		log.Panic("Professors failed to validate!")
