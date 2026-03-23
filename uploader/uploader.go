@@ -70,7 +70,7 @@ func Upload(inDir string, replace bool, staticOnly bool) {
 	buildStaticAggregation(client, ctx, "sections", "events", pipelines.EventsPipeline)
 	buildStaticAggregation(client, ctx, "courses", "trends_course_sections", pipelines.TrendsCourseSectionsPipeline)
 	buildStaticAggregation(client, ctx, "professors", "trends_prof_sections", pipelines.TrendsProfSectionsPipeline)
-	buildStaticAggregation(client, ctx, "courses", "trends_course_and_prof_sections", pipelines.TrendsCourseProfSectionsPipeline)
+	buildStaticAggregation(client, ctx, "courses", "trends_course_and_prof_sections", pipelines.TrendsCombinedSectionsPipeline)
 
 	log.Print("Done building static aggregations!")
 }
@@ -94,6 +94,31 @@ func UploadData[T any](client *mongo.Client, ctx context.Context, fptr *os.File,
 		// Get collection
 		collection := getCollection(client, fileName)
 
+		// If we inserted discounts, text-index the collection so we can search for keywords
+		if fileName == "discounts" {
+			/*
+				// If the search indexes have been created, don't create again
+				// TODO: Find a way to dynamically avoid creating one when is has been created
+				_, err = collection.SearchIndexes().CreateOne(ctx, mongo.SearchIndexModel{
+					Definition: bson.D{
+						{Key: "mappings", Value: bson.D{
+							{Key: "dynamic", Value: true},
+							{Key: "fields", Value: bson.D{
+								{Key: "category", Value: bson.D{{Key: "type", Value: "string"}}},
+								{Key: "business", Value: bson.D{{Key: "type", Value: "string"}}},
+								{Key: "address", Value: bson.D{{Key: "type", Value: "string"}}},
+								{Key: "discount", Value: bson.D{{Key: "type", Value: "string"}}},
+							}},
+						}},
+					},
+					Options: options.SearchIndexes().SetName("discount_searches"),
+				})
+				if err != nil {
+					log.Panic(err)
+				}
+			*/
+		}
+
 		// Delete all documents from collection
 		_, err := collection.DeleteMany(ctx, bson.D{})
 		if err != nil {
@@ -101,7 +126,7 @@ func UploadData[T any](client *mongo.Client, ctx context.Context, fptr *os.File,
 		}
 
 		// Convert your documents to []interface{}
-		docsInterface := make([]interface{}, len(docs))
+		docsInterface := make([]any, len(docs))
 		for i := range docs {
 			docsInterface[i] = docs[i]
 		}
@@ -137,7 +162,7 @@ func UploadData[T any](client *mongo.Client, ctx context.Context, fptr *os.File,
 				log.Panic(err)
 			}
 
-			var sorted []interface{}
+			var sorted []any
 			cursor.All(ctx, &sorted)
 
 			opts := options.InsertMany().SetOrdered(false)
@@ -229,7 +254,7 @@ func buildStaticAggregation(client *mongo.Client, ctx context.Context, collectio
 	defer cursor.Close(ctx)
 
 	output := getCollection(client, outputCollection)
-	var results []interface{}
+	var results []any
 	if err := cursor.All(ctx, &results); err != nil {
 		log.Panic(err)
 	}

@@ -63,68 +63,97 @@ func init() {
 	}
 }
 
-// Test duplicate courses. Designed for fail cases
 // TestDuplicateCoursesFail expects duplicates to trigger validation panic.
+//
+// Designed for fail cases
 func TestDuplicateCoursesFail(t *testing.T) {
 	for i := range len(testCourses) {
-		t.Run(fmt.Sprintf("Duplicate course %v", i), func(t *testing.T) {
-			testDuplicateFail("course", i, t)
-		})
+		t.Run(
+			fmt.Sprintf("Duplicate course %v", i),
+			func(t *testing.T) {
+				testDuplicateFail("course", i, t)
+			},
+		)
 	}
 }
 
-// Test duplicate sections. Designed for fail cases
 // TestDuplicateSectionsFail ensures duplicate sections are rejected.
+//
+// Designed for fail cases
 func TestDuplicateSectionsFail(t *testing.T) {
 	for i := range len(testSections) {
-		t.Run(fmt.Sprintf("Duplicate section %v", i), func(t *testing.T) {
-			testDuplicateFail("section", i, t)
-		})
+		t.Run(
+			fmt.Sprintf("Duplicate section %v", i),
+			func(t *testing.T) {
+				testDuplicateFail("section", i, t)
+			},
+		)
 	}
 }
 
-// Test duplicate professors . Designed for fail cases
 // TestDuplicateProfFail ensures duplicate professors fail validation.
+//
+// Designed for fail cases
 func TestDuplicateProfFail(t *testing.T) {
 	for i := range len(testProfessors) {
-		t.Run(fmt.Sprintf("Duplicate professor %v", i), func(t *testing.T) {
-			testDuplicateFail("professor", i, t)
-		})
+		t.Run(
+			fmt.Sprintf("Duplicate professor %v", i),
+			func(t *testing.T) {
+				testDuplicateFail("professor", i, t)
+			},
+		)
 	}
 }
 
-// Test duplicate courses. Designed for pass case
 // TestDuplicateCoursesPass confirms unique courses validate successfully.
+//
+// Designed for pass case
 func TestDuplicateCoursesPass(t *testing.T) {
-	for i := range len(testCourses) - 1 {
-		t.Run(fmt.Sprintf("Duplicate courses %v, %v", i, i+1), func(t *testing.T) {
-			testDuplicatePass("course", i, i+1, t)
-		})
+	for i := range len(testCourses) {
+		for j := i + 1; j < len(testCourses); j++ {
+			t.Run(
+				fmt.Sprintf("Duplicate courses %v, %v", i, j),
+				func(t *testing.T) {
+					testDuplicatePass("course", i, j, t)
+				},
+			)
+		}
 	}
 }
 
-// Test duplicate sections. Designed for pass cases
 // TestDuplicateSectionsPass confirms unique sections validate successfully.
+//
+// Designed for pass cases
 func TestDuplicateSectionsPass(t *testing.T) {
-	for i := range len(testSections) - 1 {
-		t.Run(fmt.Sprintf("Duplicate sections %v, %v", i, i+1), func(t *testing.T) {
-			testDuplicatePass("section", i, i+1, t)
-		})
+	for i := range len(testSections) {
+		for j := i + 1; j < len(testSections); j++ {
+			t.Run(
+				fmt.Sprintf("Duplicate sections %v, %v", i, j),
+				func(t *testing.T) {
+					testDuplicatePass("section", i, j, t)
+				},
+			)
+		}
 	}
 }
 
-// Test duplicate professors. Designed for pass cases
 // TestDuplicateProfPass confirms unique professors validate successfully.
+//
+// Designed for pass cases
 func TestDuplicateProfPass(t *testing.T) {
-	for i := range len(testProfessors) - 1 {
-		t.Run(fmt.Sprintf("Duplicate professors %v, %v", i, i+1), func(t *testing.T) {
-			testDuplicatePass("professor", i, i+1, t)
-		})
+	for i := range len(testProfessors) {
+		for j := i + 1; j < len(testProfessors); j++ {
+			t.Run(fmt.Sprintf("Duplicate professors %v, %v", i, j),
+				func(t *testing.T) {
+					testDuplicatePass("professor", i, j, t)
+				},
+			)
+		}
 	}
 }
 
-// Test if course references to anything nonexistent. Designed for pass case
 // TestCourseReferencePass ensures section references to courses succeed.
+// Test if course references to anything nonexistent. Designed for pass case
 func TestCourseReferencePass(t *testing.T) {
 	sectionMap := make(map[primitive.ObjectID]*schema.Section)
 	for _, section := range testSections {
@@ -156,29 +185,35 @@ func TestCourseReferencePass(t *testing.T) {
 // 2 types of fail:
 //   - Course references non-existent section
 //   - Section doesn't reference back to same course
-//
-// This is fail: missing
+
 // TestCourseReferenceFail1 detects missing course references during validation.
+// This is fail: missing
 func TestCourseReferenceFail1(t *testing.T) {
 	for key, value := range indexMap {
-		t.Run(fmt.Sprintf("Section %v & course %v", key, value), func(t *testing.T) {
-			testCourseReferenceFail("missing", value, key, t)
-		})
+		t.Run(
+			fmt.Sprintf("Section %v & course %v", key, value),
+			func(t *testing.T) {
+				testCourseReferenceFail("missing", value, key, t)
+			},
+		)
 	}
 }
 
-// This is fail: modified
 // TestCourseReferenceFail2 detects mismatched section-course references.
+// This is fail: modified
 func TestCourseReferenceFail2(t *testing.T) {
 	for key, value := range indexMap {
-		t.Run(fmt.Sprintf("Section %v & course %v", key, value), func(t *testing.T) {
-			testCourseReferenceFail("modified", value, key, t)
-		})
+		t.Run(
+			fmt.Sprintf("Section %v & course %v", key, value),
+			func(t *testing.T) {
+				testCourseReferenceFail("modified", value, key, t)
+			},
+		)
 	}
 }
 
-// Test section reference to professor, designed for pass case
 // TestSectionReferenceProfPass ensures section professor references are mutual.
+// Test section reference to professor, designed for pass case
 func TestSectionReferenceProfPass(t *testing.T) {
 	// Build profIDMap & profs
 	profIDMap := make(map[primitive.ObjectID]string)
@@ -208,8 +243,8 @@ func TestSectionReferenceProfPass(t *testing.T) {
 	}
 }
 
-// Test section reference to professors, designed for fail case
 // TestSectionReferenceProfFail catches missing professor back-references.
+// Test section reference to professors, designed for fail case
 func TestSectionReferenceProfFail(t *testing.T) {
 
 	profIDMap := make(map[primitive.ObjectID]string)
@@ -251,8 +286,8 @@ func TestSectionReferenceProfFail(t *testing.T) {
 	}
 }
 
-// Test section reference to course
 // TestSectionReferenceCourse verifies section-course reference validation.
+// Test section reference to course
 func TestSectionReferenceCourse(t *testing.T) {
 	courseIDMap := make(map[primitive.ObjectID]string)
 	for _, course := range testCourses {
@@ -280,7 +315,7 @@ func TestSectionReferenceCourse(t *testing.T) {
 
 /******** BELOW HERE ARE HELPER FUNCTION FOR TESTS ABOVE ********/
 
-// Test if validate() throws erros when encountering duplicate
+// testDuplicateFail tests if validate() throws erros when encountering duplicate
 // Design for fail cases
 func testDuplicateFail(objType string, ix int, t *testing.T) {
 	// the buffer used to capture the log output
@@ -351,7 +386,8 @@ func testDuplicateFail(objType string, ix int, t *testing.T) {
 	}
 }
 
-// Test if func doesn't log anything and doesn't panic.
+// testDuplicatePass tests if func doesn't log anything and doesn't panic.
+//
 // Design for pass cases
 func testDuplicatePass(objType string, ix1 int, ix2 int, t *testing.T) {
 	// Buffer to capture the output
@@ -380,6 +416,8 @@ func testDuplicatePass(objType string, ix1 int, ix2 int, t *testing.T) {
 	}
 }
 
+// testCourseReferenceFail tests if func doesn't log anything and doesn't panic.
+//
 // fail = "missing" means it lacks one sections
 // fail = "modified" means one section's course reference has been modified
 func testCourseReferenceFail(fail string, courseIx int, sectionIx int, t *testing.T) {

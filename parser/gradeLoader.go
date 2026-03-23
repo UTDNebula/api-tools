@@ -82,7 +82,7 @@ func csvToMap(filename string) (map[string][]int, error) {
 
 	for _, name := range optionalColumns {
 		if _, ok := indexMap[name]; !ok {
-			log.Printf("could not find %s column in %s", name, filename)
+			fmt.Fprintf(logFile, "could not find %s column\n", name)
 		}
 	}
 
