@@ -4,35 +4,40 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
+	"time"
 
 	"github.com/UTDNebula/api-tools/utils"
 	"github.com/chromedp/chromedp"
 )
 
-func ScrapeDegrees(outDir string) {
-	// Define the URL
-	const URL = "https://academics.utdallas.edu/degrees/#filter=.alldegrees.bass"
+const degreesUrl = "https://academics.utdallas.edu/degrees/"
 
-	ctx, cancel := utils.InitChromeDp()
+func ScrapeDegrees(outDir string) {
+	// Ensure output directory exists
+	err := os.MkdirAll(outDir, 0777)
+	if err != nil {
+		panic(err)
+	}
+
+	chromedpCtx, cancel := utils.InitChromeDp()
 	defer cancel()
 
-	var html string
 	log.Println("Scraping Degrees!")
-	err := chromedp.Run(ctx,
-		chromedp.Navigate(URL),
-		chromedp.WaitVisible("body", chromedp.ByQuery),
-		chromedp.OuterHTML("html", &html, chromedp.ByQuery),
+	_, err = chromedp.RunResponse(chromedpCtx,
+		chromedp.Navigate(degreesUrl),
+		chromedp.WaitVisible("article .col-sm-12", chromedp.ByQuery),
 	)
 	if err != nil {
 		log.Panicf("failed to scrape: %v", err)
 	}
 
-	// Ensure the output directory exists
-	outputPath := filepath.Join(outDir, "degrees")
-	err = os.MkdirAll(outputPath, os.ModePerm)
+	// Wait for the article content to load
+	time.Sleep(2 * time.Second)
+
+	var html string
+	err = chromedp.Run(chromedpCtx, chromedp.OuterHTML("article .col-sm-12", &html))
 	if err != nil {
-		log.Panicf("failed to create directory: %v", err)
+		log.Panicf("failed to scrape: %v", err)
 	}
 
 	// Write raw HTML to file
@@ -42,5 +47,5 @@ func ScrapeDegrees(outDir string) {
 		panic(err)
 	}
 
-	log.Printf("Finished scraping discount page successfully!\n\n")
+	log.Printf("Scraped degrees successfully!\n")
 }

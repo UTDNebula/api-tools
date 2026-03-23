@@ -22,13 +22,19 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.24'
+        go-version: '1.26'
 
     - name: Setup
       run: make setup
 
     - name: Check
       run: make check
+
+    - name: Test
+      env:
+        LOGIN_NETID: ${{ secrets.LOGIN_NETID }}
+        LOGIN_PASSWORD: ${{ secrets.LOGIN_PASSWORD }}
+      run: make test
 
     - name: Build
       run: make build
@@ -43,13 +49,19 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: '1.24'
+        go-version: '1.26'
 
     - name: Setup
       run: .\build.bat setup
 
     - name: Check
       run: .\build.bat check
+
+    - name: Test
+      env:
+        LOGIN_NETID: ${{ secrets.LOGIN_NETID }}
+        LOGIN_PASSWORD: ${{ secrets.LOGIN_PASSWORD }}
+      run: .\build.bat test
 
     - name: Build
       run: .\build.bat build

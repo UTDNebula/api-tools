@@ -1,14 +1,15 @@
 package parser
 
 import (
-	"encoding/json"
 	"fmt"
 	"html"
 	"log"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/UTDNebula/api-tools/utils"
 	"github.com/UTDNebula/nebula-api/api/schema"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -54,15 +55,11 @@ func ParseDiscounts(inDir string, outDir string) {
 		}
 	})
 
-	log.Printf("Parsed %d discount programs!", len(discounts))
-
-	// Write to JSON file with custom encoding (disable HTML escaping)
-	outPath := fmt.Sprintf("%s/discounts.json", outDir)
-	if err := writeDiscountsJSON(outPath, discounts); err != nil {
+	if err := utils.WriteJSON(fmt.Sprintf("%s/discounts.json", outDir), discounts); err != nil {
 		panic(err)
 	}
 
-	log.Printf("Finished parsing %d discount programs successfully!\n\n", len(discounts))
+	log.Printf("Parsed %d discount programs successfully!", len(discounts))
 }
 
 // parseDiscountItem extracts discount information from a cditem div
@@ -211,10 +208,8 @@ func isValidDiscount(d *schema.DiscountProgram) bool {
 	// Filter out obvious non-businesses
 	businessLower := strings.ToLower(d.Business)
 	invalidNames := []string{"business", "discount", "categories", "vendors", "contact"}
-	for _, invalid := range invalidNames {
-		if businessLower == invalid {
-			return false
-		}
+	if slices.Contains(invalidNames, businessLower) {
+		return false
 	}
 
 	// Must have at least a discount or some contact info
@@ -253,23 +248,8 @@ func extractEmail(text string) string {
 
 // trimAfter returns the substring after the first occurrence of sep
 func trimAfter(s, sep string) string {
-	if idx := strings.Index(s, sep); idx >= 0 {
-		return s[idx+len(sep):]
+	if _, after, ok := strings.Cut(s, sep); ok {
+		return after
 	}
 	return s
-}
-
-// writeDiscountsJSON writes discount data to JSON file without HTML escaping
-func writeDiscountsJSON(filepath string, data []schema.DiscountProgram) error {
-	fptr, err := os.Create(filepath)
-	if err != nil {
-		return err
-	}
-	defer fptr.Close()
-
-	encoder := json.NewEncoder(fptr)
-	encoder.SetIndent("", "\t")
-	encoder.SetEscapeHTML(false) // Don't escape HTML characters like & to \u0026
-
-	return encoder.Encode(data)
 }
