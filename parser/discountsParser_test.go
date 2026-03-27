@@ -39,8 +39,8 @@ func TestParseDiscountItem(t *testing.T) {
 			expected: schema.DiscountProgram{
 				Category: "Accommodations",
 				Business: "Airbnb Houses Near UTD",
-				Address:  "",
-				Phone:    "972-214-5510",
+				Address:  []string{},
+				Phone:    "19722145510",
 				Email:    "timmy.bao@gmail.com",
 				Website:  "https://www.airbnb.com/",
 				Discount: "10% discount to any Comet Card holder from UTD.",
@@ -67,8 +67,8 @@ func TestParseDiscountItem(t *testing.T) {
 			expected: schema.DiscountProgram{
 				Category: "Accommodations",
 				Business: "Element Dallas Richardson",
-				Address:  "2205 N. Glenville Drive, Richardson, Texas 75082",
-				Phone:    "972.833.1771",
+				Address:  []string{"2205 N. Glenville Drive, Richardson, Texas 75082"},
+				Phone:    "19728331771",
 				Email:    "jlhoward@elementdallasrichardson.com",
 				Website:  "http://www.marriott.com/daler",
 				Discount: "Receive up to 25% off retail rates by using UTD promo code – UTX",
@@ -95,8 +95,8 @@ func TestParseDiscountItem(t *testing.T) {
 			expected: schema.DiscountProgram{
 				Category: "Auto Services",
 				Business: "MasterTech",
-				Address:  "1300 Alma Dr. Plano, Tx.",
-				Phone:    "972-578-1841",
+				Address:  []string{"1300 Alma Dr. Plano, Tx."},
+				Phone:    "19725781841",
 				Email:    "Bill.mastertech@gmail.com",
 				Website:  "",
 				Discount: "10% off both parts and labor up to $150 off (excluding sublet).",
@@ -121,7 +121,7 @@ func TestParseDiscountItem(t *testing.T) {
 			expected: schema.DiscountProgram{
 				Category: "Entertainment",
 				Business: "J&S Party Rental",
-				Address:  "4906 Dillehay Dr. #300 Allen, TX 75002",
+				Address:  []string{"4906 Dillehay Dr. #300 Allen, TX 75002"},
 				Phone:    "",
 				Email:    "admin@test.com",
 				Website:  "http://test.com",

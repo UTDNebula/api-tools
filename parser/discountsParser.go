@@ -11,6 +11,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/UTDNebula/api-tools/utils"
 	"github.com/UTDNebula/nebula-api/api/schema"
+	"github.com/dongri/phonenumber"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -135,20 +136,23 @@ func parseDiscountItem(s *goquery.Selection, category string) *schema.DiscountPr
 
 		// Check if it's a phone number
 		if containsPhonePattern(line) || isNumericPhone(line) {
-			discount.Phone = line
+			// assumes that all phone numbers here are US phone numbers
+			discount.Phone = phonenumber.Parse(line, "US")
 		}
 	}
 
-	// Join address lines and clean up newlines
-	if len(addressLines) > 0 {
-		addr := strings.Join(addressLines, ", ")
-		// Replace newlines with spaces
-		addr = strings.ReplaceAll(addr, "\n", " ")
-		addr = strings.ReplaceAll(addr, "\r", " ")
-		// Clean up multiple spaces
-		addr = strings.Join(strings.Fields(addr), " ")
-		discount.Address = addr
+	var addresses = []string{}
+	for i := 0; i < len(addressLines); i++ {
+		currentLine := addressLines[i]
+
+		// Cleaning up the line
+		currentLine = strings.ReplaceAll(currentLine, "\n", " ")
+		currentLine = strings.ReplaceAll(currentLine, "\r", " ")
+
+		addresses = append(addresses, currentLine)
 	}
+
+	discount.Address = addresses
 
 	// Second column: discount info
 	discountCol := cols.Eq(1)
@@ -214,7 +218,7 @@ func isValidDiscount(d *schema.DiscountProgram) bool {
 
 	// Must have at least a discount or some contact info
 	hasContent := d.Discount != "" || d.Email != "" || d.Phone != "" ||
-		d.Website != "" || d.Address != ""
+		d.Website != "" || len(d.Address) > 0
 
 	return hasContent
 }
