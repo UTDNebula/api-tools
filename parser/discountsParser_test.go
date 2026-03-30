@@ -39,8 +39,8 @@ func TestParseDiscountItem(t *testing.T) {
 			expected: schema.DiscountProgram{
 				Category: "Accommodations",
 				Business: "Airbnb Houses Near UTD",
-				Address:  "",
-				Phone:    "972-214-5510",
+				Address:  []string{},
+				Phone:    "19722145510",
 				Email:    "timmy.bao@gmail.com",
 				Website:  "https://www.airbnb.com/",
 				Discount: "10% discount to any Comet Card holder from UTD.",
@@ -67,8 +67,8 @@ func TestParseDiscountItem(t *testing.T) {
 			expected: schema.DiscountProgram{
 				Category: "Accommodations",
 				Business: "Element Dallas Richardson",
-				Address:  "2205 N. Glenville Drive, Richardson, Texas 75082",
-				Phone:    "972.833.1771",
+				Address:  []string{"2205 N. Glenville Drive, Richardson, Texas 75082"},
+				Phone:    "19728331771",
 				Email:    "jlhoward@elementdallasrichardson.com",
 				Website:  "http://www.marriott.com/daler",
 				Discount: "Receive up to 25% off retail rates by using UTD promo code – UTX",
@@ -95,8 +95,8 @@ func TestParseDiscountItem(t *testing.T) {
 			expected: schema.DiscountProgram{
 				Category: "Auto Services",
 				Business: "MasterTech",
-				Address:  "1300 Alma Dr. Plano, Tx.",
-				Phone:    "972-578-1841",
+				Address:  []string{"1300 Alma Dr. Plano, Tx."},
+				Phone:    "19725781841",
 				Email:    "Bill.mastertech@gmail.com",
 				Website:  "",
 				Discount: "10% off both parts and labor up to $150 off (excluding sublet).",
@@ -121,7 +121,7 @@ func TestParseDiscountItem(t *testing.T) {
 			expected: schema.DiscountProgram{
 				Category: "Entertainment",
 				Business: "J&S Party Rental",
-				Address:  "4906 Dillehay Dr. #300 Allen, TX 75002",
+				Address:  []string{"4906 Dillehay Dr. #300 Allen, TX 75002"},
 				Phone:    "",
 				Email:    "admin@test.com",
 				Website:  "http://test.com",
@@ -249,86 +249,6 @@ func TestCleanText(t *testing.T) {
 			result := cleanText(tc.input)
 			if result != tc.expected {
 				t.Errorf("cleanText(%q) = %q, expected %q", tc.input, result, tc.expected)
-			}
-		})
-	}
-}
-
-// TestContainsPhonePattern tests phone number pattern detection
-func TestContainsPhonePattern(t *testing.T) {
-	t.Parallel()
-
-	testCases := map[string]struct {
-		input    string
-		expected bool
-	}{
-		"standard": {
-			input:    "972-214-5510",
-			expected: true,
-		},
-		"parentheses": {
-			input:    "(972) 214-5510",
-			expected: true,
-		},
-		"not_phone": {
-			input:    "Hello World",
-			expected: false,
-		},
-		"single_dash": {
-			input:    "Test-Name",
-			expected: false,
-		},
-	}
-
-	for name, tc := range testCases {
-		t.Run(name, func(t *testing.T) {
-			t.Parallel()
-
-			result := containsPhonePattern(tc.input)
-			if result != tc.expected {
-				t.Errorf("containsPhonePattern(%q) = %v, expected %v", tc.input, result, tc.expected)
-			}
-		})
-	}
-}
-
-// TestIsNumericPhone tests numeric phone detection
-func TestIsNumericPhone(t *testing.T) {
-	t.Parallel()
-
-	testCases := map[string]struct {
-		input    string
-		expected bool
-	}{
-		"numeric_phone": {
-			input:    "9722145510",
-			expected: true,
-		},
-		"with_spaces": {
-			input:    "972 214 5510",
-			expected: true,
-		},
-		"too_short": {
-			input:    "12345",
-			expected: false,
-		},
-		"too_long": {
-			input:    "123456789012345678901",
-			expected: false,
-		},
-		"not_numeric": {
-			input:    "Hello World",
-			expected: false,
-		},
-	}
-
-	for name, tc := range testCases {
-		t.Run(name, func(t *testing.T) {
-			t.Parallel()
-
-			result := isNumericPhone(tc.input)
-			if result != tc.expected {
-				t.Errorf("isNumericPhone(%q) = %v, expected %v", tc.input, result, tc.expected)
 			}
 		})
 	}
