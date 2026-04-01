@@ -224,8 +224,8 @@ func WriteJSON(filepath string, data interface{}) error {
 	defer fptr.Close()
 	encoder := json.NewEncoder(fptr)
 	encoder.SetIndent("", "\t")
-	encoder.Encode(data)
-	return nil
+	encoder.SetEscapeHTML(false)
+	return encoder.Encode(data)
 }
 
 // GetAllFilesWithExtension recursively gathers file paths within inDir that match extension.

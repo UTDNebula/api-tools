@@ -1,9 +1,9 @@
 {
-	"_id": "67d07ee0c972c18731e23bdf",
+	"_id": "69cda9299bb0b8cd4cf4c724",
 	"subject_prefix": "BA",
 	"course_number": "1320",
 	"title": "Business in a Global World",
-	"description": "BA 1320 - Business in a Global World  (3 semester credit hours) This course provides a primer on the impacts of globalization on business. We equip students with the basic facts of globalization and examine the business underpinnings and the institutions that shape globalization. We discuss major trends and the future of international management. The aim is an ability to think strategically and critically about global business issues. (3-0) S",
+	"description": "BA 1320 - Business in a Global World (3 semester credit hours) This course provides a primer on the impacts of globalization on business. We equip students with the basic facts of globalization and examine the business underpinnings and the institutions that shape globalization. We discuss major trends and the future of international management. The aim is an ability to think strategically and critically about global business issues. (3-0) S",
 	"enrollment_reqs": "BA 1320 Repeat Restriction",
 	"school": "Naveen Jindal School of Management",
 	"credit_hours": "3",
@@ -15,7 +15,7 @@
 	"corequisites": null,
 	"co_or_pre_requisites": null,
 	"sections": [
-		"67d07ee0c972c18731e23be0"
+		"69cda9299bb0b8cd4cf4c725"
 	],
 	"lecture_contact_hours": "3",
 	"laboratory_contact_hours": "0",

@@ -1,12 +1,12 @@
 [
 	{
-		"_id": "69cda9299bb0b8cd4cf4c726",
-		"first_name": "Peter",
-		"last_name": "Lewin",
+		"_id": "69cda9299bb0b8cd4cf4c730",
+		"first_name": "Damian",
+		"last_name": "Enyaosah",
 		"titles": [
 			"Primary Instructor"
 		],
-		"email": "plewin@utdallas.edu",
+		"email": "dpe190000@utdallas.edu",
 		"phone_number": "",
 		"office": {
 			"building": "",
@@ -17,7 +17,7 @@
 		"image_uri": "",
 		"office_hours": null,
 		"sections": [
-			"69cda9299bb0b8cd4cf4c725"
+			"69cda9299bb0b8cd4cf4c72f"
 		]
 	}
 ]
