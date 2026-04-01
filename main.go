@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -106,45 +105,7 @@ func main() {
 		case *scrapeProfiles:
 			scrapers.ScrapeProfiles(*outDir)
 		case *scrapeCoursebook:
-			if *term == "" {
-				log.Fatalf("No term specified for coursebook scraping! Use -term to specify.")
-			}
-			// TODO Handle Errors, give flag to retry on panic, and a retry count for non panics, how long to wait for retry
-			var lastErr error = nil
-			repeatErrCount := 0
-			for {
-				err := scrapers.ScrapeCoursebook(*term, *startPrefix, *outDir, *resume)
-
-				if err == nil {
-					break // Scraping succeeded
-				}
-
-				var setupErr *scrapers.SetupError
-				if errors.As(err, &setupErr) {
-					log.Fatalf("Coursebook Scraping Setup Failed: %v", err)
-					// Exit immediately
-				}
-
-				if fmt.Sprintf("%v", lastErr) == fmt.Sprintf("%v", err) {
-					repeatErrCount++
-				} else {
-					repeatErrCount = 0
-				}
-
-				log.Printf("Coursebook Scraping Failed: %v", err)
-
-				if *retry == 0 {
-					log.Fatalf("Coursebook Scraping Failed, Exiting")
-				} else if repeatErrCount >= *retry { // Make max repeat count determined by flag
-					log.Fatalf("Coursebook Scraping Failed %d times in a row with the same error, Exiting", *retry+1)
-				}
-
-				lastErr = err
-
-				// TODO: handle netid (using setup error)
-				// TODO: handle context broke error
-				// TODO: handle network issues
-			}
+			scrapers.ScrapeCoursebook(*term, *startPrefix, *outDir, *resume, *retry)
 		case *scrapeDiscounts:
 			scrapers.ScrapeDiscounts(*outDir)
 		case *cometCalendar:

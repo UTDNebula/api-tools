@@ -43,8 +43,53 @@ func (e *SetupError) Error() string {
 	return e.Message
 }
 
-// ScrapeCoursebook scrapes utd coursebook for the provided term (semester)
-func ScrapeCoursebook(term string, startPrefix string, outDir string, resume bool) error {
+// ScrapeCoursebook Scrapes utd coursebook for provided term with specified options
+func ScrapeCoursebook(term string, startPrefix string, outDir string, resume bool, retry int) {
+	// TODO Handle Errors, give flag to retry on panic, and a retry count for non panics, how long to wait for retry
+	var lastErr error = nil
+	repeatErrCount := 0
+	for repeatErrCount <= retry { // While instead?
+		err := scrapeCoursebookInternal(term, startPrefix, outDir, resume)
+
+		if err == nil {
+			return // Scraping succeeded
+		}
+
+		if err.Error() == "context canceled" {
+			log.Fatalf("Coursebook Scraping Canceled, Exiting")
+		}
+
+		var setupErr *SetupError
+		if errors.As(err, &setupErr) {
+			log.Fatalf("Coursebook Scraping Setup Failed: %v", err)
+			// Exit immediately
+		}
+
+		if fmt.Sprintf("%v", lastErr) == fmt.Sprintf("%v", err) {
+			repeatErrCount++
+		} else {
+			repeatErrCount = 1
+		}
+
+		log.Printf("Coursebook Scraping Failed: %v", err)
+
+		lastErr = err
+
+		// TODO: handle netid (using setup error)
+		// TODO: handle context broke error
+		// TODO: handle network issues
+	}
+
+	if retry != 0 {
+		log.Fatalf("Coursebook Scraping Failed %d times in a row with the same error, Exiting", retry+1)
+	}
+}
+
+// scrapeCoursebookInternal scrapes utd coursebook for the provided term (semester)
+func scrapeCoursebookInternal(term string, startPrefix string, outDir string, resume bool) error {
+	if term == "" {
+		return &SetupError{Message: fmt.Sprintf("No term specified for coursebook scraping! Use -term to specify.")}
+	}
 	if startPrefix != "" && !prefixRegex.MatchString(startPrefix) {
 		return &SetupError{Message: fmt.Sprintf("invalid starting prefix %s, must match format cp_{abcde}", startPrefix)}
 	}
