@@ -1,15 +1,18 @@
 package parser
 
 import (
-	"encoding/json"
 	"fmt"
 	"html"
 	"log"
 	"os"
+	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/UTDNebula/api-tools/utils"
 	"github.com/UTDNebula/nebula-api/api/schema"
+	"github.com/dongri/phonenumber"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -54,15 +57,11 @@ func ParseDiscounts(inDir string, outDir string) {
 		}
 	})
 
-	log.Printf("Parsed %d discount programs!", len(discounts))
-
-	// Write to JSON file with custom encoding (disable HTML escaping)
-	outPath := fmt.Sprintf("%s/discounts.json", outDir)
-	if err := writeDiscountsJSON(outPath, discounts); err != nil {
+	if err := utils.WriteJSON(fmt.Sprintf("%s/discounts.json", outDir), discounts); err != nil {
 		panic(err)
 	}
 
-	log.Printf("Finished parsing %d discount programs successfully!\n\n", len(discounts))
+	log.Printf("Parsed %d discount programs successfully!", len(discounts))
 }
 
 // parseDiscountItem extracts discount information from a cditem div
@@ -137,21 +136,27 @@ func parseDiscountItem(s *goquery.Selection, category string) *schema.DiscountPr
 		}
 
 		// Check if it's a phone number
-		if containsPhonePattern(line) || isNumericPhone(line) {
-			discount.Phone = line
+		// phonenumber.Parse returns "" if not parsable as a phone number
+		// assumes that all phone numbers here are US phone numbers
+		parsed := phonenumber.Parse(line, "US")
+		if parsed != "" {
+			discount.Phone = parsed
 		}
+
 	}
 
-	// Join address lines and clean up newlines
-	if len(addressLines) > 0 {
-		addr := strings.Join(addressLines, ", ")
-		// Replace newlines with spaces
-		addr = strings.ReplaceAll(addr, "\n", " ")
-		addr = strings.ReplaceAll(addr, "\r", " ")
-		// Clean up multiple spaces
-		addr = strings.Join(strings.Fields(addr), " ")
-		discount.Address = addr
+	var addresses = []string{}
+	for i := 0; i < len(addressLines); i++ {
+		currentLine := addressLines[i]
+
+		// Cleaning up the line
+		currentLine = strings.ReplaceAll(currentLine, "\n", " ")
+		currentLine = strings.ReplaceAll(currentLine, "\r", " ")
+
+		addresses = append(addresses, currentLine)
 	}
+
+	discount.Address = addresses
 
 	// Second column: discount info
 	discountCol := cols.Eq(1)
@@ -190,17 +195,6 @@ func stripHTMLTags(s string) string {
 	return s
 }
 
-// isNumericPhone checks if a string is mostly numeric (like a phone number)
-func isNumericPhone(s string) bool {
-	digitCount := 0
-	for _, c := range s {
-		if c >= '0' && c <= '9' {
-			digitCount++
-		}
-	}
-	return digitCount >= 7 && len(s) <= 20
-}
-
 // isValidDiscount checks if a discount entry has meaningful data
 func isValidDiscount(d *schema.DiscountProgram) bool {
 	// Must have a business name
@@ -211,65 +205,35 @@ func isValidDiscount(d *schema.DiscountProgram) bool {
 	// Filter out obvious non-businesses
 	businessLower := strings.ToLower(d.Business)
 	invalidNames := []string{"business", "discount", "categories", "vendors", "contact"}
-	for _, invalid := range invalidNames {
-		if businessLower == invalid {
-			return false
-		}
+	if slices.Contains(invalidNames, businessLower) {
+		return false
 	}
 
 	// Must have at least a discount or some contact info
 	hasContent := d.Discount != "" || d.Email != "" || d.Phone != "" ||
-		d.Website != "" || d.Address != ""
+		d.Website != "" || len(d.Address) > 0
 
 	return hasContent
 }
 
-// containsPhonePattern checks if a string contains phone number patterns
-func containsPhonePattern(s string) bool {
-	// Simple check for phone number patterns like XXX-XXX-XXXX or (XXX) XXX-XXXX
-	return strings.Count(s, "-") >= 2 || (strings.Contains(s, "(") && strings.Contains(s, ")"))
-}
-
-// extractEmail extracts email from text
+// extractEmail uses regex to extract email addresses from text
 func extractEmail(text string) string {
-	text = strings.TrimSpace(text)
+	const emailRegexPattern = `[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,4}`
+	var emailRegex = regexp.MustCompile(emailRegexPattern)
 
-	// Find @ symbol and extract email
-	if idx := strings.Index(text, "@"); idx != -1 {
-		// Find start and end of email
-		start := idx
-		for start > 0 && !strings.ContainsAny(string(text[start-1]), " \t\n\r,;") {
-			start--
-		}
-		end := idx
-		for end < len(text) && !strings.ContainsAny(string(text[end]), " \t\n\r,;") {
-			end++
-		}
-		return text[start:end]
+	email := emailRegex.FindString(text)
+
+	if email == "" {
+		return "No email here"
 	}
 
-	return text
+	return email
 }
 
 // trimAfter returns the substring after the first occurrence of sep
 func trimAfter(s, sep string) string {
-	if idx := strings.Index(s, sep); idx >= 0 {
-		return s[idx+len(sep):]
+	if _, after, ok := strings.Cut(s, sep); ok {
+		return after
 	}
 	return s
-}
-
-// writeDiscountsJSON writes discount data to JSON file without HTML escaping
-func writeDiscountsJSON(filepath string, data []schema.DiscountProgram) error {
-	fptr, err := os.Create(filepath)
-	if err != nil {
-		return err
-	}
-	defer fptr.Close()
-
-	encoder := json.NewEncoder(fptr)
-	encoder.SetIndent("", "\t")
-	encoder.SetEscapeHTML(false) // Don't escape HTML characters like & to \u0026
-
-	return encoder.Encode(data)
 }
