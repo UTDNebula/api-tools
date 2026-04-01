@@ -1,23 +1,23 @@
 [
-  {
-    "_id": "6972f54d6afb10b361a3e8c5",
-    "first_name": "Damian",
-    "last_name": "Enyaosah",
-    "titles": [
-      "Primary Instructor"
-    ],
-    "email": "dpe190000@utdallas.edu",
-    "phone_number": "",
-    "office": {
-      "building": "",
-      "room": "",
-      "map_uri": ""
-    },
-    "profile_uri": "",
-    "image_uri": "",
-    "office_hours": null,
-    "sections": [
-      "6972f54d6afb10b361a3e8c4"
-    ]
-  }
+	{
+		"_id": "69cda9299bb0b8cd4cf4c730",
+		"first_name": "Damian",
+		"last_name": "Enyaosah",
+		"titles": [
+			"Primary Instructor"
+		],
+		"email": "dpe190000@utdallas.edu",
+		"phone_number": "",
+		"office": {
+			"building": "",
+			"room": "",
+			"map_uri": ""
+		},
+		"profile_uri": "",
+		"image_uri": "",
+		"office_hours": null,
+		"sections": [
+			"69cda9299bb0b8cd4cf4c72f"
+		]
+	}
 ]

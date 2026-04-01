@@ -264,11 +264,11 @@ func TestSectionReferenceProfFail(t *testing.T) {
 		logOutput := logBuffer.String()
 
 		for _, msg := range []string{
-			"Nonexistent professor reference found for section ID ObjectID(\"6972f54d6afb10b361a3e8c7\")!",
-			"Referenced professor ID: ObjectID(\"6972f54d6afb10b361a3e8c9\")",
+			"Nonexistent professor reference found for section ID ObjectID(\"69cda9299bb0b8cd4cf4c732\")!",
+			"Referenced professor ID: ObjectID(\"69cda9299bb0b8cd4cf4c734\")",
 		} {
 			if !strings.Contains(logOutput, msg) {
-				t.Errorf("The function didn't log correct message. Expected \"%v\"", msg)
+				t.Errorf("The function didn't log correct message. \nExpected \"%v\"\nGot \"%v\"", msg, logOutput)
 			}
 		}
 

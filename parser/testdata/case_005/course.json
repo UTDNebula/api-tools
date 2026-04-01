@@ -1,9 +1,9 @@
 {
-	"_id": "6972f54d6afb10b361a3e8c1",
+	"_id": "69cda9299bb0b8cd4cf4c72c",
 	"subject_prefix": "AERO",
 	"course_number": "4320",
 	"title": "- Laboratory",
-	"description": "-  ()",
+	"description": "- ()",
 	"enrollment_reqs": "",
 	"school": "Undergraduate Studies",
 	"credit_hours": "4",
@@ -15,7 +15,7 @@
 	"corequisites": null,
 	"co_or_pre_requisites": null,
 	"sections": [
-		"6972f54d6afb10b361a3e8c2"
+		"69cda9299bb0b8cd4cf4c72d"
 	],
 	"lecture_contact_hours": "",
 	"laboratory_contact_hours": "",

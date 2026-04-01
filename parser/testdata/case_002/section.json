@@ -1,7 +1,7 @@
 {
-  "_id": "6972f54d6afb10b361a3e8ba",
+	"_id": "69cda9299bb0b8cd4cf4c725",
 	"section_number": "501",
-  "course_reference": "6972f54d6afb10b361a3e8b9",
+	"course_reference": "69cda9299bb0b8cd4cf4c724",
 	"section_corequisites": null,
 	"academic_session": {
 		"name": "25S",
@@ -9,7 +9,7 @@
 		"end_date": "2025-05-16T00:00:00-05:00"
 	},
 	"professors": [
-      "6972f54d6afb10b361a3e8bb"
+		"69cda9299bb0b8cd4cf4c726"
 	],
 	"teaching_assistants": [
 		{
@@ -44,25 +44,25 @@
 		"090"
 	],
 	"syllabus_uri": "https://dox.utdallas.edu/syl153033",
-  "grade_distribution": [
-    0,
-    13,
-    23,
-    6,
-    4,
-    7,
-    1,
-    0,
-    0,
-    0,
-    0,
-    0,
-    1,
-    1,
-    0,
-    0,
-    0,
-    0
-  ],
+	"grade_distribution": [
+		0,
+		13,
+		23,
+		6,
+		4,
+		7,
+		1,
+		0,
+		0,
+		0,
+		0,
+		0,
+		1,
+		1,
+		0,
+		0,
+		0,
+		0
+	],
 	"attributes": null
 }
