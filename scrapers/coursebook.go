@@ -104,7 +104,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string, resume boo
 		for _, sectionId := range sectionIds {
 			content, err := scraper.getSectionContent(sectionId)
 			if err != nil {
-				log.Panicf("Error getting section content for section %s: %v", sectionId, err)
+				return fmt.Errorf("error getting section content for section %s: %v", sectionId, err)
 			}
 			if err := scraper.writeSection(prefix, sectionId, content); err != nil {
 				log.Panicf("Error writing section %s: %v", sectionId, err)
