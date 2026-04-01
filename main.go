@@ -34,6 +34,7 @@ func main() {
 	term := flag.String("term", "", "Alongside -coursebook, specifies the term to scrape, i.e. 23S")
 	startPrefix := flag.String("startprefix", "", "Alongside -coursebook, specifies the course prefix to start scraping from, i.e. cp_span")
 	resume := flag.Bool("resume", false, "Alongside -coursebook, signifies that scraping should begin at the last complete prefix and should not re-scrape existing data")
+	retry := flag.Int("retry", 0, "Alongside -coursebook, specifies how many times to retry before quitting")
 
 	// Flag for profile scraping
 	scrapeProfiles := flag.Bool("profiles", false, "Alongside -scrape, signifies that professor profiles should be scraped.")
@@ -130,13 +131,19 @@ func main() {
 					repeatErrCount = 0
 				}
 
-				lastErr = err
 				log.Printf("Coursebook Scraping Failed: %v", err)
-				if repeatErrCount >= 3 { // Make max repeat count determined by flag
-					log.Fatalf("Coursebook Scraping Failed 3 times in a row with the same error, Exiting")
+
+				if *retry == 0 {
+					log.Fatalf("Coursebook Scraping Failed, Exiting")
+				} else if repeatErrCount >= *retry { // Make max repeat count determined by flag
+					log.Fatalf("Coursebook Scraping Failed %d times in a row with the same error, Exiting", *retry+1)
 				}
 
-				// TODO: we need to resume!!!
+				lastErr = err
+
+				// TODO: handle netid (using setup error)
+				// TODO: handle context broke error
+				// TODO: handle network issues
 			}
 		case *scrapeDiscounts:
 			scrapers.ScrapeDiscounts(*outDir)
