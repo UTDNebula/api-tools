@@ -1,9 +1,9 @@
 {
-	"_id": "67d07ee0c972c18731e23be2",
+	"_id": "69cda9299bb0b8cd4cf4c727",
 	"subject_prefix": "BIOL",
 	"course_number": "6111",
 	"title": "Graduate Research Presentation",
-	"description": "BIOL 6111 - Graduate Research Presentation  (1 semester credit hour) This course will train graduate students (MS and PhD) in hypothesis building and testing, designing, and conducting experiments, and presenting scientific findings in an efficient and clear manner. During the class, graduate students will discuss and present their graduate research work-in-progress. Significant time outside of class will also be required to analyze data, assemble, and practice presentations. May be repeated for credit as topics vary (2 semester credit hours maximum). Department consent required. (1-0) S",
+	"description": "BIOL 6111 - Graduate Research Presentation (1 semester credit hour) This course will train graduate students (MS and PhD) in hypothesis building and testing, designing, and conducting experiments, and presenting scientific findings in an efficient and clear manner. During the class, graduate students will discuss and present their graduate research work-in-progress. Significant time outside of class will also be required to analyze data, assemble, and practice presentations. May be repeated for credit as topics vary (2 semester credit hours maximum). Department consent required. (1-0) S",
 	"enrollment_reqs": "",
 	"school": "School of Natural Sciences and Mathematics",
 	"credit_hours": "1",
@@ -15,7 +15,7 @@
 	"corequisites": null,
 	"co_or_pre_requisites": null,
 	"sections": [
-		"67d07ee0c972c18731e23be3"
+		"69cda9299bb0b8cd4cf4c728"
 	],
 	"lecture_contact_hours": "1",
 	"laboratory_contact_hours": "0",
