@@ -22,7 +22,7 @@ var (
 	// coreRegexp matches any 3-digit number, used for core curriculum codes (e.g., "090").
 	coreRegexp = regexp.MustCompile(`[0-9]{3}`)
 
-	// personRegexp matches any 3 strings (no spaces) seperated by '・', (e.g, Name・Role・Email)
+	// personRegexp matches any 3 strings (no spaces) separated by '・', (e.g, Name・Role・Email)
 	personRegexp = regexp.MustCompile(`(.+)・(.+)・(.+)`)
 
 	// meetingDatesRegexp matches a full date in "Month Day, Year" format (e.g., "January 5, 2022")
@@ -35,7 +35,7 @@ var (
 	meetingTimesRegexp = regexp.MustCompile(utils.R_TIME_AM_PM)
 )
 
-// parseSection creates a schema.Section from rowInfo and ClassInfo,
+// parseSection creates a schema.Section from rowInfo and classInfo,
 // adds it to Sections, and updates the associated Course and Professors.
 // Internally calls parseCourse and parseProfessors, which modify global maps.
 func parseSection(rowInfo map[string]*goquery.Selection, classInfo map[string]string) {
@@ -46,16 +46,18 @@ func parseSection(rowInfo map[string]*goquery.Selection, classInfo map[string]st
 
 	id := primitive.NewObjectID()
 
-	// Build compound keys
 	courseKey := schema.CourseKey{
 		Subject_prefix: courseRef.Subject_prefix,
 		Course_number:  courseRef.Course_number,
 		Catalog_year:   courseRef.Catalog_year,
 	}
 
-	courseSectionKey := schema.CourseSectionKey{
+	sectionKey := schema.SectionKey{
+		Subject_prefix: courseRef.Subject_prefix,
+		Course_number:  courseRef.Course_number,
+		Catalog_year:   courseRef.Catalog_year,
 		Section_number: sectionNumber,
-		Term: session.Name,
+		Term:           session.Name,
 	}
 
 	profSectionKey := schema.ProfSectionKey{
@@ -84,14 +86,14 @@ func parseSection(rowInfo map[string]*goquery.Selection, classInfo map[string]st
 	Sections[section.Id] = &section
 
 	// Append new section to course's section listing
-	courseRef.Sections = append(courseRef.Sections, courseSectionKey)
+	courseRef.Sections = append(courseRef.Sections, sectionKey)
 }
 
-// getInternalClassAndCourseNum returns a sections internal course and class number,
+// getInternalClassAndCourseNum returns a section's internal class number and internal course number,
 // both 0-padded, 5-digit numbers as strings.
-// It expects ClassInfo to contain "Class/Course Number:" key.
+// It expects classInfo to contain "Class/Course Number:" key.
 // If the key is not found or the value is not in the expected "classNum / courseNum" format,
-// it returns empty strings.
+// it panics.
 func getInternalClassAndCourseNum(classInfo map[string]string) (string, string) {
 	if numbers, ok := classInfo["Class/Course Number:"]; ok {
 		classAndCourseNum := strings.Split(numbers, " / ")
@@ -100,7 +102,7 @@ func getInternalClassAndCourseNum(classInfo map[string]string) (string, string) 
 		}
 		panic("failed to parse internal class number and course number")
 	}
-	panic("could not find 'Class/Course Number:' in ClassInfo")
+	panic("could not find 'Class/Course Number:' in classInfo")
 }
 
 // getAcademicSession returns the schema.AcademicSession parsed from the provided rowInfo.
@@ -111,7 +113,7 @@ func getAcademicSession(rowInfo map[string]*goquery.Selection) schema.AcademicSe
 	infoNodes := rowInfo["Schedule:"].FindMatcher(goquery.Single("p.courseinfo__sectionterm")).Contents().Nodes
 	for _, node := range infoNodes {
 		if node.DataAtom == atom.B {
-			//since the key is not a TextElement, the Text is stored in its first child, a TextElement
+			// since the key is not a TextElement, the text is stored in its first child, a TextElement
 			key := utils.TrimWhitespace(node.FirstChild.Data)
 			value := utils.TrimWhitespace(node.NextSibling.Data)
 
@@ -127,25 +129,24 @@ func getAcademicSession(rowInfo map[string]*goquery.Selection) schema.AcademicSe
 	}
 
 	if session.Name == "" {
-		panic("failed to find academic session, session name can not be empty")
+		panic("failed to find academic session, session name cannot be empty")
 	}
 
 	return session
 }
 
 // getSectionNumber returns the matched value from a sectionPrefixRegexp on
-// `ClassInfo["Class Section:"]`. It expects ClassInfo to contain "Class Section:" key.
-// If there is no matches, getSectionNumber will panic as sectionNumber is a required
-// field.
+// classInfo["Class Section:"]. It expects classInfo to contain "Class Section:" key.
+// If there are no matches, getSectionNumber will panic since sectionNumber is a required field.
 func getSectionNumber(classInfo map[string]string) string {
-	if syllabus, ok := classInfo["Class Section:"]; ok {
-		matches := sectionPrefixRegexp.FindStringSubmatch(syllabus)
+	if classSection, ok := classInfo["Class Section:"]; ok {
+		matches := sectionPrefixRegexp.FindStringSubmatch(classSection)
 		if len(matches) == 2 {
 			return matches[1]
 		}
 		panic("failed to parse section number")
 	}
-	panic("could not find 'Class Section:' in ClassInfo")
+	panic("could not find 'Class Section:' in classInfo")
 }
 
 // getTeachingAssistants parses TA/RA information from rowInfo and returns a list of schema.Assistant.
@@ -156,6 +157,7 @@ func getTeachingAssistants(rowInfo map[string]*goquery.Selection) []schema.Assis
 	if !ok {
 		return []schema.Assistant{}
 	}
+
 	assistantMatches := personRegexp.FindAllStringSubmatch(utils.TrimWhitespace(taRow.Text()), -1)
 	assistants := make([]schema.Assistant, 0, len(assistantMatches))
 
@@ -170,11 +172,12 @@ func getTeachingAssistants(rowInfo map[string]*goquery.Selection) []schema.Assis
 		}
 		assistants = append(assistants, assistant)
 	}
+
 	return assistants
 }
 
-// getInstructionMode returns the instruction mode (e.g., in-person, online) from ClassInfo.
-// It expects ClassInfo to contain "Instruction Mode:" key.
+// getInstructionMode returns the instruction mode (e.g., in-person, online) from classInfo.
+// It expects classInfo to contain "Instruction Mode:" key.
 // If the key is not present, it returns an empty string.
 func getInstructionMode(classInfo map[string]string) string {
 	if mode, ok := classInfo["Instruction Mode:"]; ok {
@@ -189,7 +192,7 @@ func getInstructionMode(classInfo map[string]string) string {
 // each meeting. Therefore, both an empty slice or a slice containing a meeting
 // where all its values are empty are perfectly valid.
 //
-// Each meeting is parsed as following:
+// Each meeting is parsed as follows:
 //
 // Start and End Date
 //   - Accepts 0, 1 or 2 dates matched using meetingDatesRegexp.
@@ -209,7 +212,7 @@ func getInstructionMode(classInfo map[string]string) string {
 //   - Skips locations whose text don't match format <any><space><any>
 func getMeetings(rowInfo map[string]*goquery.Selection) []schema.Meeting {
 	meetingItems := rowInfo["Schedule:"].Find("div.courseinfo__meeting-item--multiple")
-	var meetings = make([]schema.Meeting, 0, meetingItems.Length())
+	meetings := make([]schema.Meeting, 0, meetingItems.Length())
 
 	meetingItems.Each(func(i int, s *goquery.Selection) {
 		meeting := schema.Meeting{}
@@ -228,7 +231,7 @@ func getMeetings(rowInfo map[string]*goquery.Selection) []schema.Meeting {
 		if days != nil {
 			meeting.Meeting_days = days
 		} else {
-			meeting.Meeting_days = []string{} //avoid null in the json
+			meeting.Meeting_days = []string{}
 		}
 
 		times := meetingTimesRegexp.FindAllString(meetingInfo.Text(), -1)
@@ -241,23 +244,25 @@ func getMeetings(rowInfo map[string]*goquery.Selection) []schema.Meeting {
 		}
 
 		if locationInfo := meetingInfo.FindMatcher(goquery.Single("a")); locationInfo != nil {
-			mapUri := locationInfo.AttrOr("href", "")
+			mapURI := locationInfo.AttrOr("href", "")
 
-			//only add locations for meetings that have actual data, all meetings have a link some are not visible or empty
-			if mapUri != "" && mapUri != "https://locator.utdallas.edu/" && mapUri != "https://locator.utdallas.edu/ONLINE" {
+			// only add locations for meetings that have actual data; all meetings have a link but some are not visible or empty
+			if mapURI != "" && mapURI != "https://locator.utdallas.edu/" && mapURI != "https://locator.utdallas.edu/ONLINE" {
 				splitText := strings.Split(utils.TrimWhitespace(locationInfo.Text()), " ")
 
 				if len(splitText) == 2 {
 					meeting.Location = schema.Location{
 						Building: splitText[0],
 						Room:     splitText[1],
-						Map_uri:  mapUri,
+						Map_uri:  mapURI,
 					}
 				}
 			}
 		}
+
 		meetings = append(meetings, meeting)
 	})
+
 	return meetings
 }
 
@@ -268,7 +273,6 @@ func getMeetings(rowInfo map[string]*goquery.Selection) []schema.Meeting {
 func getCoreFlags(rowInfo map[string]*goquery.Selection) []string {
 	if core, ok := rowInfo["Core:"]; ok {
 		flags := coreRegexp.FindAllString(utils.TrimWhitespace(core.Text()), -1)
-
 		if flags != nil {
 			return flags
 		}
@@ -290,18 +294,18 @@ func getSyllabusUri(rowInfo map[string]*goquery.Selection) string {
 }
 
 // getGradeDistribution returns the grade distribution for the given section.
-// It retrieves grade distribution from the global `GradeMap`.
+// It retrieves grade distribution from the global GradeMap.
 //
 // If GradeMap contains the resulting key it will return the specified slice,
-// otherwise it will return an empty slice, `[]int{}`.
+// otherwise it will return an empty slice, []int{}.
 // The key is generated using the following formula:
-// key = SubjectPrefix + InternalCourseNumber + InternalSectionNumber.
-// Note that the InternalSectionNumber is trimmed of leading '0's
+// key = SubjectPrefix + CourseNumber + InternalSectionNumberTrimmed
+// Note that the section number is trimmed of leading '0's.
 func getGradeDistribution(session schema.AcademicSession, sectionNumber string, courseRef *schema.Course) []int {
 	if semesterGrades, ok := GradeMap[session.Name]; ok {
 		// We have to trim leading zeroes from the section number in order to match properly, since the grade data does not use leading zeroes
 		trimmedSectionNumber := strings.TrimLeft(sectionNumber, "0")
-		// Key into grademap should be uppercased like the grade data
+		// Key into GradeMap should be uppercased like the grade data
 		gradeKey := strings.ToUpper(courseRef.Subject_prefix + courseRef.Course_number + trimmedSectionNumber)
 		sectionGrades, exists := semesterGrades[gradeKey]
 		if exists {
@@ -311,7 +315,7 @@ func getGradeDistribution(session schema.AcademicSession, sectionNumber string, 
 	return []int{}
 }
 
-// parseTimeOrPanic is a simplified version time.ParseInLocation. The layout and
+// parseTimeOrPanic is a simplified version of time.ParseInLocation. The layout and
 // location are constants, timeLayout and timeLocation respectively. If time.ParseInLocation
 // returns an error, parseTimeOrPanic will panic regardless of the error type.
 func parseTimeOrPanic(value string) time.Time {

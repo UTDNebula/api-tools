@@ -17,6 +17,9 @@
 		"co_or_pre_requisites": null,
 		"sections": [
 			{
+				"subject_prefix": "BA",
+				"course_number": "1320",
+				"catalog_year": "24",
 				"section_number": "501",
 				"term": "25S"
 			}
@@ -45,6 +48,9 @@
 		"co_or_pre_requisites": null,
 		"sections": [
 			{
+				"subject_prefix": "BIOL",
+				"course_number": "6111",
+				"catalog_year": "24",
 				"section_number": "016",
 				"term": "25S"
 			}
@@ -73,6 +79,9 @@
 		"co_or_pre_requisites": null,
 		"sections": [
 			{
+				"subject_prefix": "AERO",
+				"course_number": "3320",
+				"catalog_year": "24",
 				"section_number": "201",
 				"term": "25S"
 			}
@@ -101,6 +110,9 @@
 		"co_or_pre_requisites": null,
 		"sections": [
 			{
+				"subject_prefix": "AERO",
+				"course_number": "4320",
+				"catalog_year": "24",
 				"section_number": "002",
 				"term": "25S"
 			}
@@ -129,10 +141,16 @@
 		"co_or_pre_requisites": null,
 		"sections": [
 			{
+				"subject_prefix": "ACCT",
+				"course_number": "2301",
+				"catalog_year": "24",
 				"section_number": "003",
 				"term": "25S"
 			},
 			{
+				"subject_prefix": "ACCT",
+				"course_number": "2301",
+				"catalog_year": "24",
 				"section_number": "001",
 				"term": "25S"
 			}

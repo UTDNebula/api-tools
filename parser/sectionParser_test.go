@@ -8,7 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-// TestGetInternalClassAndCourseNum checks parsing of internal course identifiers.
+// Test get internal class and course num
 func TestGetInternalClassAndCourseNum(t *testing.T) {
 	t.Parallel()
 
@@ -25,9 +25,8 @@ func TestGetInternalClassAndCourseNum(t *testing.T) {
 			}
 
 			if courseNum != expectedCourseNumber {
-				t.Errorf("Class Number: expected %s got %s", expectedCourseNumber, courseNum)
+				t.Errorf("Course Number: expected %s got %s", expectedCourseNumber, courseNum)
 			}
-
 		})
 	}
 
@@ -51,16 +50,16 @@ func TestGetInternalClassAndCourseNum(t *testing.T) {
 
 			defer func() {
 				if r := recover(); r == nil {
-					t.Errorf("expected panic for input %s but none occurred", fail)
+					t.Errorf("expected panic for input %v but none occurred", fail)
 				}
 			}()
-			getInternalClassAndCourseNum(fail)
 
+			getInternalClassAndCourseNum(fail)
 		})
 	}
 }
 
-// TestGetAcademicSession ensures term metadata is parsed correctly.
+// Test get academic session
 func TestGetAcademicSession(t *testing.T) {
 	t.Parallel()
 
@@ -80,7 +79,7 @@ func TestGetAcademicSession(t *testing.T) {
 	}
 }
 
-// TestGetSectionNumber validates extraction of section numbers.
+// Test get section number
 func TestGetSectionNumber(t *testing.T) {
 	t.Parallel()
 
@@ -117,16 +116,16 @@ func TestGetSectionNumber(t *testing.T) {
 
 			defer func() {
 				if r := recover(); r == nil {
-					t.Errorf("expected panic for input %s but none occurred", fail)
+					t.Errorf("expected panic for input %v but none occurred", fail)
 				}
 			}()
+
 			getSectionNumber(fail)
-
 		})
-
 	}
 }
 
+// Test get teaching assistants
 func TestGetTeachingAssistants(t *testing.T) {
 	t.Parallel()
 
@@ -146,6 +145,7 @@ func TestGetTeachingAssistants(t *testing.T) {
 	}
 }
 
+// Test get instruction mode
 func TestGetInstructionMode(t *testing.T) {
 	t.Parallel()
 
@@ -160,10 +160,10 @@ func TestGetInstructionMode(t *testing.T) {
 				t.Errorf("expected %s got %s", expected, output)
 			}
 		})
-
 	}
 }
 
+// Test get meetings
 func TestGetMeetings(t *testing.T) {
 	t.Parallel()
 
@@ -183,6 +183,7 @@ func TestGetMeetings(t *testing.T) {
 	}
 }
 
+// Test get core flags
 func TestGetCoreFlags(t *testing.T) {
 	t.Parallel()
 
@@ -202,12 +203,14 @@ func TestGetCoreFlags(t *testing.T) {
 	}
 }
 
+// Test get syllabus uri
 func TestGetSyllabusUri(t *testing.T) {
 	t.Parallel()
 
 	for name, testCase := range testData {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
+
 			output := getSyllabusUri(testCase.RowInfo)
 			expected := testCase.Section.Syllabus_uri
 
@@ -215,10 +218,10 @@ func TestGetSyllabusUri(t *testing.T) {
 				t.Errorf("expected %s got %s", expected, output)
 			}
 		})
-
 	}
 }
 
+// Test parse time or panic
 func TestParseTimeOrPanic(t *testing.T) {
 	t.Parallel()
 
@@ -238,15 +241,15 @@ func TestParseTimeOrPanic(t *testing.T) {
 			Panic:    false,
 		},
 		"Case_003": {
-			Input: "15 March, 2020", // wrong format
+			Input: "15 March, 2020",
 			Panic: true,
 		},
 		"Case_004": {
-			Input: "Not a date", // clearly wrong
+			Input: "Not a date",
 			Panic: true,
 		},
 		"Case_005": {
-			Input: "", // empty input
+			Input: "",
 			Panic: true,
 		},
 	}
