@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/fs"
 	"log"
+	"math"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -295,20 +296,43 @@ func GetCoursePrefixes(chromedpCtx context.Context) ([]string, error) {
 	var coursePrefixes []string
 	log.Println("Finding course prefixes...")
 
-	// Get option elements for course prefix dropdown
-	_, err := chromedp.RunResponse(chromedpCtx,
-		chromedp.Navigate("https://coursebook.utdallas.edu"),
-		chromedp.QueryAfter("select#combobox_cp option",
-			func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
-				for _, node := range nodes[1:] {
-					coursePrefixes = append(coursePrefixes, node.AttributeValue("value"))
-				}
-				return nil
-			},
-		),
-	)
+	var err error
+	maxRetries := 10
+
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		coursePrefixes = nil // Reset course prefixes for each attempt
+
+		// Get option elements for course prefix dropdown
+		_, err = chromedp.RunResponse(chromedpCtx,
+			chromedp.Navigate("https://coursebook.utdallas.edu"),
+			chromedp.QueryAfter("select#combobox_cp option", // TODO: TEST IF THIS DOESNT EXIST MAYBE
+				func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
+					for _, node := range nodes[1:] {
+						coursePrefixes = append(coursePrefixes, node.AttributeValue("value"))
+					}
+					return nil
+				},
+			),
+		)
+
+		if err == nil {
+			break // Success, exit retry loop
+		}
+
+		// Only retry on page load error
+		if !strings.Contains(err.Error(), "page load error") {
+			return nil, err // Return early for unrecognized errors
+		}
+		log.Printf("%v", err) // TODO: Shouold be verbose
+
+		// Exponential backoff
+		wait := time.Duration(math.Pow(2, float64(attempt))) * time.Second // TODO: Update other backoff to print seconds as well
+		log.Printf("Coarsbook load error, waiting %v (attempt %d of %d)", wait, attempt, maxRetries)
+		time.Sleep(wait)
+	}
+
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to fetch course prefixes after %d attempts: %w", maxRetries, err)
 	}
 	log.Printf("Found the %d course prefixes!", len(coursePrefixes))
 	return coursePrefixes, nil

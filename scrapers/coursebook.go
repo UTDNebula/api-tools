@@ -33,37 +33,37 @@ const (
 	reqThrottle    = 400 * time.Millisecond
 	prefixThrottle = 5 * time.Second
 	httpTimeout    = 10 * time.Second
+	networkWait    = 30 * time.Second // TODO: UNUSED
 )
-
-type SetupError struct {
-	Message string
-}
-
-func (e *SetupError) Error() string {
-	return e.Message
-}
 
 // ScrapeCoursebook Scrapes utd coursebook for provided term with specified options
 func ScrapeCoursebook(term string, startPrefix string, outDir string, resume bool, retry int) {
-	// TODO Handle Errors, give flag to retry on panic, and a retry count for non panics, how long to wait for retry
 	var lastErr error = nil
 	repeatErrCount := 0
 	for repeatErrCount <= retry { // While instead?
+
 		err := scrapeCoursebookInternal(term, startPrefix, outDir, resume)
 
+		// No error
 		if err == nil {
-			return // Scraping succeeded
+			return
 		}
 
+		/* Non-retry Errors */
+
+		// Setup Error (such as invalid args)
+		var setupErr *utils.SetupError
+		if errors.As(err, &setupErr) {
+			log.Fatalf("Coursebook Scraping Setup Failed: %v", err)
+		}
+
+		// Context canceled Error (such as when closing chromedp window)
 		if err.Error() == "context canceled" {
 			log.Fatalf("Coursebook Scraping Canceled, Exiting")
 		}
 
-		var setupErr *SetupError
-		if errors.As(err, &setupErr) {
-			log.Fatalf("Coursebook Scraping Setup Failed: %v", err)
-			// Exit immediately
-		}
+		/* Retry Coursebook Scraping */
+		log.Printf("Coursebook Scraping Failed: %v", err)
 
 		if fmt.Sprintf("%v", lastErr) == fmt.Sprintf("%v", err) {
 			repeatErrCount++
@@ -71,13 +71,10 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string, resume boo
 			repeatErrCount = 1
 		}
 
-		log.Printf("Coursebook Scraping Failed: %v", err)
-
 		lastErr = err
 
 		// TODO: handle netid (using setup error)
-		// TODO: handle context broke error
-		// TODO: handle network issues
+		// TODO: handle network issues -> wait longer before restarting
 	}
 
 	if retry != 0 {
@@ -88,13 +85,13 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string, resume boo
 // scrapeCoursebookInternal scrapes utd coursebook for the provided term (semester)
 func scrapeCoursebookInternal(term string, startPrefix string, outDir string, resume bool) error {
 	if term == "" {
-		return &SetupError{Message: fmt.Sprintf("No term specified for coursebook scraping! Use -term to specify.")}
+		return &utils.SetupError{Message: "No term specified for coursebook scraping! Use -term to specify."}
 	}
 	if startPrefix != "" && !prefixRegex.MatchString(startPrefix) {
-		return &SetupError{Message: fmt.Sprintf("invalid starting prefix %s, must match format cp_{abcde}", startPrefix)}
+		return &utils.SetupError{Message: fmt.Sprintf("invalid starting prefix %s, must match format cp_{abcde}", startPrefix)}
 	}
 	if !termRegex.MatchString(term) {
-		return &SetupError{Message: fmt.Sprintf("invalid term %s, must match format {00-99}{s/f/u}", term)}
+		return &utils.SetupError{Message: fmt.Sprintf("invalid term %s, must match format {00-99}{s/f/u}", term)}
 	}
 
 	scraper, err := newCoursebookScraper(term, outDir)
@@ -108,7 +105,7 @@ func scrapeCoursebookInternal(term string, startPrefix string, outDir string, re
 		var err error
 		startPrefix, err = scraper.lastCompletePrefix()
 		if err != nil {
-			return &SetupError{Message: fmt.Sprintf("failed to get last complete prefix while resuming: %v", err)}
+			return &utils.SetupError{Message: fmt.Sprintf("failed to get last complete prefix while resuming: %v", err)}
 		}
 	}
 
