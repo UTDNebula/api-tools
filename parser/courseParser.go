@@ -25,24 +25,25 @@ var (
 // provided information. If the associated course is not found in
 // Courses, it will run getCourse and add the result to Courses.
 func parseCourse(internalCourseNumber string, session schema.AcademicSession, rowInfo map[string]*goquery.Selection, classInfo map[string]string) *schema.Course {
-	// Courses are internally keyed by their internal course number and the catalog year they're part of
+	// Courses are internally keyed by their identifying fields
 	catalogYear := getCatalogYear(session)
-	courseKey := internalCourseNumber + catalogYear
+	subjectPrefix, courseNumber := getPrefixAndNumber(classInfo)
+	courseMapKey := subjectPrefix + courseNumber + catalogYear
 
 	// Don't recreate the course if it already exists
-	course, courseExists := Courses[courseKey]
+	course, courseExists := Courses[courseMapKey]
 	if courseExists {
 		return course
 	}
 
 	course = getCourse(internalCourseNumber, session, rowInfo, classInfo)
 
-	// Get closure for parsing course requisites (god help me)
+	// Get closure for parsing course requisites
 	enrollmentReqs, hasEnrollmentReqs := rowInfo["Enrollment Reqs:"]
 	ReqParsers[course.Id] = getReqParser(course, hasEnrollmentReqs, enrollmentReqs)
 
-	Courses[courseKey] = course
-	CourseIDMap[course.Id] = courseKey
+	Courses[courseMapKey] = course
+	CourseIDMap[course.Id] = courseMapKey
 	return course
 }
 
@@ -50,13 +51,13 @@ func parseCourse(internalCourseNumber string, session schema.AcademicSession, ro
 // This function does not modify any global state.
 // Returns a pointer to the newly created schema.Course object.
 func getCourse(internalCourseNumber string, session schema.AcademicSession, rowInfo map[string]*goquery.Selection, classInfo map[string]string) *schema.Course {
-	CoursePrefix, CourseNumber := getPrefixAndNumber(classInfo)
+	subjectPrefix, courseNumber := getPrefixAndNumber(classInfo)
 	catalogYear := getCatalogYear(session)
 
 	course := schema.Course{
 		Id:                     primitive.NewObjectID(),
-		Course_number:          CourseNumber,
-		Subject_prefix:         CoursePrefix,
+		Subject_prefix:         subjectPrefix,
+		Course_number:          courseNumber,
 		Title:                  utils.TrimWhitespace(rowInfo["Course Title:"].Text()),
 		Description:            utils.TrimWhitespace(rowInfo["Description:"].Text()),
 		School:                 utils.TrimWhitespace(rowInfo["College:"].Text()),
@@ -66,6 +67,7 @@ func getCourse(internalCourseNumber string, session schema.AcademicSession, rowI
 		Grading:                classInfo["Grading:"],
 		Internal_course_number: internalCourseNumber,
 		Catalog_year:           catalogYear,
+		Sections:               []schema.SectionKey{},
 	}
 
 	// Try to get lecture/lab contact hours and offering frequency from course description
@@ -82,13 +84,15 @@ func getCourse(internalCourseNumber string, session schema.AcademicSession, rowI
 
 // getCatalogYear determines the catalog year from the academic session information.
 // It assumes the session name starts with a 2-digit year and a semester character ('F', 'S', 'U').
-// Fall (S) and Summer U sessions are associated with the previous calendar year.
-// (e.g, 20F = 20, 20S = 19)
+// Fall sessions are associated with the same catalog year.
+// Spring and Summer sessions are associated with the previous catalog year.
+// (e.g. 20F = 20, 20S = 19)
 func getCatalogYear(session schema.AcademicSession) string {
 	sessionYear, err := strconv.Atoi(session.Name[0:2])
 	if err != nil {
 		panic(err)
 	}
+
 	sessionSemester := session.Name[2]
 	switch sessionSemester {
 	case 'F':
@@ -96,21 +100,24 @@ func getCatalogYear(session schema.AcademicSession) string {
 	case 'S', 'U':
 		return strconv.Itoa(sessionYear - 1)
 	default:
-		panic(fmt.Errorf("encountered invalid session semester '%c!'", sessionSemester))
+		panic(fmt.Errorf("encountered invalid session semester '%c'", sessionSemester))
 	}
 }
 
 // getPrefixAndNumber returns the 2nd and 3rd matched values from a coursePrefixRegexp on
-// `ClassInfo["Class Section:"]`. It expects ClassInfo to contain "Class Section:" key.
-// If there are no matches, empty strings are returned.
+// classInfo["Class Section:"]. It expects classInfo to contain "Class Section:".
+// If there are no matches, it panics.
 func getPrefixAndNumber(classInfo map[string]string) (string, string) {
-	if sectionId, ok := classInfo["Class Section:"]; ok {
-		// Get subject prefix and course number by doing a regexp match on the section id
-		matches := coursePrefixRegexp.FindStringSubmatch(sectionId)
-		if len(matches) == 3 {
-			return matches[1], matches[2]
-		}
-		panic("failed to course prefix and number")
+	sectionID, ok := classInfo["Class Section:"]
+	if !ok {
+		panic("could not find 'Class Section:' in classInfo")
 	}
-	panic("could not find 'Class Section:' in ClassInfo")
+
+	// Get subject prefix and course number by doing a regexp match on the section id
+	matches := coursePrefixRegexp.FindStringSubmatch(sectionID)
+	if len(matches) == 3 {
+		return matches[1], matches[2]
+	}
+
+	panic("failed to parse course prefix and number")
 }

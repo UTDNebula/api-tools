@@ -1,5 +1,5 @@
 {
-	"_id": "67d07ee0c972c18731e23be5",
+	"_id": "69ceeb3ec5bf079cd1334b27",
 	"subject_prefix": "AERO",
 	"course_number": "3320",
 	"title": "- Recitation",
@@ -16,6 +16,9 @@
 	"co_or_pre_requisites": null,
 	"sections": [
 		{
+			"subject_prefix": "AERO",
+			"course_number": "3320",
+			"catalog_year": "24",
 			"section_number": "201",
 			"term": "25S"
 		}

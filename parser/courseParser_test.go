@@ -9,7 +9,7 @@ import (
 	"github.com/UTDNebula/nebula-api/api/schema"
 )
 
-// TestGetCourse checks course parsing from HTML fixtures.
+// Test get course
 func TestGetCourse(t *testing.T) {
 	t.Parallel()
 
@@ -19,17 +19,28 @@ func TestGetCourse(t *testing.T) {
 			output := *getCourse(courseNum, testCase.Section.Academic_session, testCase.RowInfo, testCase.ClassInfo)
 			expected := testCase.Course
 
-			diff := cmp.Diff(expected, output, cmpopts.IgnoreFields(schema.Course{}, "Id", "Sections", "Enrollment_reqs", "Prerequisites"))
+			diff := cmp.Diff(
+				expected,
+				output,
+				cmpopts.IgnoreFields(
+					schema.Course{},
+					"Id",
+					"Sections",
+					"Enrollment_reqs",
+					"Prerequisites",
+					"Corequisites",
+					"Co_or_pre_requisites",
+				),
+			)
 
 			if diff != "" {
-				t.Errorf("Failed (-expected +got)\n %s", diff)
+				t.Errorf("Failed (-expected +got)\n%s", diff)
 			}
-
 		})
 	}
 }
 
-// TestGetCatalogYear ensures catalog year derivation matches expected academic sessions.
+// Test get catalog year
 func TestGetCatalogYear(t *testing.T) {
 	t.Parallel()
 
@@ -81,7 +92,6 @@ func TestGetCatalogYear(t *testing.T) {
 				}
 			}()
 
-			// only call if we *expect* it to succeed
 			output := getCatalogYear(testCase.Session)
 			if !testCase.Panic && output != testCase.Expected {
 				t.Errorf("expected %q, got %q", testCase.Expected, output)
@@ -90,7 +100,7 @@ func TestGetCatalogYear(t *testing.T) {
 	}
 }
 
-// TestGetPrefixAndCourseNum verifies extraction of subject prefixes and course numbers.
+// Test get prefix and course num
 func TestGetPrefixAndCourseNum(t *testing.T) {
 	t.Parallel()
 

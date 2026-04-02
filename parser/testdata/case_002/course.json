@@ -1,5 +1,5 @@
 {
-	"_id": "67d07ee0c972c18731e23bdf",
+	"_id": "69ceeb3ec5bf079cd1334b21",
 	"subject_prefix": "BA",
 	"course_number": "1320",
 	"title": "Business in a Global World",
@@ -16,6 +16,9 @@
 	"co_or_pre_requisites": null,
 	"sections": [
 		{
+			"subject_prefix": "BA",
+			"course_number": "1320",
+			"catalog_year": "24",
 			"section_number": "501",
 			"term": "25S"
 		}
