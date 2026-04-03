@@ -16,7 +16,7 @@ import (
 
 func main() {
 	// Load environment variables
-	godotenv.Load()
+	godotenv.Load() // TODO: I Don't think this does anything
 
 	// Setup flags
 
@@ -33,6 +33,7 @@ func main() {
 	term := flag.String("term", "", "Alongside -coursebook, specifies the term to scrape, i.e. 23S")
 	startPrefix := flag.String("startprefix", "", "Alongside -coursebook, specifies the course prefix to start scraping from, i.e. cp_span")
 	resume := flag.Bool("resume", false, "Alongside -coursebook, signifies that scraping should begin at the last complete prefix and should not re-scrape existing data")
+	retry := flag.Int("retry", 0, "Alongside -coursebook, specifies how many times to retry before quitting")
 
 	// Flag for profile scraping
 	scrapeProfiles := flag.Bool("profiles", false, "Alongside -scrape, signifies that professor profiles should be scraped.")
@@ -87,8 +88,8 @@ func main() {
 	}
 
 	defer logFile.Close()
-	// Set logging output destination to a SplitWriter that writes to both the log file and stdout
-	log.SetOutput(utils.NewSplitWriter(logFile, os.Stdout))
+	// Set logging output destination to a SplitWriter that writes to both the log file and stderr
+	log.SetOutput(utils.NewSplitWriter(logFile, os.Stdout)) // TODO: Switch to stderr
 	// Do verbose logging if verbose flag specified
 	if *verbose {
 		log.SetFlags(log.Ltime | log.Lmicroseconds | log.Lshortfile | utils.Lverbose)
@@ -104,10 +105,7 @@ func main() {
 		case *scrapeProfiles:
 			scrapers.ScrapeProfiles(*outDir)
 		case *scrapeCoursebook:
-			if *term == "" {
-				log.Panic("No term specified for coursebook scraping! Use -term to specify.")
-			}
-			scrapers.ScrapeCoursebook(*term, *startPrefix, *outDir, *resume)
+			scrapers.ScrapeCoursebook(*term, *startPrefix, *outDir, *resume, *retry)
 		case *scrapeDiscounts:
 			scrapers.ScrapeDiscounts(*outDir)
 		case *cometCalendar:

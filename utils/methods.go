@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/fs"
 	"log"
+	"math"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -54,14 +55,14 @@ func InitChromeDp() (chromedpCtx context.Context, cancelFnc context.CancelFunc) 
 }
 
 // RefreshToken logs into CourseBook and returns headers containing a fresh session token.
-func RefreshToken(chromedpCtx context.Context) map[string][]string {
+func RefreshToken(chromedpCtx context.Context) (map[string][]string, error) {
 	netID, err := GetEnv("LOGIN_NETID")
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	password, err := GetEnv("LOGIN_PASSWORD")
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	delayedRetryCallback := func(numRetries int) {
@@ -81,13 +82,13 @@ func RefreshToken(chromedpCtx context.Context) map[string][]string {
 			chromedp.Click(`button#login-button`),
 		)
 		if r != nil && r.Status != 200 {
-			return errors.New("Non-200 response status code")
+			return fmt.Errorf("non-200 response status code: %d", r.Status)
 		}
 		return err
 	}, 3, delayedRetryCallback)
 
 	if err != nil {
-		panic(err)
+		return nil, err // TODO: we should return different error or error types based on the response code
 	}
 
 	time.Sleep(250 * time.Millisecond)
@@ -124,7 +125,7 @@ func RefreshToken(chromedpCtx context.Context) map[string][]string {
 	}, 3, delayedRetryCallback)
 
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	return map[string][]string{
@@ -135,7 +136,7 @@ func RefreshToken(chromedpCtx context.Context) map[string][]string {
 		"Content-Type":    {"application/x-www-form-urlencoded"},
 		"Cookie":          cookieStrs,
 		"Connection":      {"keep-alive"},
-	}
+	}, nil
 }
 
 // RefreshAstraToken signs into Astra and returns headers containing authentication cookies.
@@ -288,30 +289,53 @@ func Retry(action func() error, maxRetries int, retryCallback func(numRetries in
 }
 
 // GetCoursePrefixes retrieves all course prefix values from CourseBook.
-func GetCoursePrefixes(chromedpCtx context.Context) []string {
+func GetCoursePrefixes(chromedpCtx context.Context) ([]string, error) {
 	// Might need to refresh the token every time we get new course prefixes in the future
 	// refreshToken(chromedpCtx)
 
 	var coursePrefixes []string
 	log.Println("Finding course prefixes...")
 
-	// Get option elements for course prefix dropdown
-	_, err := chromedp.RunResponse(chromedpCtx,
-		chromedp.Navigate("https://coursebook.utdallas.edu"),
-		chromedp.QueryAfter("select#combobox_cp option",
-			func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
-				for _, node := range nodes[1:] {
-					coursePrefixes = append(coursePrefixes, node.AttributeValue("value"))
-				}
-				return nil
-			},
-		),
-	)
+	var err error
+	maxRetries := 10
+
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		coursePrefixes = nil // Reset course prefixes for each attempt
+
+		// Get option elements for course prefix dropdown
+		_, err = chromedp.RunResponse(chromedpCtx,
+			chromedp.Navigate("https://coursebook.utdallas.edu"),
+			chromedp.QueryAfter("select#combobox_cp option", // TODO: TEST IF THIS DOESNT EXIST MAYBE
+				func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
+					for _, node := range nodes[1:] {
+						coursePrefixes = append(coursePrefixes, node.AttributeValue("value"))
+					}
+					return nil
+				},
+			),
+		)
+
+		if err == nil {
+			break // Success, exit retry loop
+		}
+
+		// Only retry on page load error
+		if !strings.Contains(err.Error(), "page load error") {
+			return nil, err // Return early for unrecognized errors
+		}
+		log.Printf("%v", err) // TODO: Shouold be verbose
+
+		// Exponential backoff
+		wait := time.Duration(math.Pow(2, float64(attempt))) * time.Second // TODO: Update other backoff to print seconds as well
+		log.Printf("Coarsbook load error, waiting %v (attempt %d of %d)", wait, attempt, maxRetries)
+		time.Sleep(wait)
+	}
+
 	if err != nil {
-		log.Panic(err)
+		return nil, fmt.Errorf("failed to fetch course prefixes after %d attempts: %w", maxRetries, err)
 	}
 	log.Printf("Found the %d course prefixes!", len(coursePrefixes))
-	return coursePrefixes
+	return coursePrefixes, nil
 }
 
 // ConvertFromInterface attempts to convert a value into the requested type and returns a pointer when successful.
