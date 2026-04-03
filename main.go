@@ -81,7 +81,7 @@ func main() {
 	dateTime := time.Now()
 	year, month, day := dateTime.Date()
 	hour, min, sec := dateTime.Clock()
-	logFile, err := os.Create(fmt.Sprintf("./logs/%d-%d-%dT%d-%d-%d.log", month, day, year, hour, min, sec))
+	logFile, err := os.Create(fmt.Sprintf("./logs/%d-%d-%dT%d-%d-%d.log", month, day, year, hour, min, sec)) // TODO: This should probably be year month day
 
 	if err != nil {
 		log.Fatal(err)
