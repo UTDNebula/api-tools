@@ -25,7 +25,7 @@ import (
 )
 
 var (
-	prefixRegex = regexp.MustCompile("cp_[a-z]{0,5}")
+	prefixRegex = regexp.MustCompile("^cp_[a-z]{1,5}$")
 	termRegex   = regexp.MustCompile("[0-9]{1,2}[sfu]")
 )
 

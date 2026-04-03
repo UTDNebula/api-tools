@@ -19,6 +19,9 @@ var (
 	// contactRegexp matches the contact hours and offering frequency from the course description
 	// (e.g. "(12-34) SUS")
 	contactRegexp = regexp.MustCompile(`\(([0-9]+)-([0-9]+)\)\s+([SUFY]+)`)
+
+	// descriptionWhitespaceRegexp matches one or more whitespace characters (including newlines)
+	descriptionWhitespaceRegexp = regexp.MustCompile(`\s+`)
 )
 
 // parseCourse returns a pointer to the course specified by the
@@ -50,15 +53,18 @@ func parseCourse(internalCourseNumber string, session schema.AcademicSession, ro
 // This function does not modify any global state.
 // Returns a pointer to the newly created schema.Course object.
 func getCourse(internalCourseNumber string, session schema.AcademicSession, rowInfo map[string]*goquery.Selection, classInfo map[string]string) *schema.Course {
-	CoursePrefix, CourseNumber := getPrefixAndNumber(classInfo)
+	coursePrefix, courseNumber := getPrefixAndNumber(classInfo)
+
+	description := descriptionWhitespaceRegexp.ReplaceAllString(rowInfo["Description:"].Text(), " ")
+	school := descriptionWhitespaceRegexp.ReplaceAllString(rowInfo["College:"].Text(), " ")
 
 	course := schema.Course{
 		Id:                     primitive.NewObjectID(),
-		Course_number:          CourseNumber,
-		Subject_prefix:         CoursePrefix,
+		Course_number:          courseNumber,
+		Subject_prefix:         coursePrefix,
 		Title:                  utils.TrimWhitespace(rowInfo["Course Title:"].Text()),
-		Description:            utils.TrimWhitespace(rowInfo["Description:"].Text()),
-		School:                 utils.TrimWhitespace(rowInfo["College:"].Text()),
+		Description:            utils.TrimWhitespace(description),
+		School:                 utils.TrimWhitespace(school),
 		Credit_hours:           classInfo["Semester Credit Hours:"],
 		Class_level:            classInfo["Class Level:"],
 		Activity_type:          classInfo["Activity Type:"],

@@ -24,8 +24,8 @@ echo Performing checks...
 go mod tidy && ^
 go vet ./... && ^
 staticcheck ./... && ^
-gofmt -w ./.. && ^
-goimports -w ./..
+gofmt -w . && ^
+goimports -w .
 if ERRORLEVEL 1 exit /b %ERRORLEVEL% :: fail if error occurred
 echo Checks done!
 if %skip%==1 exit

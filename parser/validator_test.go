@@ -52,8 +52,15 @@ func init() {
 		panic(err)
 	}
 
-	// The correct mapping
-	indexMap = map[int]int{0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 4}
+	courseIndex := make(map[primitive.ObjectID]int)
+	for i, course := range testCourses {
+		courseIndex[course.Id] = i
+	}
+
+	indexMap = make(map[int]int, len(testSections))
+	for i, section := range testSections {
+		indexMap[i] = courseIndex[section.Course_reference]
+	}
 }
 
 // TestDuplicateCoursesFail expects duplicates to trigger validation panic.
@@ -257,11 +264,11 @@ func TestSectionReferenceProfFail(t *testing.T) {
 		logOutput := logBuffer.String()
 
 		for _, msg := range []string{
-			"Nonexistent professor reference found for section ID ObjectID(\"67d07ee0c972c18731e23bea\")!",
-			"Referenced professor ID: ObjectID(\"67d07ee0c972c18731e23beb\")",
+			"Nonexistent professor reference found for section ID ObjectID(\"69cda9299bb0b8cd4cf4c732\")!",
+			"Referenced professor ID: ObjectID(\"69cda9299bb0b8cd4cf4c734\")",
 		} {
 			if !strings.Contains(logOutput, msg) {
-				t.Errorf("The function didn't log correct message. Expected \"%v\"", msg)
+				t.Errorf("The function didn't log correct message. \nExpected \"%v\"\nGot \"%v\"", msg, logOutput)
 			}
 		}
 
