@@ -30,9 +30,11 @@ var (
 )
 
 const (
-	reqThrottle    = 400 * time.Millisecond
-	prefixThrottle = 5 * time.Second
-	httpTimeout    = 10 * time.Second
+	reqThrottle                      = 400 * time.Millisecond
+	prefixThrottle                   = 5 * time.Second
+	httpTimeout                      = 10 * time.Second
+	getSectionContentRetryCount      = 8
+	getSectionIdsForPrefixRetryCount = 8
 )
 
 // ScrapeCoursebook Scrapes utd coursebook for provided term with specified options
@@ -89,8 +91,6 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string, resume boo
 
 		lastErr = err
 
-		// TODO: handle netid (using setup error)
-		// TODO: handle network issues -> wait longer before restarting
 		// TODO: ensure all panics are reasonable, and should not be retried
 	}
 
@@ -160,9 +160,7 @@ func (s *coursebookScraper) scrapePrefix(prefix string, resume bool, index int) 
 	log.Printf("[Scrape Prefix] %s (%d/%d): Found %d sections to scrape.", prefix, index+1, len(s.prefixes), len(sectionIds))
 
 	for _, sectionId := range sectionIds {
-		content, err := s.getSectionContent(sectionId) // TODO: This function can have the following, dont force chromedp restart when it happens
-		// error getting section content for section angm3305.0w1.26u: get section content for id angm3305.0w1.26u failed: Post "https://coursebook.utdallas.edu/clips/clip-cb11-hat.zog": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
-
+		content, err := s.getSectionContent(sectionId)
 		if err != nil {
 			return fmt.Errorf("error getting section content for section %s: %v", sectionId, err)
 		}
@@ -284,7 +282,7 @@ func (s *coursebookScraper) writeSection(prefix string, id string, content strin
 // retries up to 3 times, each time refreshing the token and waiting longer
 func (s *coursebookScraper) getSectionContent(id string) (string, error) {
 	queryStr := fmt.Sprintf("id=%s&req=b30da8ab21637dbef35fd7682f48e1c1W0ypMhaj%%2FdsnYn3Wa03BrxSNgCeyvLfvucSTobcSXRf38SWaUaNfMjJQn%%2BdcabF%%2F7ZuG%%2BdKqHAqmrxEKyg8AdB0FqVGcz4rkff3%%2B3SIUIt8%%3D&action=info", id)
-	response, err := s.req(queryStr, 3, id)
+	response, err := s.req(queryStr, getSectionContentRetryCount, id)
 	if err != nil {
 		return "", fmt.Errorf("get section content for id %s failed: %w", id, err)
 	}
@@ -340,7 +338,7 @@ func (s *coursebookScraper) getSectionIdsForPrefix(prefix string) ([]string, err
 	sections := make([]string, 0, 100)
 	for _, clevel := range []string{"clevel_u", "clevel_g"} {
 		queryStr := fmt.Sprintf("action=search&s%%5B%%5D=term_%s&s%%5B%%5D=%s&s%%5B%%5D=%s", s.term, prefix, clevel)
-		content, err := s.req(queryStr, 10, fmt.Sprintf("%s:%s", prefix, clevel))
+		content, err := s.req(queryStr, getSectionIdsForPrefixRetryCount, fmt.Sprintf("%s:%s", prefix, clevel))
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch sections: %s", err)
 		}

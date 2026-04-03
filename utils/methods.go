@@ -278,6 +278,7 @@ func Regexpf(format string, vars ...interface{}) *regexp.Regexp {
 
 // Retry calls action until it succeeds or exceeds maxRetries, invoking retryCallback between attempts.
 func Retry(action func() error, maxRetries int, retryCallback func(numRetries int)) error {
+	// TODO: Consider removing this and replacing with for loops. this function is confusing and hard to read
 	for retries := 1; ; retries++ {
 		// Perform the action
 		err := action()
@@ -297,7 +298,7 @@ func GetCoursePrefixes(chromedpCtx context.Context) ([]string, error) {
 	log.Println("Finding course prefixes...")
 
 	var err error
-	maxRetries := 10
+	maxRetries := 8
 
 	for attempt := 1; attempt <= maxRetries; attempt++ {
 		coursePrefixes = nil // Reset course prefixes for each attempt
@@ -319,15 +320,11 @@ func GetCoursePrefixes(chromedpCtx context.Context) ([]string, error) {
 			break // Success, exit retry loop
 		}
 
-		// Only retry on page load error
-		if !strings.Contains(err.Error(), "page load error") {
-			return nil, err // Return early for unrecognized errors
-		}
-		log.Printf("%v", err) // TODO: Shouold be verbose
+		VPrintf("[Get Course Prefixes Failed] %v", err)
 
 		// Exponential backoff
-		wait := time.Duration(math.Pow(2, float64(attempt))) * time.Second // TODO: Update other backoff to print seconds as well
-		log.Printf("Coarsbook load error, waiting %v (attempt %d of %d)", wait, attempt, maxRetries)
+		wait := time.Duration(math.Pow(2, float64(attempt))) * time.Second
+		VPrintf("Coarsbook load error, waiting %v (attempt %d of %d)", wait, attempt, maxRetries)
 		time.Sleep(wait)
 	}
 
