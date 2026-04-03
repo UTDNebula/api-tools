@@ -46,6 +46,14 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string, resume boo
 	if !termRegex.MatchString(term) {
 		log.Fatalf("Coursebook Scraping Setup Failed: invalid term %s, must match format {00-99}{s/f/u}", term)
 	}
+	_, err := utils.GetEnv("LOGIN_NETID")
+	if err != nil {
+		log.Fatalf("Coursebook Scraping Setup Failed: LOGIN_NETID environment variable was missing. Enter a valid UTD Net ID in .env")
+	}
+	_, err = utils.GetEnv("LOGIN_PASSWORD")
+	if err != nil {
+		log.Fatalf("Coursebook Scraping Setup Failed: LOGIN_PASSWORD environment variable was missing. Enter a valid UTD Net ID Password in .env")
+	}
 
 	var lastErr error = nil
 	repeatErrCount := 0
