@@ -39,6 +39,7 @@ const (
 
 // ScrapeCoursebook Scrapes utd coursebook for provided term with specified options
 func ScrapeCoursebook(term string, startPrefix string, outDir string, resume bool, retry int) {
+	// Make sure variables are set right before starting scraping
 	if term == "" {
 		log.Fatal("Coursebook Scraping Setup Failed: No term specified for coursebook scraping! Use -term to specify.")
 	}
@@ -54,13 +55,23 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string, resume boo
 	}
 	_, err = utils.GetEnv("LOGIN_PASSWORD")
 	if err != nil {
-		log.Fatalf("Coursebook Scraping Setup Failed: LOGIN_PASSWORD environment variable was missing. Enter a valid UTD Net ID Password in .env")
+		log.Fatalf("Coursebook Scraping Setup Failed: LOGIN_PASSWORD environment variable was missing. Enter a valid Password for UTD Net ID in .env")
 	}
 
+	// if retry is set to something other than 0, and an unexpected error or panic makes it back here, we ca
 	var lastErr error = nil
 	repeatErrCount := 0
-	for repeatErrCount <= retry {
-		err := func() error {
+	panicCount := 0
+	for repeatErrCount <= retry && panicCount <= retry {
+		err := func() (funcErr error) {
+			// Recover potential panic from the below and retry
+			defer func() {
+				if r := recover(); r != nil {
+					panicCount++
+					funcErr = fmt.Errorf("coursebook Scraping Panicked: %v (panic %d of %d)", r, panicCount, retry+1)
+				}
+			}()
+
 			scraper, err := newCoursebookScraper(term, outDir)
 			if err != nil {
 				return err
@@ -92,6 +103,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string, resume boo
 		lastErr = err
 
 		// TODO: ensure all panics are reasonable, and should not be retried
+		// TODO: Improve retry logic with more exponential retry
 	}
 
 	if retry != 0 {
