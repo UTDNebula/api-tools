@@ -101,9 +101,6 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string, resume boo
 		}
 
 		lastErr = err
-
-		// TODO: ensure all panics are reasonable, and should not be retried
-		// TODO: Improve retry logic with more exponential retry
 	}
 
 	if retry != 0 {
@@ -137,7 +134,7 @@ func (s *coursebookScraper) Scrape(startPrefix string, resume bool) error {
 	log.Printf("[Scrape Complete] Finished scraping term %s in %v. Total sections %d: Total retries %d", s.term, time.Since(totalTime), s.totalScrapedSections, s.reqRetries)
 
 	if err := s.validate(); err != nil {
-		log.Panicf("Validating failed: %v", err)
+		log.Panicf("Validating failed: %v", err) // We panic here because retry won't fix validation issues
 	}
 
 	return nil
@@ -161,7 +158,7 @@ func (s *coursebookScraper) scrapePrefix(prefix string, resume bool, index int) 
 	}
 
 	if err != nil {
-		log.Panicf("Error getting section ids for %s: %v", prefix, err) //TODO: Not a valid panic probably
+		log.Panicf("Error getting section ids for %s: %v", prefix, err) // We panic here because req has a built in retry.
 	}
 
 	if len(sectionIds) == 0 {
@@ -177,7 +174,7 @@ func (s *coursebookScraper) scrapePrefix(prefix string, resume bool, index int) 
 			return fmt.Errorf("error getting section content for section %s: %v", sectionId, err)
 		}
 		if err := s.writeSection(prefix, sectionId, content); err != nil {
-			log.Panicf("Error writing section %s: %v", sectionId, err)
+			log.Panicf("Error writing section %s: %v", sectionId, err) // We panic here because retry won't help if we can't write data
 		}
 		time.Sleep(reqThrottle)
 	}
@@ -213,12 +210,12 @@ func newCoursebookScraper(term string, outDir string) (*coursebookScraper, error
 	//prefixes in alphabetical order for skip prefix flag
 	prefixes, err := utils.GetCoursePrefixes(ctx)
 	if err != nil {
-		return nil, err
+		log.Panicf("Failed to get course prefixes %v", err) // We panic here because GetCoursePrefixes has a built in retry.
 	}
 	sort.Strings(prefixes)
 	coursebookHeaders, err := utils.RefreshToken(ctx)
 	if err != nil {
-		return nil, err
+		log.Panicf("Failed to refresh token %v", err) // We panic here because RefreshToken has a built in retry.
 	}
 	return &coursebookScraper{
 		chromedpCtx:       ctx,
@@ -368,10 +365,26 @@ func (s *coursebookScraper) getSectionIdsForPrefix(prefix string) ([]string, err
 // req utility function for making calling the coursebook api
 func (s *coursebookScraper) req(queryStr string, retries int, reqName string) (string, error) {
 	var res *http.Response
-	err := utils.Retry(func() error {
-		req, err := http.NewRequest("POST", "https://coursebook.utdallas.edu/clips/clip-cb11-hat.zog", strings.NewReader(queryStr))
+	var err error
+
+	for attempt := 0; attempt <= retries; attempt++ {
+		if attempt > 0 {
+			wait := time.Duration(math.Pow(2, float64(attempt))) * time.Second
+			utils.VPrintf("Request error: %v, backing off for %v", err, wait)
+			utils.VPrintf("[Request Retry] Attempt %d of %d for request %s", attempt, retries, reqName)
+
+			s.coursebookHeaders, err = utils.RefreshToken(s.chromedpCtx)
+			if err != nil {
+				log.Panicf("Failed to refresh token %v", err) // We panic here because RefreshToken has a built in retry.
+			}
+			s.reqRetries++
+			time.Sleep(wait)
+		}
+
+		var req *http.Request
+		req, err = http.NewRequest("POST", "https://coursebook.utdallas.edu/clips/clip-cb11-hat.zog", strings.NewReader(queryStr))
 		if err != nil {
-			return fmt.Errorf("http request failed: %w", err)
+			log.Fatalf("Http request failed: %v", err)
 		}
 		req.Header = s.coursebookHeaders
 
@@ -381,9 +394,12 @@ func (s *coursebookScraper) req(queryStr string, retries int, reqName string) (s
 
 		if res != nil {
 			if res.StatusCode != 200 {
-				return fmt.Errorf("non-200 response status code: got code %d", res.StatusCode)
+				err = fmt.Errorf("non-200 response status code, got %d", res.StatusCode)
+				res.Body.Close()
+			} else {
+				utils.VPrintf("[Request Success] Request for [%s] took %v", reqName, dur)
+				err = nil
 			}
-			utils.VPrintf("[Request Success] Request for [%s] took %v", reqName, dur)
 		} else if err != nil {
 			var netErr net.Error
 			if errors.As(err, &netErr) && netErr.Timeout() {
@@ -393,21 +409,11 @@ func (s *coursebookScraper) req(queryStr string, retries int, reqName string) (s
 			}
 		}
 
-		return err
-	}, retries, func(numRetries int) {
-		utils.VPrintf("[Request Retry] Attempt %d of %d for request %s", numRetries, retries, reqName)
-		coursebookHeaders, err := utils.RefreshToken(s.chromedpCtx)
-		if err != nil {
-			utils.VPrintf("[Token Refresh Failed] Failed to refresh token during retry for request %s: %v", reqName, err)
-		} else {
-			s.coursebookHeaders = coursebookHeaders
+		if err == nil {
+			break
 		}
+	}
 
-		s.reqRetries++
-
-		//back off exponentially
-		time.Sleep(time.Duration(math.Pow(2, float64(numRetries))) * time.Second)
-	})
 	if err != nil {
 		return "", err
 	}
@@ -437,7 +443,7 @@ func (s *coursebookScraper) validate() error {
 		log.Printf("[Validation] Missing %d sections for %s", len(ids), prefix)
 
 		if err := s.ensurePrefixFolder(prefix); err != nil {
-			log.Panic(err)
+			log.Panic(err) // We panic here because retry won't help if we can't write data
 		}
 
 		for _, id := range ids {
