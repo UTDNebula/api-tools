@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
@@ -29,6 +31,11 @@ type discoverySearchResponse struct {
 	SearchID         string  `json:"searchid"`
 }
 
+type brochure struct {
+	ProgramID int
+	Content   string
+}
+
 func main() {
 	ctx, cancel := chromedp.NewContext(context.Background())
 	defer cancel()
@@ -39,6 +46,7 @@ func main() {
 	var brochureLinks []string
 	var discoveryBody []byte
 	var discoveryRequestID network.RequestID
+	var programIDs []int
 
 	chromedp.ListenTarget(ctx, func(ev interface{}) {
 		switch ev := ev.(type) {
@@ -86,17 +94,28 @@ func main() {
 			discovery.Limit,
 			discovery.ResultCount,
 		)
-		fmt.Printf("programIDs=%v\n", discovery.ReturnedPrograms)
-		return
+		programIDs = discovery.ReturnedPrograms
+		fmt.Printf("programIDs=%v\n", programIDs)
+	} else {
+		programIDs = extractProgramIDs(brochureLinks)
+		if len(programIDs) == 0 {
+			log.Fatal("did not capture discovery-search response or any brochure links")
+		}
+
+		fmt.Printf("discovery response was not captured; using DOM fallback\n")
+		fmt.Printf("programIDs=%v\n", programIDs)
 	}
 
-	programIDs := extractProgramIDs(brochureLinks)
-	if len(programIDs) == 0 {
-		log.Fatal("did not capture discovery-search response or any brochure links")
-	}
+	for _, programID := range programIDs {
+		brochure, err := fetchBrochure(programID)
+		if err != nil {
+			log.Printf("fetch brochure %d: %v", programID, err)
+			continue
+		}
 
-	fmt.Printf("discovery response was not captured; using DOM fallback\n")
-	fmt.Printf("programIDs=%v\n", programIDs)
+		fmt.Printf("\nBROCHURE %d\n", brochure.ProgramID)
+		fmt.Printf("content=%s\n", brochure.Content)
+	}
 }
 
 func extractProgramIDs(links []string) []int {
@@ -123,4 +142,43 @@ func extractProgramIDs(links []string) []int {
 	}
 
 	return ids
+}
+
+func fetchBrochure(programID int) (brochure, error) {
+	brochureURL := fmt.Sprintf(
+		"https://utdallas-ea.terradotta.com/_portal/tds-program-brochure?programid=%d",
+		programID,
+	)
+
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+	}
+
+	req, err := http.NewRequest(http.MethodGet, brochureURL, nil)
+	if err != nil {
+		return brochure{}, err
+	}
+
+	req.Header.Set("User-Agent", "Mozilla/5.0")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return brochure{}, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
+		return brochure{}, fmt.Errorf("status %s: %s", resp.Status, strings.TrimSpace(string(body)))
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return brochure{}, err
+	}
+
+	return brochure{
+		ProgramID: programID,
+		Content:   string(body),
+	}, nil
 }
