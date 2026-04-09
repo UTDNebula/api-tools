@@ -306,7 +306,7 @@ func GetCoursePrefixes(chromedpCtx context.Context) ([]string, error) {
 		// Get option elements for course prefix dropdown
 		_, err = chromedp.RunResponse(chromedpCtx,
 			chromedp.Navigate("https://coursebook.utdallas.edu"),
-			chromedp.QueryAfter("select#combobox_cp option", // TODO: TEST IF THIS DOESNT EXIST MAYBE
+			chromedp.QueryAfter("select#combobox_cp option",
 				func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
 					for _, node := range nodes[1:] {
 						coursePrefixes = append(coursePrefixes, node.AttributeValue("value"))
@@ -324,7 +324,7 @@ func GetCoursePrefixes(chromedpCtx context.Context) ([]string, error) {
 
 		// Exponential backoff
 		wait := time.Duration(math.Pow(2, float64(attempt))) * time.Second
-		VPrintf("Coarsbook load error, waiting %v (attempt %d of %d)", wait, attempt, maxRetries)
+		VPrintf("Coursebook load error, waiting %v (attempt %d of %d)", wait, attempt, maxRetries)
 		time.Sleep(wait)
 	}
 

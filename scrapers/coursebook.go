@@ -161,7 +161,7 @@ func (s *coursebookScraper) scrapePrefix(prefix string, resume bool, index int) 
 	}
 
 	if err != nil {
-		log.Panicf("Error getting section ids for %s ", prefix)
+		log.Panicf("Error getting section ids for %s: %v", prefix, err) //TODO: Not a valid panic probably
 	}
 
 	if len(sectionIds) == 0 {
@@ -381,7 +381,7 @@ func (s *coursebookScraper) req(queryStr string, retries int, reqName string) (s
 
 		if res != nil {
 			if res.StatusCode != 200 {
-				return errors.New("non-200 response status code")
+				return fmt.Errorf("non-200 response status code: got code %d", res.StatusCode)
 			}
 			utils.VPrintf("[Request Success] Request for [%s] took %v", reqName, dur)
 		} else if err != nil {
