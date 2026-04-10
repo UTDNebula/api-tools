@@ -71,6 +71,7 @@ func RefreshToken(chromedpCtx context.Context) (map[string][]string, error) {
 
 	VPrintf("Getting new token...")
 
+	// Retry login loop with exponential backoff
 	for attempt := 0; attempt <= coursebookMaxRetries; attempt++ {
 		if attempt > 0 {
 			wait := time.Duration(math.Pow(2, float64(attempt))) * time.Second
@@ -103,6 +104,7 @@ func RefreshToken(chromedpCtx context.Context) (map[string][]string, error) {
 			VPrintf("[Refresh Token Error] Refresh token login failed: %v", err)
 		}
 
+		// Success, break
 		if err == nil {
 			break
 		}
@@ -116,6 +118,7 @@ func RefreshToken(chromedpCtx context.Context) (map[string][]string, error) {
 
 	var cookieStrs []string
 
+	// Get cookie loop with exponential backoff
 	for attempt := 0; attempt <= coursebookMaxRetries; attempt++ {
 		if attempt > 0 {
 			wait := time.Duration(math.Pow(2, float64(attempt))) * time.Second
@@ -179,18 +182,6 @@ func RefreshToken(chromedpCtx context.Context) (map[string][]string, error) {
 		"Cookie":          cookieStrs,
 		"Connection":      {"keep-alive"},
 	}, nil
-}
-
-// Retry calls action until it succeeds or exceeds maxRetries, invoking retryCallback between attempts.
-func Retry(action func() error, maxRetries int, retryCallback func(numRetries int)) error {
-	for retries := 1; ; retries++ {
-		// Perform the action
-		err := action()
-		if err == nil || retries > maxRetries {
-			return err
-		}
-		retryCallback(retries)
-	}
 }
 
 // RefreshAstraToken signs into Astra and returns headers containing authentication cookies.
