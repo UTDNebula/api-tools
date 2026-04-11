@@ -227,7 +227,6 @@ func initMatchers() {
 
 		*/
 
-		// * <YEAR> only
 		{
 			utils.Regexpf(`(?i).+%s\s+only$`, utils.R_YEARS),
 			OtherMatcher,
