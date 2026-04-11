@@ -18,6 +18,62 @@ import (
 	"github.com/UTDNebula/nebula-api/api/schema"
 )
 
+// Rename the building and rooms to match the other sources of data
+type standardizedBuilding struct {
+	building string
+	rooms    map[string]string
+}
+
+// TODO: Find the better way to avoid hardcoding this
+var standardizedMap = map[string]standardizedBuilding{
+	"ATC": {
+		building: "ATC",
+		rooms: map[string]string{
+			"ATC Auditorium": "Auditorium",
+			"Lecture Hall":   "Auditorium",
+			"1.102":          "Auditorium",
+		},
+	},
+	"ECSN": {
+		building: "ECSN",
+		rooms: map[string]string{
+			"1st floor ECSN atrium": "1st Floor ECSN Atrium",
+		},
+	},
+	"FO": {
+		building: "FO",
+		rooms: map[string]string{
+			"Founders 2nd Floor Atrium": "2nd Floor Atrium",
+			"2nd floor atrium":          "2nd Floor Atrium",
+		},
+	},
+	"SU": {
+		building: "Student Union (SU)",
+		rooms: map[string]string{
+			"1st Floor":             "First Floor",
+			"2nd Floor":             "Second Floor",
+			"2.602":                 "Galaxy  Room  (A, B, & C)",
+			"Galaxy Rooms":          "Galaxy  Room  (A, B, & C)",
+			"Galaxy Rooms A, B & C": "Galaxy  Room  (A, B, & C)",
+			"Galaxy Rooms A & B":    "Galaxy  Room  (A & B)",
+			"Galaxy A":              "Galaxy  Room - A",
+			"Artemis Hall I &II":    "Artemis Hall (I & II)",
+		},
+	},
+	"SB": {
+		building: "SSB",
+		rooms:    map[string]string{},
+	},
+	"SSA": {
+		building: "SSA",
+		rooms: map[string]string{
+			"12.120":                              "Atrium",
+			"Atrium (formely Gaming Wall Lounge)": "Atrium",
+			"13.330":                              "Auditorium",
+		},
+	},
+}
+
 // ParseCometCalendar reformats the comet calendar data into uploadable json in Mongo
 func ParseCometCalendar(inDir string, outDir string) {
 
@@ -80,16 +136,23 @@ func ParseCometCalendar(inDir string, outDir string) {
 			}
 		}
 
-		// If building is still empty string or invalid abbreviation, then location was initally an empty string
-		// or location was a place off campus
+		// If building is still empty string or invalid abbreviation, then location wasn't provided
 		if building == "" || !isValidBuilding {
 			building = "Other"
 		}
 
-		// If room is still empty string, then location was initally an empty string, or
-		// location did not include a room, or location was a place off campus
+		// If room is still empty string, then location wasn't provided, or
+		// location did not include a room
 		if room == "" {
 			room = "Other"
+		}
+
+		if _, exists := standardizedMap[building]; exists {
+			standardized := standardizedMap[building]
+			building = standardized.building
+			if _, exists := standardized.rooms[room]; exists {
+				room = standardized.rooms[room]
+			}
 		}
 
 		if _, exists := multiBuildingMap[date]; !exists {
