@@ -3,10 +3,14 @@ package parser
 import (
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/UTDNebula/api-tools/utils"
+	"github.com/UTDNebula/nebula-api/api/schema"
 	packrat "github.com/cphaensch/go-packrat/v2"
 )
+
+var Whitespace = regexp.MustCompile(`\s+`)
 
 type Requisite interface{}
 
@@ -23,12 +27,66 @@ type Definition struct {
 
 var registry []*Definition
 
+// ParseRequirement is the main entry point for parsing requirement text.
+// It handles AND/OR at the top level by splitting the string, then uses
+// the packrat parser for the individual parts.
+func ParseRequirement(text string) *schema.CollectionRequirement {
+	text = strings.TrimSpace(text)
+
+	// TODO: I should probably handle paranthesis here, but recursion makes me sad
+
+	// Handle AND chains
+	if strings.Contains(text, " and ") {
+		parts := strings.Split(text, " and ")
+		options := make([]interface{}, 0, len(parts))
+		for _, part := range parts {
+			req := parseLeaf(part)
+			if req != nil && !reqIsThrowaway(req) {
+				options = append(options, req)
+			}
+		}
+		// AND means all options are required
+		return schema.NewCollectionRequirement("", len(options), options)
+	}
+
+	// Handle OR chains
+	if strings.Contains(text, " or ") {
+		parts := strings.Split(text, " or ")
+		options := make([]interface{}, 0, len(parts))
+		for _, part := range parts {
+			req := parseLeaf(part)
+			if req != nil && !reqIsThrowaway(req) {
+				options = append(options, req)
+			}
+		}
+		// OR means at least one option is required
+		return schema.NewCollectionRequirement("", 1, options)
+	}
+
+	// No AND/OR – parse as a single leaf requirement
+	leaf := parseLeaf(text)
+	if leaf == nil || reqIsThrowaway(leaf) {
+		return nil
+	}
+	// Wrap as a collection with one option, required = 1
+	return schema.NewCollectionRequirement("", 1, []interface{}{leaf})
+}
+
+// parseLeaf uses the packrat parser (which now contains only leaf parsers) to parse a single atomic requirement.
+func parseLeaf(input string) interface{} {
+	scanner := packrat.NewScanner[Requisite](input, Whitespace)
+	node, ok := ExprParser.Match(scanner)
+	if ok && node.Payload != nil {
+		return node.Payload
+	}
+	return nil
+}
+
 // TODO: Probably check values first before appending
 func Register(d *Definition) {
 	registry = append(registry, d)
 }
 
-// TODO: AND, OR and Group Matchers are recursive, so it doesn't work, fix that
 func (d *Definition) ToParser() packrat.Parser[Requisite] {
 	// Build an OrParser over each pattern
 	var subParsers []packrat.Parser[Requisite]
@@ -114,30 +172,12 @@ func init() {
 	})
 
 	Register(&Definition{
-		Name:           "ANDParser",
-		Patterns:       []string{`(?i)\s+and\s+`},
-		GroupCount:     1,
-		Matcher:        ANDMatcher,
-		SkipWhitespace: true,
-		CaseSensitive:  false,
-	})
-
-	Register(&Definition{
 		Name: "SubstitionParser",
 		Patterns: []string{
 			fmt.Sprintf(`^(?i)(%s\s+with\s+a(?:\s+grade)?(?:\s+of)?\s+(%s)\s+or\s+better)`, utils.R_SUBJ_COURSE_CAP, utils.R_GRADE), // [name, number, min grade]
 		},
 		GroupCount:     4,
 		Matcher:        SubstitutionMatcher(CourseMinGradeMatcher),
-		SkipWhitespace: true,
-		CaseSensitive:  false,
-	})
-
-	Register(&Definition{
-		Name:           "ORParser",
-		Patterns:       []string{`(?i)\s+or\s+`},
-		GroupCount:     1,
-		Matcher:        ORMatcher,
 		SkipWhitespace: true,
 		CaseSensitive:  false,
 	})
