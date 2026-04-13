@@ -34,7 +34,7 @@ type TestData struct {
 // testData global dictionary containing the data from /testdata by folder name
 var testData map[string]TestData
 
-// TestMain loads parser fixtures and handles the -update flag for regenerating expectations.
+// TestMain loads parser fixtures and handles the `-update` flag for regenerating expectations.
 func TestMain(m *testing.M) {
 	update := flag.Bool("update", false, "Regenerates the expected output for the provided test inputs. Should only be used when you are 100% sure your code is correct! It will make all test pass :)")
 
@@ -132,10 +132,13 @@ func updateTestData() error {
 	}
 	defer os.RemoveAll(tempDir)
 
+	GradeMap, err = loadGrades("../grade-data")
+	if err != nil {
+		return err
+	}
+
 	//Fill temp dir with all the test cases and expected values
-
 	duplicates := make(map[string]bool)
-
 	for i, input := range utils.GetAllFilesWithExtension("testdata", ".html") {
 		parse(input)
 
@@ -214,20 +217,66 @@ func updateTestData() error {
 
 	//rerun parser to get Courses.json, Sections.json, Professors.json
 
-	//Parse(tempDir, tempDir, "../grade-data", false)
-	//Grade data isn't work with tests currently
-	Parse(tempDir, tempDir, "", false)
+	Parse(tempDir, tempDir, "../grade-data", false)
 
-	//overwrite the current test data with the new data
-	if err := os.RemoveAll("testdata"); err != nil {
-		return fmt.Errorf("failed to remove testdata: %v", err)
+	targetDir := "testdata"
+
+	err = filepath.Walk(tempDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		relPath, err := filepath.Rel(tempDir, path)
+		if err != nil {
+			return err
+		}
+		destPath := filepath.Join(targetDir, relPath)
+
+		if info.IsDir() {
+			return os.MkdirAll(destPath, 0755)
+		}
+
+		newContent, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+
+		if existingContent, err := os.ReadFile(destPath); err == nil {
+			if bytes.Equal(newContent, existingContent) {
+				return nil
+			}
+		}
+
+		log.Printf("Updating file: %s", destPath)
+		return os.WriteFile(destPath, newContent, 0644)
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to sync test data: %v", err)
 	}
 
-	if err := os.CopyFS("testdata", os.DirFS(tempDir)); err != nil {
-		return fmt.Errorf("failed to copy testdata: %v", err)
+	err = filepath.Walk(targetDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		relPath, err := filepath.Rel(targetDir, path)
+		if err != nil {
+			return err
+		}
+
+		srcPath := filepath.Join(tempDir, relPath)
+		if _, err := os.Stat(srcPath); os.IsNotExist(err) {
+			log.Printf("Removing stale file: %s", path)
+			return os.RemoveAll(path)
+		}
+		return nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to cleanup stale data: %v", err)
 	}
 
-	//reset maps to avoid side effects. maybe parser should be an object?
 	clearGlobals()
 	return nil
 }
@@ -244,8 +293,8 @@ func clearGlobals() {
 // TestParse verifies that parsing input fixtures generates the expected JSON exports.
 func TestParse(t *testing.T) {
 	tempDir := t.TempDir()
-	// todo fix grade data, csvPath = ./grade-data panics
-	Parse("testdata", tempDir, "", false)
+
+	Parse("testdata", tempDir, "../grade-data", false)
 
 	OutputCourses, err := unmarshallFile[[]schema.Course](filepath.Join(tempDir, "courses.json"))
 	if err != nil {
