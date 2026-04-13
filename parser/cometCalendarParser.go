@@ -88,9 +88,10 @@ func ParseCometCalendar(inDir string, outDir string) {
 		if room == "" && isValidBuilding {
 			locationParts := strings.SplitN(*location, ", ", 2)
 			if len(locationParts) == 2 {
-				room = normalizeRoom(building, locationParts[1])
+				room = locationParts[1]
 			}
 		}
+		room = normalizeRoom(building, room)
 
 		// If building is still empty string or invalid abbreviation, then location wasn't provided
 		if building == "" || !isValidBuilding {
