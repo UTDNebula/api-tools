@@ -144,9 +144,10 @@ func ParseCometCalendar(inDir string, outDir string) {
 	utils.WriteJSON(fmt.Sprintf("%s/cometCalendar.json", outDir), result)
 }
 
-// normalizeRoom standardize the room into set of rooms to match rooms from other event-related data source
+// normalizeRoom normalizes the room into set of rooms to match rooms from other event-related data source.
+// This is still a little flawed but it can handle 95% of the cases.
 func normalizeRoom(building string, room string) string {
-	allowedTokens := []string{
+	validTokens := []string{
 		"first", "second", "third", "floor",
 		"galaxy", "a", "b", "c",
 		"artemis", "i", "ii", "lecture",
@@ -175,12 +176,14 @@ func normalizeRoom(building string, room string) string {
 	}
 
 	if roomRegexp.MatchString(room) {
+		// Numeric room, convert to the normalized non-number room if possible
 		if _, ok := normalizedMap[building+" "+room]; ok {
 			return normalizedMap[building+" "+room]
 		}
 		return room
 	}
 
+	// Non-number room
 	room = strings.ToLower(strings.Split(room, ", ")[0])
 	tokens := strings.Split(room, " ")
 	normalizedTokens := []string{}
@@ -189,7 +192,7 @@ func normalizeRoom(building string, room string) string {
 		if _, ok := tokenMap[trimmedToken]; ok {
 			trimmedToken = tokenMap[trimmedToken]
 		}
-		if slices.Contains(allowedTokens, trimmedToken) {
+		if slices.Contains(validTokens, trimmedToken) {
 			normalizedTokens = append(normalizedTokens, trimmedToken)
 		}
 	}

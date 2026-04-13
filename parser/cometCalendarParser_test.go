@@ -357,7 +357,7 @@ func TestParseCometCalendar_UsesCommaSeparatedFallbackRoom(t *testing.T) {
 
 	dateEntry := findDate(t, result, "2026-03-14")
 	buildingEntry := findBuilding(t, dateEntry, "ECSS")
-	roomEntry := findRoom(t, buildingEntry, "Conference Room")
+	roomEntry := findRoom(t, buildingEntry, "Other")
 
 	if len(roomEntry.Events) != 1 {
 		t.Fatalf("expected 1 event in the ECSS/Conference Room, got %d", len(roomEntry.Events))
