@@ -182,28 +182,6 @@ func UploadData[T any](client *mongo.Client, ctx context.Context, fptr *os.File,
 					log.Println("Existing search index is fine")
 				}
 			}
-
-			/*
-				// If the search indexes have been created, don't create again
-				// TODO: Find a way to dynamically avoid creating one when is has been created
-				_, err = collection.SearchIndexes().CreateOne(ctx, mongo.SearchIndexModel{
-					Definition: bson.D{
-						{Key: "mappings", Value: bson.D{
-							{Key: "dynamic", Value: true},
-							{Key: "fields", Value: bson.D{
-								{Key: "category", Value: bson.D{{Key: "type", Value: "string"}}},
-								{Key: "business", Value: bson.D{{Key: "type", Value: "string"}}},
-								{Key: "address", Value: bson.D{{Key: "type", Value: "string"}}},
-								{Key: "discount", Value: bson.D{{Key: "type", Value: "string"}}},
-							}},
-						}},
-					},
-					Options: options.SearchIndexes().SetName("discount_searches"),
-				})
-				if err != nil {
-					log.Panic(err)
-				}
-			*/
 		}
 
 		// Delete all documents from collection
