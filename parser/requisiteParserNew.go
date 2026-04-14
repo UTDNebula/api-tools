@@ -3,6 +3,7 @@ package parser
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/UTDNebula/api-tools/utils"
@@ -10,11 +11,7 @@ import (
 	packrat "github.com/cphaensch/go-packrat/v2"
 )
 
-var Whitespace = regexp.MustCompile(`\s+`)
-
 type Requisite interface{}
-
-var ExprParser packrat.Parser[Requisite]
 
 type Definition struct {
 	Name           string
@@ -26,23 +23,45 @@ type Definition struct {
 }
 
 var registry []*Definition
+var Whitespace = regexp.MustCompile(`\s+`)
+var ExprParser packrat.Parser[Requisite]
 
 // ParseRequirement is the main entry point for parsing requirement text.
 // It handles AND/OR at the top level by splitting the string, then uses
 // the packrat parser for the individual parts.
 func ParseRequirement(text string) *schema.CollectionRequirement {
+	fmt.Printf("Parsing input: %q\n", text) // Add this at function start
 	text = strings.TrimSpace(text)
 
-	// TODO: I should probably handle paranthesis here, but recursion makes me sad
+	flatText, groups := groupParens(text)
+	groupReqs := make([]interface{}, len(groups))
+	// Parse groups bottom‑up (they may contain nested @N references)
+	for i := len(groups) - 1; i >= 0; i-- {
+		req := ParseRequirement(groups[i]) // recursive call
+		if req != nil {
+			groupReqs[i] = req
+		}
+	}
+	text = flatText
 
 	// Handle AND chains
 	if strings.Contains(text, " and ") {
 		parts := strings.Split(text, " and ")
 		options := make([]interface{}, 0, len(parts))
 		for _, part := range parts {
-			req := parseLeaf(part)
+			var req interface{}
+			if placeholder := getPlaceholder(part, groupReqs); placeholder != nil {
+				req = placeholder
+				fmt.Printf("DEBUG: placeholder %q -> %T\n", part, req)
+			} else {
+				req = parseLeaf(part)
+				fmt.Printf("DEBUG: leaf %q -> %T\n", part, req)
+			}
 			if req != nil && !reqIsThrowaway(req) {
 				options = append(options, req)
+				fmt.Printf("DEBUG: added option, now %d options\n", len(options))
+			} else {
+				fmt.Printf("DEBUG: skipped (nil or throwaway)\n")
 			}
 		}
 		// AND means all options are required
@@ -55,6 +74,11 @@ func ParseRequirement(text string) *schema.CollectionRequirement {
 		options := make([]interface{}, 0, len(parts))
 		for _, part := range parts {
 			req := parseLeaf(part)
+			if placeholder := getPlaceholder(part, groupReqs); placeholder != nil {
+				req = placeholder
+			} else {
+				req = parseLeaf(part)
+			}
 			if req != nil && !reqIsThrowaway(req) {
 				options = append(options, req)
 			}
@@ -70,6 +94,16 @@ func ParseRequirement(text string) *schema.CollectionRequirement {
 	}
 	// Wrap as a collection with one option, required = 1
 	return schema.NewCollectionRequirement("", 1, []interface{}{leaf})
+}
+
+func getPlaceholder(part string, groupReqs []interface{}) interface{} {
+	if strings.HasPrefix(part, "@") && len(part) > 1 {
+		idx, err := strconv.Atoi(part[1:])
+		if err == nil && idx >= 0 && idx < len(groupReqs) {
+			return groupReqs[idx]
+		}
+	}
+	return nil
 }
 
 // parseLeaf uses the packrat parser (which now contains only leaf parsers) to parse a single atomic requirement.

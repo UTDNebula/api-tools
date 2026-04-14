@@ -28,7 +28,6 @@ func TestLeafParsers(t *testing.T) {
 		{"CS majors only", "*schema.MajorRequirement"},
 		{"CS minors only", "*schema.MinorRequirement"},
 		{"Completion of 130 core course", "*schema.CoreRequirement"},
-		// HACK: still very confused on why throwaway returns a regular requirement
 		{"same as CS 1200", "schema.Requirement"},
 	}
 
@@ -55,6 +54,8 @@ func TestCollectionRequirements(t *testing.T) {
 	Courses = map[string]*schema.Course{
 		"CS 1200":   {Subject_prefix: "CS", Course_number: "1200", Internal_course_number: "CS-1200"},
 		"MATH 2413": {Subject_prefix: "MATH", Course_number: "2413", Internal_course_number: "MATH-2413"},
+		"PHYS 2325": {Subject_prefix: "PHYS", Course_number: "2325", Internal_course_number: "PHYS-2325"},
+		"LIT 1301":  {Subject_prefix: "LIT", Course_number: "1301", Internal_course_number: "LIT-1301"},
 	}
 
 	tests := []struct {
@@ -63,14 +64,23 @@ func TestCollectionRequirements(t *testing.T) {
 		optionsLen      int
 		firstOptionType string
 	}{
+		// Basic
 		{"CS 1200", 1, 1, "*schema.CourseRequirement"},
 		{"CS 1200 and MATH 2413", 2, 2, "*schema.CourseRequirement"},
 		{"CS 1200 or MATH 2413", 1, 2, "*schema.CourseRequirement"},
+
+		// Parenthesis
+		{"CS 1200 and (MATH 2413 or LIT 1301)", 2, 2, "*schema.CourseRequirement"},
+		{"(CS 1200 and MATH 2413) or LIT 1301", 1, 2, "*schema.CollectionRequirement"},
+		{"(CS 1200 and MATH 2413) or LIT 1301", 1, 2, "*schema.CollectionRequirement"},
+		{"(CS 1200 and MATH 2413) or (LIT 1301 and PHYS 2325)", 1, 2, "*schema.CollectionRequirement"},
+		{"CS 1200 and ((MATH 2413 or PHYS 1301) and ENGL 1301)", 2, 2, "*schema.CourseRequirement"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
 			result := ParseRequirement(tt.input)
+
 			if result == nil {
 				t.Fatal("nil result")
 			}
@@ -81,8 +91,8 @@ func TestCollectionRequirements(t *testing.T) {
 				t.Errorf("Options len = %d, want %d", len(result.Options), tt.optionsLen)
 			}
 			if tt.firstOptionType != "" && len(result.Options) > 0 {
-				if getTypeName(result.Options[0]) != tt.firstOptionType {
-					t.Errorf("First option type mismatch")
+				if got := getTypeName(result.Options[0]); got != tt.firstOptionType {
+					t.Errorf("First option type = %s, want %s", got, tt.firstOptionType)
 				}
 			}
 		})
