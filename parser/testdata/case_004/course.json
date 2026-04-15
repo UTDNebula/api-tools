@@ -1,9 +1,9 @@
 {
-	"_id": "67d07ee0c972c18731e23be5",
+	"_id": "69cda9299bb0b8cd4cf4c72a",
 	"subject_prefix": "AERO",
 	"course_number": "3320",
 	"title": "- Recitation",
-	"description": "-  ()",
+	"description": "- ()",
 	"enrollment_reqs": "",
 	"school": "Undergraduate Studies",
 	"credit_hours": "Non-Enroll",
@@ -15,7 +15,7 @@
 	"corequisites": null,
 	"co_or_pre_requisites": null,
 	"sections": [
-		"67d07ee0c972c18731e23be6"
+		"69cda9299bb0b8cd4cf4c72b"
 	],
 	"lecture_contact_hours": "",
 	"laboratory_contact_hours": "",

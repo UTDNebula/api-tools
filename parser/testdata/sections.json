@@ -1,8 +1,8 @@
 [
 	{
-		"_id": "67d07ee0c972c18731e23bef",
-		"section_number": "501",
-		"course_reference": "67d07ee0c972c18731e23bee",
+		"_id": "69cda9299bb0b8cd4cf4c732",
+		"section_number": "003",
+		"course_reference": "69cda9299bb0b8cd4cf4c731",
 		"section_corequisites": null,
 		"academic_session": {
 			"name": "25S",
@@ -10,7 +10,151 @@
 			"end_date": "2025-05-16T00:00:00-05:00"
 		},
 		"professors": [
-			"67d07ee0c972c18731e23bf0"
+			"69cda9299bb0b8cd4cf4c733",
+			"69cda9299bb0b8cd4cf4c734"
+		],
+		"teaching_assistants": [
+			{
+				"first_name": "Galymzhan",
+				"last_name": "Tazhibayev",
+				"role": "Teaching Assistant",
+				"email": "gxt230023@utdallas.edu"
+			},
+			{
+				"first_name": "Dipta",
+				"last_name": "Banik",
+				"role": "Teaching Assistant",
+				"email": "dxb220047@utdallas.edu"
+			}
+		],
+		"internal_class_number": "27706",
+		"instruction_mode": "Face-to-Face",
+		"meetings": [
+			{
+				"start_date": "2025-01-21T00:00:00-06:00",
+				"end_date": "2025-05-09T00:00:00-05:00",
+				"meeting_days": [
+					"Tuesday",
+					"Thursday"
+				],
+				"start_time": "10:00am",
+				"end_time": "11:15am",
+				"modality": "",
+				"location": {
+					"building": "JSOM",
+					"room": "2.717",
+					"map_uri": "https://locator.utdallas.edu/SOM_2.717"
+				}
+			}
+		],
+		"core_flags": [],
+		"syllabus_uri": "https://dox.utdallas.edu/syl152555",
+		"grade_distribution": [
+			9,
+			9,
+			4,
+			6,
+			4,
+			5,
+			12,
+			3,
+			1,
+			3,
+			1,
+			0,
+			4,
+			3,
+			0,
+			0,
+			0,
+			0
+		],
+		"attributes": null
+	},
+	{
+		"_id": "69cda9299bb0b8cd4cf4c735",
+		"section_number": "001",
+		"course_reference": "69cda9299bb0b8cd4cf4c731",
+		"section_corequisites": null,
+		"academic_session": {
+			"name": "25S",
+			"start_date": "2025-01-21T00:00:00-06:00",
+			"end_date": "2025-05-16T00:00:00-05:00"
+		},
+		"professors": [
+			"69cda9299bb0b8cd4cf4c734",
+			"69cda9299bb0b8cd4cf4c733"
+		],
+		"teaching_assistants": [
+			{
+				"first_name": "Galymzhan",
+				"last_name": "Tazhibayev",
+				"role": "Teaching Assistant",
+				"email": "gxt230023@utdallas.edu"
+			},
+			{
+				"first_name": "Dipta",
+				"last_name": "Banik",
+				"role": "Teaching Assistant",
+				"email": "dxb220047@utdallas.edu"
+			}
+		],
+		"internal_class_number": "26595",
+		"instruction_mode": "Face-to-Face",
+		"meetings": [
+			{
+				"start_date": "2025-01-21T00:00:00-06:00",
+				"end_date": "2025-05-09T00:00:00-05:00",
+				"meeting_days": [
+					"Tuesday",
+					"Thursday"
+				],
+				"start_time": "8:30am",
+				"end_time": "9:45am",
+				"modality": "",
+				"location": {
+					"building": "JSOM",
+					"room": "2.717",
+					"map_uri": "https://locator.utdallas.edu/SOM_2.717"
+				}
+			}
+		],
+		"core_flags": [],
+		"syllabus_uri": "https://dox.utdallas.edu/syl152552",
+		"grade_distribution": [
+			2,
+			7,
+			5,
+			8,
+			8,
+			7,
+			3,
+			6,
+			1,
+			3,
+			3,
+			0,
+			9,
+			1,
+			0,
+			0,
+			0,
+			0
+		],
+		"attributes": null
+	},
+	{
+		"_id": "69cda9299bb0b8cd4cf4c737",
+		"section_number": "501",
+		"course_reference": "69cda9299bb0b8cd4cf4c736",
+		"section_corequisites": null,
+		"academic_session": {
+			"name": "25S",
+			"start_date": "2025-01-21T00:00:00-06:00",
+			"end_date": "2025-05-16T00:00:00-05:00"
+		},
+		"professors": [
+			"69cda9299bb0b8cd4cf4c738"
 		],
 		"teaching_assistants": [
 			{
@@ -45,13 +189,32 @@
 			"090"
 		],
 		"syllabus_uri": "https://dox.utdallas.edu/syl153033",
-		"grade_distribution": [],
+		"grade_distribution": [
+			0,
+			13,
+			23,
+			6,
+			4,
+			7,
+			1,
+			0,
+			0,
+			0,
+			0,
+			0,
+			1,
+			1,
+			0,
+			0,
+			0,
+			0
+		],
 		"attributes": null
 	},
 	{
-		"_id": "67d07ee0c972c18731e23bf2",
+		"_id": "69cda9299bb0b8cd4cf4c73a",
 		"section_number": "016",
-		"course_reference": "67d07ee0c972c18731e23bf1",
+		"course_reference": "69cda9299bb0b8cd4cf4c739",
 		"section_corequisites": null,
 		"academic_session": {
 			"name": "25S",
@@ -59,7 +222,7 @@
 			"end_date": "2025-05-16T00:00:00-05:00"
 		},
 		"professors": [
-			"67d07ee0c972c18731e23bf3"
+			"69cda9299bb0b8cd4cf4c73b"
 		],
 		"teaching_assistants": [],
 		"internal_class_number": "29611",
@@ -87,9 +250,9 @@
 		"attributes": null
 	},
 	{
-		"_id": "67d07ee0c972c18731e23bf5",
+		"_id": "69cda9299bb0b8cd4cf4c73d",
 		"section_number": "201",
-		"course_reference": "67d07ee0c972c18731e23bf4",
+		"course_reference": "69cda9299bb0b8cd4cf4c73c",
 		"section_corequisites": null,
 		"academic_session": {
 			"name": "25S",
@@ -123,9 +286,9 @@
 		"attributes": null
 	},
 	{
-		"_id": "67d07ee0c972c18731e23bf7",
+		"_id": "69cda9299bb0b8cd4cf4c73f",
 		"section_number": "002",
-		"course_reference": "67d07ee0c972c18731e23bf6",
+		"course_reference": "69cda9299bb0b8cd4cf4c73e",
 		"section_corequisites": null,
 		"academic_session": {
 			"name": "25S",
@@ -174,9 +337,9 @@
 		"attributes": null
 	},
 	{
-		"_id": "67d07ee0c972c18731e23bea",
-		"section_number": "003",
-		"course_reference": "67d07ee0c972c18731e23be9",
+		"_id": "69cda9299bb0b8cd4cf4c741",
+		"section_number": "001",
+		"course_reference": "69cda9299bb0b8cd4cf4c740",
 		"section_corequisites": null,
 		"academic_session": {
 			"name": "25S",
@@ -184,99 +347,54 @@
 			"end_date": "2025-05-16T00:00:00-05:00"
 		},
 		"professors": [
-			"67d07ee0c972c18731e23beb",
-			"67d07ee0c972c18731e23bec"
+			"69cda9299bb0b8cd4cf4c742"
 		],
-		"teaching_assistants": [
-			{
-				"first_name": "Galymzhan",
-				"last_name": "Tazhibayev",
-				"role": "Teaching Assistant",
-				"email": "gxt230023@utdallas.edu"
-			},
-			{
-				"first_name": "Dipta",
-				"last_name": "Banik",
-				"role": "Teaching Assistant",
-				"email": "dxb220047@utdallas.edu"
-			}
-		],
-		"internal_class_number": "27706",
+		"teaching_assistants": [],
+		"internal_class_number": "24043",
 		"instruction_mode": "Face-to-Face",
 		"meetings": [
 			{
 				"start_date": "2025-01-21T00:00:00-06:00",
 				"end_date": "2025-05-09T00:00:00-05:00",
 				"meeting_days": [
-					"Tuesday",
-					"Thursday"
+					"Monday",
+					"Wednesday"
 				],
 				"start_time": "10:00am",
 				"end_time": "11:15am",
 				"modality": "",
 				"location": {
-					"building": "JSOM",
-					"room": "2.717",
-					"map_uri": "https://locator.utdallas.edu/SOM_2.717"
+					"building": "FO",
+					"room": "1.202",
+					"map_uri": "https://locator.utdallas.edu/FO_1.202"
 				}
 			}
 		],
-		"core_flags": [],
-		"syllabus_uri": "https://dox.utdallas.edu/syl152555",
-		"grade_distribution": [],
-		"attributes": null
-	},
-	{
-		"_id": "67d07ee0c972c18731e23bed",
-		"section_number": "001",
-		"course_reference": "67d07ee0c972c18731e23be9",
-		"section_corequisites": null,
-		"academic_session": {
-			"name": "25S",
-			"start_date": "2025-01-21T00:00:00-06:00",
-			"end_date": "2025-05-16T00:00:00-05:00"
-		},
-		"professors": [
-			"67d07ee0c972c18731e23bec",
-			"67d07ee0c972c18731e23beb"
+		"core_flags": [
+			"050",
+			"090"
 		],
-		"teaching_assistants": [
-			{
-				"first_name": "Galymzhan",
-				"last_name": "Tazhibayev",
-				"role": "Teaching Assistant",
-				"email": "gxt230023@utdallas.edu"
-			},
-			{
-				"first_name": "Dipta",
-				"last_name": "Banik",
-				"role": "Teaching Assistant",
-				"email": "dxb220047@utdallas.edu"
-			}
+		"syllabus_uri": "https://dox.utdallas.edu/syl154931",
+		"grade_distribution": [
+			4,
+			7,
+			9,
+			3,
+			1,
+			1,
+			0,
+			1,
+			2,
+			0,
+			0,
+			0,
+			5,
+			0,
+			0,
+			0,
+			0,
+			0
 		],
-		"internal_class_number": "26595",
-		"instruction_mode": "Face-to-Face",
-		"meetings": [
-			{
-				"start_date": "2025-01-21T00:00:00-06:00",
-				"end_date": "2025-05-09T00:00:00-05:00",
-				"meeting_days": [
-					"Tuesday",
-					"Thursday"
-				],
-				"start_time": "8:30am",
-				"end_time": "9:45am",
-				"modality": "",
-				"location": {
-					"building": "JSOM",
-					"room": "2.717",
-					"map_uri": "https://locator.utdallas.edu/SOM_2.717"
-				}
-			}
-		],
-		"core_flags": [],
-		"syllabus_uri": "https://dox.utdallas.edu/syl152552",
-		"grade_distribution": [],
 		"attributes": null
 	}
 ]

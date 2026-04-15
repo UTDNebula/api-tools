@@ -5,79 +5,64 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/UTDNebula/api-tools/utils"
 )
 
-var grades = []string{"A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "F", "W", "P", "CR", "NC", "I"}
+var (
+	grades          = []string{"A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "F", "W", "P", "CR", "NC", "I"}
+	optionalColumns = []string{"W", "P", "CR", "NC", "I"}
+	requiredColumns = []string{"Section", "Subject", "Catalog Number", "A+"}
+	semesterRegex   = regexp.MustCompile(`[1-9][0-9][USF]`)
+)
 
-func loadGrades(csvDir string) map[string]map[string][]int {
-
+func loadGrades(csvDir string) (map[string]map[string][]int, error) {
 	// MAP[SEMESTER] -> MAP[SUBJECT + NUMBER + SECTION] -> GRADE DISTRIBUTION
 	gradeMap := make(map[string]map[string][]int)
 
-	if csvDir == "" {
-		log.Print("No grade data CSV directory specified. Grade data will not be included.")
-		return gradeMap
-	}
+	fileNames := utils.GetAllFilesWithExtension(csvDir, ".csv")
+	for _, name := range fileNames {
 
-	dirPtr, err := os.Open(csvDir)
-	if err != nil {
-		panic(err)
-	}
-	defer dirPtr.Close()
-
-	csvFiles, err := dirPtr.ReadDir(-1)
-	if err != nil {
-		panic(err)
-	}
-
-	for _, csvEntry := range csvFiles {
-
-		if csvEntry.IsDir() {
-			continue
+		semester := semesterRegex.FindString(name)
+		if semester == "" {
+			return gradeMap, fmt.Errorf("invalid name %s, must match format {>10}{F,S,U} i.e. 22F", name)
 		}
 
-		csvPath := fmt.Sprintf("%s/%s", csvDir, csvEntry.Name())
-
-		csvFile, err := os.Open(csvPath)
+		var err error
+		gradeMap[semester], err = csvToMap(name)
 		if err != nil {
-			panic(err)
+			return gradeMap, fmt.Errorf("error parsing %s: %v", name, err)
 		}
-		defer csvFile.Close()
-
-		// Create logs directory
-		if _, err := os.Stat("./logs/grades"); err != nil {
-			os.Mkdir("./logs/grades", os.ModePerm)
-		}
-
-		// Create log file [name of csv].log in logs directory
-		basePath := filepath.Base(csvPath)
-		csvName := strings.TrimSuffix(basePath, filepath.Ext(basePath))
-		logFile, err := os.Create("./logs/grades/" + csvName + ".log")
-
-		if err != nil {
-			log.Panic("Could not create CSV log file.")
-		}
-		defer logFile.Close()
-
-		// Put data from csv into map
-		gradeMap[csvName] = csvToMap(csvFile, logFile)
 	}
 
-	return gradeMap
+	return gradeMap, nil
 }
 
-func csvToMap(csvFile *os.File, logFile *os.File) map[string][]int {
-	reader := csv.NewReader(csvFile)
-	records, err := reader.ReadAll() // records is [][]strings
+func csvToMap(filename string) (map[string][]int, error) {
+	file, err := os.Open(filename)
 	if err != nil {
-		log.Panicf("Error parsing %s: %s", csvFile.Name(), err.Error())
+		return nil, fmt.Errorf("error opening CSV file '%s': %v", filename, err)
+	}
+	defer func(file *os.File) {
+		if err := file.Close(); err != nil {
+			log.Printf("failed to close file '%s': %v", filename, err)
+		}
+	}(file)
+
+	reader := csv.NewReader(file)
+	records, err := reader.ReadAll()
+	if err != nil {
+		return nil, fmt.Errorf("error parsing %s: %v", filename, err)
+	}
+
+	if len(records) == 0 {
+		return nil, fmt.Errorf("empty CSV file '%s'", filename)
 	}
 
 	indexMap := make(map[string]int)
-
 	for j, col := range records[0] {
 		switch col {
 		case "Catalog Number", "Catalog Nbr":
@@ -89,18 +74,15 @@ func csvToMap(csvFile *os.File, logFile *os.File) map[string][]int {
 		}
 	}
 
-	// required columns
-	for _, name := range []string{"Section", "Subject", "Catalog Number", "A+"} {
+	for _, name := range requiredColumns {
 		if _, ok := indexMap[name]; !ok {
-			fmt.Fprintf(logFile, "could not find %s column", name)
-			log.Panicf("could not find %s column", name)
+			return nil, fmt.Errorf("could not find %s column in %s", name, filename)
 		}
 	}
 
-	// optional columns
-	for _, name := range []string{"W", "P", "CR", "NC", "I"} {
+	for _, name := range optionalColumns {
 		if _, ok := indexMap[name]; !ok {
-			fmt.Fprintf(logFile, "could not find %s column\n", name)
+			utils.VPrintf("could not find %s column in %s", name, filename)
 		}
 	}
 
@@ -109,7 +91,6 @@ func csvToMap(csvFile *os.File, logFile *os.File) map[string][]int {
 	catalogNumberCol := indexMap["Catalog Number"]
 
 	distroMap := make(map[string][]int)
-
 	for _, record := range records[1:] {
 		// convert grade distribution from string to int
 		intSlice := make([]int, len(grades))
@@ -125,5 +106,6 @@ func csvToMap(csvFile *os.File, logFile *os.File) map[string][]int {
 		distroKey := record[subjectCol] + record[catalogNumberCol] + trimmedSectionNumber
 		distroMap[distroKey] = intSlice[:]
 	}
-	return distroMap
+
+	return distroMap, nil
 }
