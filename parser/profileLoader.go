@@ -16,7 +16,7 @@ func loadProfiles(inDir string) {
 
 	fptr, err := os.Open(fmt.Sprintf("%s/profiles.json", inDir))
 	if err != nil {
-		log.Print("Couldn't find/open profiles_raw.json or profiles.json in the input directory. Skipping profile load.")
+		log.Print("Couldn't find/open profiles.json in the input directory. Skipping profile load.")
 		return
 	}
 

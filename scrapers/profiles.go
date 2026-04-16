@@ -19,9 +19,8 @@ import (
 const profileBaseURL string = "https://profiles.utdallas.edu/api/v1"
 
 const (
-	profilesRawFileName      = "profiles_raw.json"
+	profilesRawFileName      = "profiles.json"
 	profilesIndexRawFileName = "profiles_index_raw.json"
-	profileSchoolsEnvVar     = "PROFILE_SCHOOLS"
 )
 
 const (
@@ -78,11 +77,6 @@ type profileDetailsResponse struct {
 	Profile []profileRawRecord `json:"profile"`
 }
 
-type profileScrapeOutput struct {
-	Count   int                `json:"count"`
-	Profile []profileRawRecord `json:"profile"`
-}
-
 // ScrapeProfiles fetches the raw profile API response and writes it to disk.
 func ScrapeProfiles(outDir string) {
 	log.Print("Beginning profile scrape.")
@@ -99,8 +93,6 @@ func ScrapeProfiles(outDir string) {
 		log.Print("Profile API returned no profiles.")
 		return
 	}
-
-	schools := parseProfileSchoolsFromEnv()
 
 	slugs := make([]string, 0, len(indexResponse.Profile))
 	for _, row := range indexResponse.Profile {
@@ -120,52 +112,29 @@ func ScrapeProfiles(outDir string) {
 	log.Printf("Retrieved %d profile slugs.", len(slugs))
 
 	detailedProfiles := make([]profileRawRecord, 0, len(slugs))
-	if len(schools) > 0 {
-		log.Printf("PROFILE_SCHOOLS configured with %d school codes. Pulling profile details by school.", len(schools))
-		for i, school := range schools {
-			schoolProfiles, fetchErr := fetchProfileDetailsForSchool(client, school)
-			if fetchErr != nil {
-				log.Printf("Failed to retrieve profile detail for school %s: %v", school, fetchErr)
-				continue
-			}
-
-			detailedProfiles = append(detailedProfiles, schoolProfiles...)
-			log.Printf("Fetched %d profile records for school %s.", len(schoolProfiles), school)
-
-			if i < len(schools)-1 {
-				time.Sleep(profileRequestDelay)
-			}
+	log.Printf("Pulling profile details by person slug in batches of %d.", profileBatchSize)
+	for i := 0; i < len(slugs); i += profileBatchSize {
+		end := i + profileBatchSize
+		if end > len(slugs) {
+			end = len(slugs)
 		}
-	} else {
-		log.Printf("Pulling profile details by person slug in batches of %d.", profileBatchSize)
-		for i := 0; i < len(slugs); i += profileBatchSize {
-			end := i + profileBatchSize
-			if end > len(slugs) {
-				end = len(slugs)
-			}
 
-			batch := slugs[i:end]
-			batchProfiles, fetchErr := fetchProfileDetails(client, batch)
-			if fetchErr != nil {
-				log.Printf("Failed to retrieve profile detail batch %d-%d: %v", i+1, end, fetchErr)
-				continue
-			}
+		batch := slugs[i:end]
+		batchProfiles, fetchErr := fetchProfileDetails(client, batch)
+		if fetchErr != nil {
+			log.Printf("Failed to retrieve profile detail batch %d-%d: %v", i+1, end, fetchErr)
+			continue
+		}
 
-			detailedProfiles = append(detailedProfiles, batchProfiles...)
-			log.Printf("Fetched profile detail batch %d-%d (%d records).", i+1, end, len(batchProfiles))
+		detailedProfiles = append(detailedProfiles, batchProfiles...)
+		log.Printf("Fetched profile detail batch %d-%d (%d records).", i+1, end, len(batchProfiles))
 
-			if end < len(slugs) {
-				time.Sleep(profileRequestDelay)
-			}
+		if end < len(slugs) {
+			time.Sleep(profileRequestDelay)
 		}
 	}
 
 	detailedProfiles = dedupeProfiles(detailedProfiles)
-
-	output := profileScrapeOutput{
-		Count:   len(detailedProfiles),
-		Profile: detailedProfiles,
-	}
 
 	if err := os.MkdirAll(outDir, 0777); err != nil {
 		log.Printf("Failed to create output directory: %v", err)
@@ -179,13 +148,13 @@ func ScrapeProfiles(outDir string) {
 	}
 
 	outPath := filepath.Join(outDir, profilesRawFileName)
-	if err := writePrettyJSON(outPath, output); err != nil {
+	if err := writePrettyJSON(outPath, detailedProfiles); err != nil {
 		log.Printf("Failed to write profile detail output file: %v", err)
 		return
 	}
 
 	log.Printf("Wrote profile index to %s", indexOutPath)
-	log.Printf("Wrote %d raw profiles to %s", output.Count, outPath)
+	log.Printf("Wrote %d raw profiles to %s", len(detailedProfiles), outPath)
 }
 
 func fetchProfileIndex(client *http.Client) (*profileIndexResponse, error) {
@@ -258,61 +227,6 @@ func fetchProfileDetails(client *http.Client, slugs []string) ([]profileRawRecor
 	return decoded.Profile, nil
 }
 
-func fetchProfileDetailsForSchool(client *http.Client, school string) ([]profileRawRecord, error) {
-	requestURL := buildProfileSchoolRequestURL(school)
-	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code %d", resp.StatusCode)
-	}
-
-	var decoded profileDetailsResponse
-	if err := json.NewDecoder(resp.Body).Decode(&decoded); err != nil {
-		return nil, err
-	}
-
-	return decoded.Profile, nil
-}
-
-func parseProfileSchoolsFromEnv() []string {
-	return parseDelimitedValues(os.Getenv(profileSchoolsEnvVar))
-}
-
-func parseDelimitedValues(values string) []string {
-	values = strings.TrimSpace(values)
-	if values == "" {
-		return []string{}
-	}
-
-	fields := strings.FieldsFunc(values, func(r rune) bool {
-		switch r {
-		case ';', ',', ' ', '\n', '\r', '\t':
-			return true
-		default:
-			return false
-		}
-	})
-
-	result := make([]string, 0, len(fields))
-	for _, field := range fields {
-		trimmed := strings.ToUpper(strings.TrimSpace(field))
-		if trimmed == "" {
-			continue
-		}
-		result = append(result, trimmed)
-	}
-
-	return dedupeStrings(result)
-}
 
 func dedupeStrings(values []string) []string {
 	if len(values) < 2 {
@@ -335,14 +249,6 @@ func dedupeStrings(values []string) []string {
 func buildProfileDetailsRequestURL(slugs []string) string {
 	params := url.Values{}
 	params.Set("person", strings.Join(slugs, ";"))
-	params.Set("with_data", "1")
-	params.Set("data_type", "information;areas")
-	return fmt.Sprintf("%s?%s", profileBaseURL, params.Encode())
-}
-
-func buildProfileSchoolRequestURL(school string) string {
-	params := url.Values{}
-	params.Set("from_school", strings.TrimSpace(strings.ToUpper(school)))
 	params.Set("with_data", "1")
 	params.Set("data_type", "information;areas")
 	return fmt.Sprintf("%s?%s", profileBaseURL, params.Encode())

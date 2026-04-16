@@ -3,6 +3,7 @@ package parser
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"regexp"
@@ -12,11 +13,11 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-const profilesRawFileName = "profiles_raw.json"
+const profilesRawFileName = "profiles.json"
 
 var (
-	apiPrimaryLocationRegex  = regexp.MustCompile(`^(\w+)\s+(\d+\.\d{3}[A-z]?)$`)
-	apiFallbackLocationRegex = regexp.MustCompile(`^([A-z]+)(\d+)\.?([\d]{3}[A-z]?)$`)
+	apiPrimaryLocationRegex  = regexp.MustCompile(`^(\w+)\s+(\d+\.\d{3}[A-Za-z]?)$`)
+	apiFallbackLocationRegex = regexp.MustCompile(`^([A-Za-z]+)(\d+)\.?([\d]{3}[A-Za-z]?)$`)
 )
 
 type profileIndexResponse struct {
@@ -36,11 +37,6 @@ type profileIndexRow struct {
 	ImageURL    string               `json:"image_url"`
 	APIURL      string               `json:"api_url"`
 	Media       []map[string]any     `json:"media"`
-	Information []profileInformation `json:"information"`
-	Areas       []profileArea        `json:"areas"`
-}
-
-type profileDetailsResponse struct {
 	Information []profileInformation `json:"information"`
 	Areas       []profileArea        `json:"areas"`
 }
@@ -85,14 +81,20 @@ func LoadProfiles(inDir string) bool {
 	}
 	defer fptr.Close()
 
-	var response profileIndexResponse
-	if err := json.NewDecoder(fptr).Decode(&response); err != nil {
+	payload, err := io.ReadAll(fptr)
+	if err != nil {
+		log.Printf("Failed to read profiles JSON: %v", err)
+		return false
+	}
+
+	rows, err := decodeProfileRows(payload)
+	if err != nil {
 		log.Printf("Failed to decode profiles JSON: %v", err)
 		return false
 	}
 
 	loadedCount := 0
-	for _, row := range response.Profile {
+	for _, row := range rows {
 		if !row.Public {
 			continue
 		}
@@ -113,6 +115,20 @@ func LoadProfiles(inDir string) bool {
 
 	log.Printf("Loaded %d profiles from %s.", loadedCount, profilesRawFileName)
 	return true
+}
+
+func decodeProfileRows(payload []byte) ([]profileIndexRow, error) {
+	var rows []profileIndexRow
+	if err := json.Unmarshal(payload, &rows); err == nil {
+		return rows, nil
+	}
+
+	var response profileIndexResponse
+	if err := json.Unmarshal(payload, &response); err == nil {
+		return response.Profile, nil
+	}
+
+	return nil, fmt.Errorf("unsupported profiles JSON shape")
 }
 
 func buildProfessorFromRow(row profileIndexRow) *schema.Professor {
@@ -308,13 +324,6 @@ func bestImageURI(row profileIndexRow) string {
 	}
 
 	return ""
-}
-
-func firstInformationData(items []profileInformation) profileInformationData {
-	if len(items) == 0 {
-		return profileInformationData{}
-	}
-	return items[0].Data
 }
 
 func containsString(values []string, target string) bool {
