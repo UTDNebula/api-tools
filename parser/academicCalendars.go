@@ -31,8 +31,6 @@ import (
 	"google.golang.org/genai"
 )
 
-const urlsCsvPath = "data/academicCalendars/urls.csv"
-
 // Maps id (like 26F) to calendar url
 var urlMap = make(map[string]string)
 
