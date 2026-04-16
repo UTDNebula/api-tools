@@ -11,6 +11,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"encoding/csv"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -29,6 +30,11 @@ import (
 	"github.com/UTDNebula/nebula-api/api/schema"
 	"google.golang.org/genai"
 )
+
+const urlsCsvPath = "data/academicCalendars/urls.csv"
+
+// Maps id (like 26F) to calendar url
+var urlMap = make(map[string]string)
 
 // Store client to only create once
 var once sync.Once
@@ -79,7 +85,28 @@ PDF Content:
 
 %s`
 
+func readUrlsCsv() {
+	f, err := os.Open("data/academicCalendars/urls.csv")
+	if err != nil {
+		log.Panic(err)
+	}
+	defer f.Close()
+
+	r := csv.NewReader(f)
+
+	lines, err := r.ReadAll()
+	if err != nil {
+		log.Panic(err)
+	}
+
+	for _, line := range lines {
+		urlMap[line[0]] = line[1]
+	}
+}
+
 func ParseAcademicCalendars(inDir string, outDir string) {
+	readUrlsCsv()
+
 	// Get sub folder from output folder
 	inSubDir := filepath.Join(inDir, "academicCalendars")
 
@@ -118,6 +145,10 @@ func ParseAcademicCalendars(inDir string, outDir string) {
 					}
 				}
 
+				key := filepath.Base(path)
+				key = key[:len(key)-4] // strip .pdf
+				academicCalendar.URL = urlMap[key]
+
 				mu.Lock()
 				result = append(result, academicCalendar)
 				mu.Unlock()
@@ -131,7 +162,7 @@ func ParseAcademicCalendars(inDir string, outDir string) {
 		if err != nil {
 			return err
 		}
-		if !d.IsDir() { // Is a file
+		if !d.IsDir() && filepath.Ext(path) == ".pdf" { // Is a file
 			jobs <- path
 		}
 		return nil

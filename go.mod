@@ -4,7 +4,7 @@ go 1.26
 
 require (
 	github.com/PuerkitoBio/goquery v1.12.0
-	github.com/UTDNebula/nebula-api/api v0.0.0-20260327185527-807066607244
+	github.com/UTDNebula/nebula-api/api v0.0.0-20260416040156-4ef45c1a8c79
 	github.com/chromedp/cdproto v0.0.0-20260321001828-e3e3800016bc
 	github.com/chromedp/chromedp v0.15.1
 	github.com/dongri/phonenumber v0.1.12
@@ -13,6 +13,7 @@ require (
 	github.com/valyala/fastjson v1.6.10
 	go.mongodb.org/mongo-driver v1.17.9
 	golang.org/x/net v0.52.0
+	golang.org/x/text v0.35.0
 	google.golang.org/genai v1.51.0
 )
 
@@ -91,7 +92,6 @@ require (
 	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
 	golang.org/x/sys v0.42.0 // indirect
-	golang.org/x/text v0.35.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
 	google.golang.org/api v0.273.0 // indirect
 	google.golang.org/genproto v0.0.0-20260319201613-d00831a3d3e7 // indirect
