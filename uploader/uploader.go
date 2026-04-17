@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"reflect"
 	"strings"
 
 	"time"
@@ -75,6 +76,36 @@ func Upload(inDir string, replace bool, staticOnly bool) {
 	log.Print("Done building static aggregations!")
 }
 
+// returns true if the definitions of the current and existing search indexes don't match up
+// if a field gets added to the current search index but is not present in the existing index in mongo,
+// then this function should return true
+func searchIndexNeedsUpdate(current interface{}, existing bson.M) (bool, error) {
+	currentBytes, err := bson.MarshalExtJSON(current, true, false)
+	if err != nil {
+		return false, err
+	}
+
+	existingDefinition, ok := existing["latestDefinition"].(bson.M)
+	if !ok {
+		return false, fmt.Errorf("failed to parse existing index definition")
+	}
+
+	existingBytes, err := bson.MarshalExtJSON(existingDefinition, true, false)
+	if err != nil {
+		return false, err
+	}
+
+	var currentMap, existingMap map[string]interface{}
+	if err = json.Unmarshal(currentBytes, &currentMap); err != nil {
+		return false, err
+	}
+	if err = json.Unmarshal(existingBytes, &existingMap); err != nil {
+		return false, err
+	}
+
+	return !reflect.DeepEqual(currentMap, existingMap), nil
+}
+
 // UploadData uploads parsed JSON documents to a MongoDB collection.
 // Make sure the file name matches the collection name (e.g., courses.json for the courses collection).
 func UploadData[T any](client *mongo.Client, ctx context.Context, fptr *os.File, replace bool) {
@@ -96,27 +127,61 @@ func UploadData[T any](client *mongo.Client, ctx context.Context, fptr *os.File,
 
 		// If we inserted discounts, text-index the collection so we can search for keywords
 		if fileName == "discounts" {
-			/*
-				// If the search indexes have been created, don't create again
-				// TODO: Find a way to dynamically avoid creating one when is has been created
-				_, err = collection.SearchIndexes().CreateOne(ctx, mongo.SearchIndexModel{
-					Definition: bson.D{
-						{Key: "mappings", Value: bson.D{
-							{Key: "dynamic", Value: true},
-							{Key: "fields", Value: bson.D{
-								{Key: "category", Value: bson.D{{Key: "type", Value: "string"}}},
-								{Key: "business", Value: bson.D{{Key: "type", Value: "string"}}},
-								{Key: "address", Value: bson.D{{Key: "type", Value: "string"}}},
-								{Key: "discount", Value: bson.D{{Key: "type", Value: "string"}}},
-							}},
+			indexName := "discount_searches"
+
+			currentSearchIndexModel := mongo.SearchIndexModel{
+				Definition: bson.D{
+					{Key: "mappings", Value: bson.D{
+						{Key: "dynamic", Value: true},
+						{Key: "fields", Value: bson.D{
+							{Key: "category", Value: bson.D{{Key: "type", Value: "string"}}},
+							{Key: "business", Value: bson.D{{Key: "type", Value: "string"}}},
+							{Key: "address", Value: bson.D{{Key: "type", Value: "string"}}},
+							{Key: "discount", Value: bson.D{{Key: "type", Value: "string"}}},
 						}},
-					},
-					Options: options.SearchIndexes().SetName("discount_searches"),
-				})
+					}},
+				},
+				Options: options.SearchIndexes().SetName("discount_searches"),
+			}
+
+			// look for `discount_searches` in mongo
+			cursor, err := collection.SearchIndexes().List(ctx, &options.SearchIndexesOptions{
+				Name: &indexName,
+			})
+			if err != nil {
+				log.Panic(err)
+			}
+
+			var results []bson.M
+			if err = cursor.All(ctx, &results); err != nil {
+				log.Panic(err)
+			}
+
+			// if empty, perform `CreateOne` with current search index model
+			if len(results) == 0 {
+				log.Println("No search index in mongo, creating one ...")
+				_, err = collection.SearchIndexes().CreateOne(ctx, currentSearchIndexModel)
 				if err != nil {
 					log.Panic(err)
 				}
-			*/
+
+			} else {
+				// `existing` represents the search index in mongo
+				existing := results[0]
+				needsUpdate, err := searchIndexNeedsUpdate(currentSearchIndexModel.Definition, existing)
+				if err != nil {
+					log.Panic(err)
+				}
+				if needsUpdate {
+					log.Println("Updating existing search index ...")
+					err = collection.SearchIndexes().UpdateOne(ctx, indexName, currentSearchIndexModel.Definition)
+					if err != nil {
+						log.Panic(err)
+					}
+				} else {
+					log.Println("Existing search index is fine")
+				}
+			}
 		}
 
 		// Delete all documents from collection

@@ -1,0 +1,772 @@
+[
+	{
+		"date": "2027-03-31",
+		"buildings": [
+			{
+				"building": "AD",
+				"rooms": [
+					{
+						"room": "2.216",
+						"events": [
+							{
+								"activity_name": "No Event Requesting",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 4,
+								"usage_color": "FF0000",
+								"capacity": 64
+							},
+							{
+								"activity_name": "No Event Requesting",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 4,
+								"usage_color": "FF0000",
+								"capacity": 64
+							},
+							{
+								"activity_name": "No Event Requesting",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 4,
+								"usage_color": "FF0000",
+								"capacity": 64
+							},
+							{
+								"activity_name": "No Event Requesting",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 4,
+								"usage_color": "FF0000",
+								"capacity": 64
+							},
+							{
+								"activity_name": "No Event Requesting",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 4,
+								"usage_color": "FF0000",
+								"capacity": 64
+							}
+						]
+					}
+				]
+			},
+			{
+				"building": "SOM",
+				"rooms": [
+					{
+						"room": "1.118",
+						"events": [
+							{
+								"activity_name": "No Event Requesting",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 4,
+								"usage_color": "FF0000",
+								"capacity": 340
+							},
+							{
+								"activity_name": "No Event Requesting",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 4,
+								"usage_color": "FF0000",
+								"capacity": 340
+							}
+						]
+					},
+					{
+						"room": "1.502",
+						"events": [
+							{
+								"activity_name": "No Event Requesting",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 4,
+								"usage_color": "FF0000",
+								"capacity": 60
+							},
+							{
+								"activity_name": "No Event Requesting",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 4,
+								"usage_color": "FF0000",
+								"capacity": 60
+							}
+						]
+					},
+					{
+						"room": "1.508",
+						"events": [
+							{
+								"activity_name": "No Event Requesting",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 4,
+								"usage_color": "FF0000",
+								"capacity": 60
+							},
+							{
+								"activity_name": "No Event Requesting",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 4,
+								"usage_color": "FF0000",
+								"capacity": 60
+							},
+							{
+								"activity_name": "No Event Requesting",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 4,
+								"usage_color": "FF0000",
+								"capacity": 60
+							},
+							{
+								"activity_name": "No Event Requesting",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 4,
+								"usage_color": "FF0000",
+								"capacity": 60
+							}
+						]
+					},
+					{
+						"room": "1.516",
+						"events": [
+							{
+								"activity_name": "No Event Requesting",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 4,
+								"usage_color": "FF0000",
+								"capacity": 48
+							},
+							{
+								"activity_name": "No Event Requesting",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 4,
+								"usage_color": "FF0000",
+								"capacity": 48
+							},
+							{
+								"activity_name": "No Event Requesting",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 4,
+								"usage_color": "FF0000",
+								"capacity": 48
+							},
+							{
+								"activity_name": "No Event Requesting",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 4,
+								"usage_color": "FF0000",
+								"capacity": 48
+							}
+						]
+					},
+					{
+						"room": "1.517",
+						"events": [
+							{
+								"activity_name": "No Event Requesting",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 4,
+								"usage_color": "FF0000",
+								"capacity": 60
+							},
+							{
+								"activity_name": "No Event Requesting",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 4,
+								"usage_color": "FF0000",
+								"capacity": 60
+							},
+							{
+								"activity_name": "No Event Requesting",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 4,
+								"usage_color": "FF0000",
+								"capacity": 60
+							},
+							{
+								"activity_name": "No Event Requesting",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 4,
+								"usage_color": "FF0000",
+								"capacity": 60
+							}
+						]
+					},
+					{
+						"room": "1.606",
+						"events": [
+							{
+								"activity_name": "No Event Requesting",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 4,
+								"usage_color": "FF0000",
+								"capacity": 48
+							},
+							{
+								"activity_name": "No Event Requesting",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 4,
+								"usage_color": "FF0000",
+								"capacity": 48
+							},
+							{
+								"activity_name": "No Event Requesting",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 4,
+								"usage_color": "FF0000",
+								"capacity": 48
+							},
+							{
+								"activity_name": "No Event Requesting",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 4,
+								"usage_color": "FF0000",
+								"capacity": 48
+							},
+							{
+								"activity_name": "No Event Requesting",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 4,
+								"usage_color": "FF0000",
+								"capacity": 48
+							}
+						]
+					},
+					{
+						"room": "11.214",
+						"events": [
+							{
+								"activity_name": "No Event Requesting",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 4,
+								"usage_color": "FF0000",
+								"capacity": 60
+							},
+							{
+								"activity_name": "No Event Requesting",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 4,
+								"usage_color": "FF0000",
+								"capacity": 60
+							}
+						]
+					},
+					{
+						"room": "11.218",
+						"events": [
+							{
+								"activity_name": "No Event Requesting",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 4,
+								"usage_color": "FF0000",
+								"capacity": 60
+							},
+							{
+								"activity_name": "No Event Requesting",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 4,
+								"usage_color": "FF0000",
+								"capacity": 60
+							},
+							{
+								"activity_name": "No Event Requesting",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 4,
+								"usage_color": "FF0000",
+								"capacity": 60
+							}
+						]
+					},
+					{
+						"room": "11.305",
+						"events": [
+							{
+								"activity_name": "No Event Requesting",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 4,
+								"usage_color": "FF0000",
+								"capacity": 48
+							},
+							{
+								"activity_name": "No Event Requesting",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 4,
+								"usage_color": "FF0000",
+								"capacity": 48
+							},
+							{
+								"activity_name": "No Event Requesting",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 4,
+								"usage_color": "FF0000",
+								"capacity": 48
+							}
+						]
+					}
+				]
+			},
+			{
+				"building": "SSB",
+				"rooms": [
+					{
+						"room": "RO.01",
+						"events": [
+							{
+								"activity_name": "Unavailable",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 255,
+								"usage_color": "FF0000",
+								"capacity": 0
+							}
+						]
+					},
+					{
+						"room": "RO.02",
+						"events": [
+							{
+								"activity_name": "Unavailable",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 255,
+								"usage_color": "FF0000",
+								"capacity": 0
+							}
+						]
+					},
+					{
+						"room": "RO.03",
+						"events": [
+							{
+								"activity_name": "Unavailable",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 255,
+								"usage_color": "FF0000",
+								"capacity": 0
+							}
+						]
+					},
+					{
+						"room": "RO.04",
+						"events": [
+							{
+								"activity_name": "Unavailable",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 255,
+								"usage_color": "FF0000",
+								"capacity": 0
+							}
+						]
+					},
+					{
+						"room": "RO.05",
+						"events": [
+							{
+								"activity_name": "Unavailable",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 255,
+								"usage_color": "FF0000",
+								"capacity": 0
+							}
+						]
+					},
+					{
+						"room": "RO.06",
+						"events": [
+							{
+								"activity_name": "Unavailable",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 255,
+								"usage_color": "FF0000",
+								"capacity": 0
+							}
+						]
+					},
+					{
+						"room": "RO.07",
+						"events": [
+							{
+								"activity_name": "Unavailable",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 255,
+								"usage_color": "FF0000",
+								"capacity": 0
+							}
+						]
+					},
+					{
+						"room": "RO.08",
+						"events": [
+							{
+								"activity_name": "Unavailable",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 255,
+								"usage_color": "FF0000",
+								"capacity": 0
+							}
+						]
+					},
+					{
+						"room": "RO.09",
+						"events": [
+							{
+								"activity_name": "Unavailable",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 255,
+								"usage_color": "FF0000",
+								"capacity": 0
+							}
+						]
+					},
+					{
+						"room": "RO.10",
+						"events": [
+							{
+								"activity_name": "Unavailable",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 255,
+								"usage_color": "FF0000",
+								"capacity": 0
+							}
+						]
+					},
+					{
+						"room": "RO.11",
+						"events": [
+							{
+								"activity_name": "Unavailable",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 255,
+								"usage_color": "FF0000",
+								"capacity": 0
+							}
+						]
+					},
+					{
+						"room": "RO.12",
+						"events": [
+							{
+								"activity_name": "Unavailable",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 255,
+								"usage_color": "FF0000",
+								"capacity": 0
+							}
+						]
+					},
+					{
+						"room": "RO.13",
+						"events": [
+							{
+								"activity_name": "Unavailable",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 255,
+								"usage_color": "FF0000",
+								"capacity": 0
+							}
+						]
+					},
+					{
+						"room": "RO.14",
+						"events": [
+							{
+								"activity_name": "Unavailable",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 255,
+								"usage_color": "FF0000",
+								"capacity": 0
+							}
+						]
+					},
+					{
+						"room": "RO.15T",
+						"events": [
+							{
+								"activity_name": "Unavailable",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 255,
+								"usage_color": "FF0000",
+								"capacity": 0
+							}
+						]
+					},
+					{
+						"room": "RO.16",
+						"events": [
+							{
+								"activity_name": "Unavailable",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 255,
+								"usage_color": "FF0000",
+								"capacity": 0
+							}
+						]
+					},
+					{
+						"room": "RO.17",
+						"events": [
+							{
+								"activity_name": "Unavailable",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 255,
+								"usage_color": "FF0000",
+								"capacity": 0
+							}
+						]
+					},
+					{
+						"room": "RO.18",
+						"events": [
+							{
+								"activity_name": "Unavailable",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 255,
+								"usage_color": "FF0000",
+								"capacity": 0
+							}
+						]
+					},
+					{
+						"room": "RO.19",
+						"events": [
+							{
+								"activity_name": "Unavailable",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 255,
+								"usage_color": "FF0000",
+								"capacity": 0
+							}
+						]
+					},
+					{
+						"room": "RO.20",
+						"events": [
+							{
+								"activity_name": "Unavailable",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 255,
+								"usage_color": "FF0000",
+								"capacity": 0
+							}
+						]
+					},
+					{
+						"room": "RO.21",
+						"events": [
+							{
+								"activity_name": "Unavailable",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 255,
+								"usage_color": "FF0000",
+								"capacity": 0
+							}
+						]
+					},
+					{
+						"room": "RO.22",
+						"events": [
+							{
+								"activity_name": "Unavailable",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 255,
+								"usage_color": "FF0000",
+								"capacity": 0
+							}
+						]
+					},
+					{
+						"room": "RO.25",
+						"events": [
+							{
+								"activity_name": "Unavailable",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 255,
+								"usage_color": "FF0000",
+								"capacity": 0
+							}
+						]
+					},
+					{
+						"room": "RO.26",
+						"events": [
+							{
+								"activity_name": "Unavailable",
+								"meeting_type": null,
+								"start_date": "2027-03-31T00:00:00",
+								"end_date": "2027-03-31T23:59:00",
+								"current_state": null,
+								"not_allowed_usage_mask": 255,
+								"usage_color": "FF0000",
+								"capacity": 0
+							}
+						]
+					}
+				]
+			}
+		]
+	}
+]
