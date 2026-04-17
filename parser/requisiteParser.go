@@ -1,3 +1,5 @@
+// Package parser provides functionality to parse academic requirement texts (prerequisites, corequisites, etc.)
+// into structured requirement objects using a packrat parser and regex-based matchers.
 package parser
 
 import (
@@ -13,8 +15,12 @@ import (
 	packrat "github.com/cphaensch/go-packrat/v2"
 )
 
+// Requisite is an empty interface that represents any parsed requirement type.
+// Concrete types include *schema.CourseRequirement, *schema.CollectionRequirement, etc.
 type Requisite interface{}
 
+// Definition describes a single parser rule: its name, regex patterns, how many capture groups to expect,
+// a matcher function that produces a Requisite, and flags for whitespace/case handling.
 type Definition struct {
 	Name           string
 	Patterns       []string
@@ -24,7 +30,10 @@ type Definition struct {
 	CaseSensitive  bool
 }
 
+// registry holds all registered Definition instances. They are converted to packrat parsers in init().
 var registry []*Definition
+
+// ExprParser is the top‑level packrat parser that combines all registered leaf parsers.
 var ExprParser packrat.Parser[Requisite]
 
 // ParseRequirement is the main entry point for parsing requirement text.
@@ -92,6 +101,7 @@ func ParseRequirement(text string) *schema.CollectionRequirement {
 	return schema.NewCollectionRequirement("", 1, []interface{}{leaf})
 }
 
+// getPlaceholder checks if a string is a group reference like "@3" and returns the corresponding parsed requirement.
 func getPlaceholder(part string, groupReqs []interface{}) interface{} {
 	if strings.HasPrefix(part, "@") && len(part) > 1 {
 		idx, err := strconv.Atoi(part[1:])
@@ -112,11 +122,18 @@ func parseLeaf(input string) interface{} {
 	return nil
 }
 
-// TODO: Probably check values first before appending
 func Register(d *Definition) {
+	// Check if regex pattern is valid before appending
+	for _, pat := range d.Patterns {
+		_, err := regexp.Compile(pat)
+		if err != nil {
+			log.Printf("Invalid regex pattern '%s' %v", pat, err)
+		}
+	}
 	registry = append(registry, d)
 }
 
+// ToParser converts a Definition into a packrat.Parser that tries all its patterns in order.
 func (d *Definition) ToParser() packrat.Parser[Requisite] {
 	// Build an OrParser over each pattern
 	var subParsers []packrat.Parser[Requisite]
@@ -141,6 +158,7 @@ func (d *Definition) ToParser() packrat.Parser[Requisite] {
 	return packrat.NewOrParser(subParsers...)
 }
 
+// init builds the global ExprParser by registering all known requirement patterns.
 func init() {
 	Register(&Definition{
 		Name:           "ThrowawayParser",
@@ -454,11 +472,16 @@ func OtherMatcher(group string, subgroups []string) interface{} {
 	return schema.NewOtherRequirement(ungroupText(group), "")
 }
 
+// preOrCoreqRegexp matches lines like "Prerequisites or Corequisites: ..." or "Corequisites or Prerequisites: ..."
 var preOrCoreqRegexp *regexp.Regexp = regexp.MustCompile(`(?i)((?:Prerequisites?\s+or\s+corequisites?|Corequisites?\s+or\s+prerequisites?):(.*))`)
+
+// prereqRegexp matches a standard "Prerequisites: ..." line.
 var prereqRegexp *regexp.Regexp = regexp.MustCompile(`(?i)(Prerequisites?:(.*))`)
+
+// coreqRegexp matches a standard "Corequisites: ..." line.
 var coreqRegexp *regexp.Regexp = regexp.MustCompile(`(?i)(Corequisites?:(.*))`)
 
-// Returns a closure that parses the course's requisites
+// getReqParser returns a closure that parses the course's requisites from its description or enrollment requirements.
 func getReqParser(course *schema.Course, hasEnrollmentReqs bool, enrollmentReqs *goquery.Selection) func() {
 	return func() {
 		text := course.Description

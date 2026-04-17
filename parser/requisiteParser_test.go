@@ -71,7 +71,7 @@ func TestCollectionRequirements(t *testing.T) {
 		{"(CS 1200 and MATH 2413) or LIT 1301", 1, 2, "*schema.CollectionRequirement"},
 		{"(CS 1200 and MATH 2413) or LIT 1301", 1, 2, "*schema.CollectionRequirement"},
 		{"(CS 1200 and MATH 2413) or (LIT 1301 and PHYS 2325)", 1, 2, "*schema.CollectionRequirement"},
-		{"CS 1200 and ((MATH 2413 or PHYS 1301) and ENGL 1301)", 2, 2, "*schema.CourseRequirement"},
+		{"CS 1200 and ((MATH 2413 or PHYS 2325) and ENGL 1301)", 2, 2, "*schema.CourseRequirement"},
 	}
 
 	for _, tt := range tests {
