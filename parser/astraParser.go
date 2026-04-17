@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/UTDNebula/api-tools/utils"
@@ -67,13 +68,27 @@ func ParseAstra(inDir string, outDir string) {
 			for roomNumber, events := range rooms {
 				roomList = append(roomList, schema.RoomEvents[schema.AstraEvent]{Room: roomNumber, Events: events})
 			}
+			// Sort rooms
+			sort.Slice(roomList, func(i, j int) bool {
+				return roomList[i].Room < roomList[j].Room
+			})
 			buildings = append(buildings, schema.SingleBuildingEvents[schema.AstraEvent]{Building: buildingCode, Rooms: roomList})
 		}
+
+		// Sort buildings
+		sort.Slice(buildings, func(i, j int) bool {
+			return buildings[i].Building < buildings[j].Building
+		})
+
 		data := schema.MultiBuildingEvents[schema.AstraEvent]{
 			Date:      date,
 			Buildings: buildings,
 		}
 		result = append(result, data)
+
+		sort.Slice(result, func(i, j int) bool {
+			return result[i].Date < result[j].Date
+		})
 	}
 
 	log.Print("Parsed Astra!")
