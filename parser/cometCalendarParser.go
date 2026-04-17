@@ -16,63 +16,15 @@ import (
 	"github.com/UTDNebula/api-tools/scrapers"
 	"github.com/UTDNebula/api-tools/utils"
 	"github.com/UTDNebula/nebula-api/api/schema"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
-// Rename the building and rooms to match the other sources of data
-type standardizedBuilding struct {
-	building string
-	rooms    map[string]string
-}
-
-// TODO: Find the better way to avoid hardcoding this
-var standardizedMap = map[string]standardizedBuilding{
-	"ATC": {
-		building: "ATC",
-		rooms: map[string]string{
-			"ATC Auditorium": "Auditorium",
-			"Lecture Hall":   "Auditorium",
-			"1.102":          "Auditorium",
-		},
-	},
-	"ECSN": {
-		building: "ECSN",
-		rooms: map[string]string{
-			"1st floor ECSN atrium": "1st Floor ECSN Atrium",
-		},
-	},
-	"FO": {
-		building: "FO",
-		rooms: map[string]string{
-			"Founders 2nd Floor Atrium": "2nd Floor Atrium",
-			"2nd floor atrium":          "2nd Floor Atrium",
-		},
-	},
-	"SU": {
-		building: "Student Union (SU)",
-		rooms: map[string]string{
-			"1st Floor":             "First Floor",
-			"2nd Floor":             "Second Floor",
-			"2.602":                 "Galaxy  Room  (A, B, & C)",
-			"Galaxy Rooms":          "Galaxy  Room  (A, B, & C)",
-			"Galaxy Rooms A, B & C": "Galaxy  Room  (A, B, & C)",
-			"Galaxy Rooms A & B":    "Galaxy  Room  (A & B)",
-			"Galaxy A":              "Galaxy  Room - A",
-			"Artemis Hall I &II":    "Artemis Hall (I & II)",
-		},
-	},
-	"SB": {
-		building: "SSB",
-		rooms:    map[string]string{},
-	},
-	"SSA": {
-		building: "SSA",
-		rooms: map[string]string{
-			"12.120":                              "Atrium",
-			"Atrium (formely Gaming Wall Lounge)": "Atrium",
-			"13.330":                              "Auditorium",
-		},
-	},
-}
+// Regexp to match building abbreviations and room numbers
+var (
+	buildingRegexp = regexp.MustCompile(`[A-Z]{2,4}`)
+	roomRegexp     = regexp.MustCompile(`([0-9]{1,2}\.[0-9]{3})([A-Z])?`)
+)
 
 // ParseCometCalendar reformats the comet calendar data into uploadable json in Mongo
 func ParseCometCalendar(inDir string, outDir string) {
@@ -106,10 +58,6 @@ func ParseCometCalendar(inDir string, outDir string) {
 		// Get building and room
 		location := utils.ConvertFromInterface[string](event.Location)
 
-		// Regexp to match building abbreviations and room numbers
-		buildingRegexp := regexp.MustCompile(`[A-Z]{2,4}`)
-		roomRegexp := regexp.MustCompile(`([0-9]{1,2}\.[0-9]{3})([A-Z])?`)
-
 		building := buildingRegexp.FindString(*location)
 		room := roomRegexp.FindString(*location)
 
@@ -128,6 +76,14 @@ func ParseCometCalendar(inDir string, outDir string) {
 			}
 		}
 
+		normalizedBuilding := map[string]string{
+			"SB": "SSB",
+			"SU": "Student Union (SU)",
+		}
+		if _, ok := normalizedBuilding[building]; ok {
+			building = normalizedBuilding[building]
+		}
+
 		// If location doesn't have room number, check to see if location included a room
 		if room == "" && isValidBuilding {
 			locationParts := strings.SplitN(*location, ", ", 2)
@@ -135,6 +91,7 @@ func ParseCometCalendar(inDir string, outDir string) {
 				room = locationParts[1]
 			}
 		}
+		room = normalizeRoom(building, room)
 
 		// If building is still empty string or invalid abbreviation, then location wasn't provided
 		if building == "" || !isValidBuilding {
@@ -142,17 +99,9 @@ func ParseCometCalendar(inDir string, outDir string) {
 		}
 
 		// If room is still empty string, then location wasn't provided, or
-		// location did not include a room
+		// location did not include a room, or the room is invalid
 		if room == "" {
 			room = "Other"
-		}
-
-		if _, exists := standardizedMap[building]; exists {
-			standardized := standardizedMap[building]
-			building = standardized.building
-			if _, exists := standardized.rooms[room]; exists {
-				room = standardized.rooms[room]
-			}
 		}
 
 		if _, exists := multiBuildingMap[date]; !exists {
@@ -196,6 +145,66 @@ func ParseCometCalendar(inDir string, outDir string) {
 	utils.WriteJSON(fmt.Sprintf("%s/cometCalendar.json", outDir), result)
 }
 
+// normalizeRoom normalizes the room into set of rooms to match rooms from other event-related data source.
+// This is still a little flawed but it can handle 95% of the cases.
+func normalizeRoom(building string, room string) string {
+	validTokens := []string{
+		"first", "second", "third", "floor",
+		"galaxy", "a", "b", "c",
+		"artemis", "i", "ii", "lecture",
+		"atrium", "auditorium", "commons", "lobby",
+	}
+	tokenMap := map[string]string{
+		"1st": "first",
+		"2nd": "second",
+		"3rd": "third",
+	}
+	normalizedMap := map[string]string{
+		"galaxy a":                 "Galaxy  Room - A",
+		"galaxy b":                 "Galaxy  Room - B",
+		"galaxy c":                 "Galaxy  Room - C",
+		"galaxy a b":               "Galaxy  Room  (A & B)",
+		"galaxy b c":               "Galaxy  Room  (B & C)",
+		"galaxy a b c":             "Galaxy  Room  (A, B, & C)",
+		"galaxy":                   "Galaxy  Room  (A, B, & C)",
+		"Student Union (SU) 2.602": "Galaxy  Room  (A, B, & C)",
+		"artemis i":                "Artermis Hall I",
+		"artemis ii":               "Artemis Hall II",
+		"artemis i ii":             "Artemis Hall (I & II)",
+		"lecture":                  "Auditorium",
+		"SSA 12.120":               "Atrium",
+		"SSA 13.330":               "Auditorium",
+	}
+
+	if roomRegexp.MatchString(room) {
+		// Numeric room, convert to the normalized non-number room if possible
+		if _, ok := normalizedMap[building+" "+room]; ok {
+			return normalizedMap[building+" "+room]
+		}
+		return room
+	}
+
+	// Non-number room
+	room = strings.ToLower(strings.Split(room, ", ")[0])
+	tokens := strings.Split(room, " ")
+	normalizedTokens := []string{}
+	for _, token := range tokens {
+		trimmedToken := strings.Trim(token, "!@#$%&()-.,;")
+		if _, ok := tokenMap[trimmedToken]; ok {
+			trimmedToken = tokenMap[trimmedToken]
+		}
+		if slices.Contains(validTokens, trimmedToken) {
+			normalizedTokens = append(normalizedTokens, trimmedToken)
+		}
+	}
+
+	normalizedRoom := strings.Join(normalizedTokens, " ")
+	if _, ok := normalizedMap[normalizedRoom]; ok {
+		return normalizedMap[normalizedRoom]
+	}
+	return cases.Title(language.English).String(normalizedRoom)
+}
+
 // getLocationAbbreviations dynamically retrieves the all of the locations abbreviations
 func getLocationAbbreviations(inDir string) (map[string]string, []string, error) {
 	// Get the locations from the map scraper
@@ -222,8 +231,8 @@ func getLocationAbbreviations(inDir string) (map[string]string, []string, error)
 	}
 
 	// Process the abbreviations
-	buildingsAbbreviations := make(map[string]string, 0) // Maps building names to their abbreviations
-	validAbbreviations := make([]string, 0)              // Valid building abreviations for checking
+	buildingsAbbreviations := make(map[string]string, 0)
+	validAbbreviations := make([]string, 0)
 
 	for _, location := range locations {
 		// Trim the following acronym in the name
