@@ -10,7 +10,7 @@ import (
 )
 
 func TestParseAstra(t *testing.T) {
-	astraTestDir := "testdata/astra"
+	astraTestDir := "testdata"
 
 	// Clean up parser output before starting the test
 	os.Remove(filepath.Join(astraTestDir, "astra.json"))
