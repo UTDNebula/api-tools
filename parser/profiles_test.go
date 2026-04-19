@@ -8,14 +8,14 @@ func TestBestInformationDataChoosesMostCompleteEntry(t *testing.T) {
 	t.Parallel()
 
 	items := []profileInformation{
-		{Data: profileInformationData{Email: "", Phone: "", Location: ""}},
-		{Data: profileInformationData{Email: "alice@utdallas.edu", Phone: "972-000-0000", URL: "https://example.com", Title: "Professor"}},
-		{Data: profileInformationData{Email: "bob@utdallas.edu"}},
+		{Data: profileInformationData{Email: profileStrPtr(""), Phone: profileStrPtr(""), Location: profileStrPtr("")}},
+		{Data: profileInformationData{Email: profileStrPtr("alice@utdallas.edu"), Phone: profileStrPtr("972-000-0000"), URL: profileStrPtr("https://example.com"), Title: profileStrPtr("Professor")}},
+		{Data: profileInformationData{Email: profileStrPtr("bob@utdallas.edu")}},
 	}
 
 	best := bestInformationData(items)
-	if best.Email != "alice@utdallas.edu" {
-		t.Fatalf("expected most complete information entry, got %q", best.Email)
+	if got := trimNullableString(best.Email); got != "alice@utdallas.edu" {
+		t.Fatalf("expected most complete information entry, got %q", got)
 	}
 }
 
@@ -25,7 +25,7 @@ func TestBestProfileURIUsesFallbacks(t *testing.T) {
 	row := profileIndexRow{
 		APIURL: "https://profiles.utdallas.edu/api/v1?person=alice",
 		Information: []profileInformation{
-			{Data: profileInformationData{SecondaryURL: "https://profiles.utdallas.edu/alice"}},
+			{Data: profileInformationData{SecondaryURL: profileStrPtr("https://profiles.utdallas.edu/alice")}},
 		},
 	}
 
@@ -59,8 +59,8 @@ func TestBuildProfessorFromRowUsesBestLocationAndFallbackURI(t *testing.T) {
 		LastName:  "Example",
 		Public:    true,
 		Information: []profileInformation{
-			{Data: profileInformationData{Location: "Not A Parsable Location", Email: "alice@utdallas.edu"}},
-			{Data: profileInformationData{Location: "ECS 3.201", SecondaryURL: "https://profiles.utdallas.edu/alice"}},
+			{Data: profileInformationData{Location: profileStrPtr("Not A Parsable Location"), Email: profileStrPtr("alice@utdallas.edu")}},
+			{Data: profileInformationData{Location: profileStrPtr("ECS 3.201"), SecondaryURL: profileStrPtr("https://profiles.utdallas.edu/alice")}},
 		},
 		Media: []map[string]any{{"url": "https://profiles.utdallas.edu/img/alice2.jpg"}},
 	}
@@ -78,4 +78,8 @@ func TestBuildProfessorFromRowUsesBestLocationAndFallbackURI(t *testing.T) {
 	if prof.Image_uri != "https://profiles.utdallas.edu/img/alice2.jpg" {
 		t.Fatalf("expected media fallback image URI, got %q", prof.Image_uri)
 	}
+}
+
+func profileStrPtr(value string) *string {
+	return &value
 }

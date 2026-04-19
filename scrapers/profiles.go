@@ -19,8 +19,7 @@ import (
 const profileBaseURL string = "https://profiles.utdallas.edu/api/v1"
 
 const (
-	profilesRawFileName      = "profiles.json"
-	profilesIndexRawFileName = "profiles_index_raw.json"
+	profilesRawFileName = "profiles.json"
 )
 
 const (
@@ -45,7 +44,7 @@ type profileIndexRecord struct {
 	Name      string           `json:"name"`
 	ImageURL  string           `json:"image_url"`
 	APIURL    string           `json:"api_url"`
-	Media     []map[string]any `json:"media"`
+	Media     []profileMedia   `json:"media"`
 }
 
 type profileRawRecord struct {
@@ -59,17 +58,96 @@ type profileRawRecord struct {
 	Name      string             `json:"name"`
 	ImageURL  string             `json:"image_url"`
 	APIURL    string             `json:"api_url"`
-	Media     []map[string]any   `json:"media"`
-	Info      []profileInfoBlock `json:"information,omitempty"`
-	Areas     []profileAreaBlock `json:"areas,omitempty"`
+	Media     []profileMedia     `json:"media"`
+	Information []profileInfoBlock `json:"information"`
+	Areas     []profileAreaBlock `json:"areas"`
+}
+
+type profileMedia struct {
+	ID                  int              `json:"id"`
+	ModelID             int              `json:"model_id"`
+	UUID                string           `json:"uuid"`
+	ModelType           string           `json:"model_type"`
+	CollectionName      string           `json:"collection_name"`
+	Name                string           `json:"name"`
+	FileName            string           `json:"file_name"`
+	MimeType            string           `json:"mime_type"`
+	Disk                string           `json:"disk"`
+	ConversionsDisk     string           `json:"conversions_disk"`
+	Size                int              `json:"size"`
+	Manipulations       []any            `json:"manipulations"`
+	CustomProperties     []any            `json:"custom_properties"`
+	GeneratedConversions profileGeneratedConversions `json:"generated_conversions"`
+	ResponsiveImages    any              `json:"responsive_images"`
+	OrderColumn         int              `json:"order_column"`
+	CreatedAt           string           `json:"created_at"`
+	UpdatedAt           string           `json:"updated_at"`
+	OriginalURL         string           `json:"original_url"`
+	PreviewURL          string           `json:"preview_url"`
+}
+
+type profileGeneratedConversions struct {
+	Large bool `json:"large"`
+	Thumb bool `json:"thumb"`
+	Medium bool `json:"medium"`
+}
+
+type profileInformationData struct {
+	URL                     *string `json:"url"`
+	Email                   *string `json:"email"`
+	Phone                   *string `json:"phone"`
+	Title                   *string `json:"title"`
+	ORCID                   *string `json:"orc_id"`
+	Location                *string `json:"location"`
+	URLName                 *string `json:"url_name"`
+	QuinaryURL              *string `json:"quinary_url"`
+	FancyHeader             *string `json:"fancy_header"`
+	TertiaryURL             *string `json:"tertiary_url"`
+	SecondaryURL            *string `json:"secondary_url"`
+	ORCIDManaged            *string `json:"orc_id_managed"`
+	QuaternaryURL           *string `json:"quaternary_url"`
+	TertiaryTitle           *string `json:"tertiary_title"`
+	ProfileSummary          *string `json:"profile_summary"`
+	SecondaryTitle          *string `json:"secondary_title"`
+	QuinaryURLName          *string `json:"quinary_url_name"`
+	TertiaryURLName         *string `json:"tertiary_url_name"`
+	AcceptingStudents       *string `json:"accepting_students"`
+	FancyHeaderRight        *string `json:"fancy_header_right"`
+	SecondaryURLName        *string `json:"secondary_url_name"`
+	DistinguishedTitle      *string `json:"distinguished_title"`
+	QuaternaryURLName       *string `json:"quaternary_url_name"`
+	NotAcceptingStudents    *string `json:"not_accepting_students"`
+	AcceptingGradStudents   *string `json:"accepting_grad_students"`
+	ShowAcceptingStudents   *string `json:"show_accepting_students"`
+	NotAcceptingGradStudents *string `json:"not_accepting_grad_students"`
+	ShowNotAcceptingStudents *string `json:"show_not_accepting_students"`
 }
 
 type profileInfoBlock struct {
-	Data map[string]any `json:"data"`
+	ID        int                   `json:"id"`
+	ProfileID int                   `json:"profile_id"`
+	Type      string                `json:"type"`
+	SortOrder int                   `json:"sort_order"`
+	Data      profileInformationData `json:"data"`
+	Public    bool                  `json:"public"`
+	CreatedAt string                `json:"created_at"`
+	UpdatedAt string                `json:"updated_at"`
+}
+
+type profileAreaData struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
 }
 
 type profileAreaBlock struct {
-	Data map[string]any `json:"data"`
+	ID        int             `json:"id"`
+	ProfileID int             `json:"profile_id"`
+	Type      string          `json:"type"`
+	SortOrder int             `json:"sort_order"`
+	Data      profileAreaData `json:"data"`
+	Public    bool            `json:"public"`
+	CreatedAt string          `json:"created_at"`
+	UpdatedAt string          `json:"updated_at"`
 }
 
 type profileDetailsResponse struct {
@@ -135,25 +213,38 @@ func ScrapeProfiles(outDir string) {
 	}
 
 	detailedProfiles = dedupeProfiles(detailedProfiles)
+	for i := range detailedProfiles {
+		if detailedProfiles[i].Media == nil {
+			detailedProfiles[i].Media = []profileMedia{}
+		}
+		if detailedProfiles[i].Information == nil {
+			detailedProfiles[i].Information = []profileInfoBlock{}
+		}
+		if detailedProfiles[i].Areas == nil {
+			detailedProfiles[i].Areas = []profileAreaBlock{}
+		}
+		for j := range detailedProfiles[i].Media {
+			if detailedProfiles[i].Media[j].Manipulations == nil {
+				detailedProfiles[i].Media[j].Manipulations = []any{}
+			}
+			if detailedProfiles[i].Media[j].CustomProperties == nil {
+				detailedProfiles[i].Media[j].CustomProperties = []any{}
+			}
+		}
+	}
 
 	if err := os.MkdirAll(outDir, 0777); err != nil {
 		log.Printf("Failed to create output directory: %v", err)
 		return
 	}
 
-	indexOutPath := filepath.Join(outDir, profilesIndexRawFileName)
-	if err := writePrettyJSON(indexOutPath, indexResponse); err != nil {
-		log.Printf("Failed to write profile index output file: %v", err)
-		return
-	}
-
 	outPath := filepath.Join(outDir, profilesRawFileName)
-	if err := writePrettyJSON(outPath, detailedProfiles); err != nil {
+	detailOutput := profileDetailsResponse{Count: len(detailedProfiles), Profile: detailedProfiles}
+	if err := writePrettyJSON(outPath, detailOutput); err != nil {
 		log.Printf("Failed to write profile detail output file: %v", err)
 		return
 	}
 
-	log.Printf("Wrote profile index to %s", indexOutPath)
 	log.Printf("Wrote %d raw profiles to %s", len(detailedProfiles), outPath)
 }
 
