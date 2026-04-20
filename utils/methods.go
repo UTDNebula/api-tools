@@ -114,7 +114,7 @@ func RefreshToken(chromedpCtx context.Context) (map[string][]string, error) {
 		return nil, fmt.Errorf("refresh token login failed after %d attempts: %w", coursebookMaxRetries+1, err)
 	}
 
-	time.Sleep(250 * time.Millisecond) // TODO: It might be more robust to not wait a fixed amount of time here
+	time.Sleep(250 * time.Millisecond)
 
 	var cookieStrs []string
 

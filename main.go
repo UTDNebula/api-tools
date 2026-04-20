@@ -16,7 +16,7 @@ import (
 
 func main() {
 	// Load environment variables
-	godotenv.Load() // TODO: I Don't think this does anything
+	godotenv.Load()
 
 	// Setup flags
 
@@ -81,7 +81,7 @@ func main() {
 	dateTime := time.Now()
 	year, month, day := dateTime.Date()
 	hour, min, sec := dateTime.Clock()
-	logFile, err := os.Create(fmt.Sprintf("./logs/%d-%d-%dT%d-%d-%d.log", month, day, year, hour, min, sec)) // TODO: This should probably be year month day
+	logFile, err := os.Create(fmt.Sprintf("./logs/%d-%d-%dT%d-%d-%d.log", month, day, year, hour, min, sec))
 
 	if err != nil {
 		log.Fatal(err)
@@ -89,7 +89,7 @@ func main() {
 
 	defer logFile.Close()
 	// Set logging output destination to a SplitWriter that writes to both the log file and stderr
-	log.SetOutput(utils.NewSplitWriter(logFile, os.Stdout)) // TODO: Switch to stderr
+	log.SetOutput(utils.NewSplitWriter(logFile, os.Stdout))
 	// Do verbose logging if verbose flag specified
 	if *verbose {
 		log.SetFlags(log.Ltime | log.Lmicroseconds | log.Lshortfile | utils.Lverbose)
