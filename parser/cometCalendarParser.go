@@ -182,6 +182,11 @@ func normalizeRoom(building string, room string) string {
 		// Numeric room, convert to the normalized non-number room if possible
 		if _, ok := normalizedMap[building+" "+room]; ok {
 			return normalizedMap[building+" "+room]
+		} else {
+			// Temporary fix for wildcard in SU
+			if building == "Student Union (SU)" && room != "2.602" {
+				return "Other"
+			}
 		}
 		return room
 	}
