@@ -6,6 +6,7 @@ package scrapers
 
 import (
 	"context"
+	"encoding/csv"
 	"fmt"
 	"io"
 	"log"
@@ -100,13 +101,25 @@ func ScrapeAcademicCalendars(outDir string) {
 	// Don't need ChromeDP anymore
 	cancel()
 
-	// Download all PDFs
+	// Create urls.csv to record each calendar's direct Box download URL.
+	// The parser reads this file to attach the URL to each parsed AcademicCalendar.
+	csvFile, err := os.Create(filepath.Join(outSubDir, "urls.csv"))
+	if err != nil {
+		panic(err)
+	}
+	defer csvFile.Close()
+	writer := csv.NewWriter(csvFile)
+	defer writer.Flush()
+
 	for _, academicCalendar := range academicCalendars {
-		downloadPdfFromBox(
-			academicCalendar.Href,
-			academicCalendar.Time+"-"+academicCalendar.Title,
-			outSubDir,
-		)
+		// Key matches the PDF filename (without extension) used by the parser.
+		key := academicCalendar.Time + "-" + academicCalendar.Title
+
+		// downloadPdfFromBox returns the Box URL it constructs, so we can record it in the CSV.
+		boxUrl := downloadPdfFromBox(academicCalendar.Href, key, outSubDir)
+		if err := writer.Write([]string{key, boxUrl}); err != nil {
+			panic(err)
+		}
 	}
 }
 
@@ -136,7 +149,9 @@ func extractTextAndHref(nodes []*cdp.Node, time string, chromedpCtx context.Cont
 	return output
 }
 
-func downloadPdfFromBox(href string, filename string, outDir string) {
+// downloadPdfFromBox downloads a PDF from a Box share link, saves it to outDir,
+// and returns the direct Box download URL for use in urls.csv.
+func downloadPdfFromBox(href string, filename string, outDir string) string {
 	// Create blank file
 	out, err := os.Create(filepath.Join(outDir, fmt.Sprintf("%s.pdf", filename)))
 	if err != nil {
@@ -152,7 +167,8 @@ func downloadPdfFromBox(href string, filename string, outDir string) {
 	fileId := path.Base(parsedLink.Path)
 
 	// Use box download link with ID
-	resp, err := http.Get(fmt.Sprintf("https://utdallas.box.com/shared/static/%s.pdf", fileId))
+	boxUrl := fmt.Sprintf("https://utdallas.box.com/shared/static/%s.pdf", fileId)
+	resp, err := http.Get(boxUrl)
 	if err != nil {
 		panic(err)
 	}
@@ -165,4 +181,5 @@ func downloadPdfFromBox(href string, filename string, outDir string) {
 	}
 
 	log.Printf("Scraped academic calendar %s!", filename)
+	return boxUrl
 }
