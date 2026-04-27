@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"time"
 
 	"github.com/UTDNebula/api-tools/utils"
@@ -121,11 +122,23 @@ func downloadPdf(href string, filename string, outDir string) {
 
 	// Check response
 	if resp.StatusCode != http.StatusOK {
-		panic(fmt.Errorf("Failed to download \"%s\": status code %d", filename, resp.StatusCode))
+		panic(fmt.Errorf("failed to download \"%s\": status code %d", filename, resp.StatusCode))
+	}
+
+	// Get sub folder from output folder
+	re := regexp.MustCompile(`FY\d{2}`)
+	match := re.FindString(filename)
+	outYearDir := filepath.Join(outDir, match)
+
+	// Make output folder
+	os.RemoveAll(outYearDir)
+	err = os.MkdirAll(outYearDir, 0777)
+	if err != nil {
+		panic(err)
 	}
 
 	// Create blank file
-	out, err := os.Create(filepath.Join(outDir, fmt.Sprintf("%s.pdf", filename)))
+	out, err := os.Create(filepath.Join(outYearDir, fmt.Sprintf("%s.pdf", filename)))
 	if err != nil {
 		panic(err)
 	}
