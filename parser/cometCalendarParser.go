@@ -160,6 +160,7 @@ func normalizeRoom(building string, room string) string {
 		"3rd": "third",
 	}
 	normalizedMap := map[string]string{
+		"ATC 1.102":                "Auditorium",
 		"galaxy a":                 "Galaxy  Room - A",
 		"galaxy b":                 "Galaxy  Room - B",
 		"galaxy c":                 "Galaxy  Room - C",
@@ -171,6 +172,7 @@ func normalizeRoom(building string, room string) string {
 		"artemis i":                "Artermis Hall I",
 		"artemis ii":               "Artemis Hall II",
 		"artemis i ii":             "Artemis Hall (I & II)",
+		"artemis":                  "Artemis Hall (I & II)",
 		"lecture":                  "Auditorium",
 		"SSA 12.120":               "Atrium",
 		"SSA 13.330":               "Auditorium",
@@ -180,6 +182,11 @@ func normalizeRoom(building string, room string) string {
 		// Numeric room, convert to the normalized non-number room if possible
 		if _, ok := normalizedMap[building+" "+room]; ok {
 			return normalizedMap[building+" "+room]
+		} else {
+			// Temporary fix for wildcard in SU
+			if building == "Student Union (SU)" && room != "2.602" {
+				return "Other"
+			}
 		}
 		return room
 	}
