@@ -21,6 +21,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"sync"
 	"time"
@@ -191,18 +192,24 @@ func parsePdf(path string) (schema.AcademicCalendar, error) {
 		// AI
 		geminiClient := getGeminiClient()
 
+		// Response schema
+		calendarSchema := utils.StructToSchema(reflect.TypeOf(schema.AcademicCalendar{}))
+
 		// Send request with default config
 		response, err := geminiClient.Models.GenerateContent(context.Background(),
 			"gemini-2.5-pro",
 			genai.Text(promptFilled),
-			&genai.GenerateContentConfig{},
+			&genai.GenerateContentConfig{
+				ResponseMIMEType: "application/json",
+				ResponseSchema:   calendarSchema,
+			},
 		)
 		if err != nil {
 			return schema.AcademicCalendar{}, err
 		}
 
-		// Get response, remove backtick formatting if present
-		result = strings.ReplaceAll(strings.ReplaceAll(response.Candidates[0].Content.Parts[0].Text, "```json", ""), "```", "")
+		// Get response
+		result = response.Candidates[0].Content.Parts[0].Text
 
 		// Set cache for next time
 		err = setCache(hash, result)

@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"time"
 
@@ -19,6 +20,7 @@ import (
 	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
+	"google.golang.org/genai"
 )
 
 // Headless toggles whether chromedp runs without a visible browser window.
@@ -351,4 +353,55 @@ func ExtractTextAndHref(nodes []*cdp.Node, chromedpCtx context.Context) []LinkRe
 	}
 
 	return output
+}
+
+func StructToSchema(t reflect.Type) *genai.Schema {
+	// Handle pointers
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+
+	switch t.Kind() {
+	case reflect.Struct:
+		properties := make(map[string]*genai.Schema)
+		var required []string
+
+		for i := 0; i < t.NumField(); i++ {
+			field := t.Field(i)
+			// Use the JSON tag for the property name
+			jsonTag := field.Tag.Get("json")
+			if jsonTag == "" || jsonTag == "-" {
+				continue
+			}
+			// Handle comma-separated tags like "name,omitempty"
+			name := strings.Split(jsonTag, ",")[0]
+
+			properties[name] = StructToSchema(field.Type)
+			required = append(required, name)
+		}
+
+		return &genai.Schema{
+			Type:       genai.TypeObject,
+			Properties: properties,
+			Required:   required,
+		}
+
+	case reflect.Slice, reflect.Array:
+		return &genai.Schema{
+			Type:  genai.TypeArray,
+			Items: StructToSchema(t.Elem()),
+		}
+
+	case reflect.String:
+		return &genai.Schema{Type: genai.TypeString}
+
+	case reflect.Int, reflect.Int64, reflect.Float64:
+		return &genai.Schema{Type: genai.TypeNumber}
+
+	case reflect.Bool:
+		return &genai.Schema{Type: genai.TypeBoolean}
+
+	default:
+		return &genai.Schema{Type: genai.TypeString}
+	}
 }
