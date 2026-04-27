@@ -5,7 +5,6 @@
 package scrapers
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"log"
@@ -83,8 +82,14 @@ func ScrapeAcademicCalendars(outDir string) {
 	if err != nil {
 		panic(err)
 	}
-	newCalendars := extractTextAndHref(futureNodes, "future", chromedpCtx)
-	academicCalendars = append(academicCalendars, newCalendars...)
+	links := utils.ExtractTextAndHref(futureNodes, chromedpCtx)
+	for _, link := range links {
+		academicCalendars = append(academicCalendars, AcademicCalendar{
+			Title: link.Text,
+			Href:  link.Href,
+			Time:  "future",
+		})
+	}
 
 	// Past list
 	var pastNodes []*cdp.Node
@@ -94,8 +99,14 @@ func ScrapeAcademicCalendars(outDir string) {
 	if err != nil {
 		panic(err)
 	}
-	newCalendars = extractTextAndHref(pastNodes, "past", chromedpCtx)
-	academicCalendars = append(academicCalendars, newCalendars...)
+	links = utils.ExtractTextAndHref(pastNodes, chromedpCtx)
+	for _, link := range links {
+		academicCalendars = append(academicCalendars, AcademicCalendar{
+			Title: link.Text,
+			Href:  link.Href,
+			Time:  "past",
+		})
+	}
 
 	// Don't need ChromeDP anymore
 	cancel()
@@ -108,32 +119,6 @@ func ScrapeAcademicCalendars(outDir string) {
 			outSubDir,
 		)
 	}
-}
-
-func extractTextAndHref(nodes []*cdp.Node, time string, chromedpCtx context.Context) []AcademicCalendar {
-	output := []AcademicCalendar{}
-	var err error
-
-	// Extract href and text
-	for _, n := range nodes {
-		var href, text string
-		// Get href attribute
-		for i := 0; i < len(n.Attributes); i += 2 {
-			if n.Attributes[i] == "href" {
-				href = n.Attributes[i+1]
-			}
-		}
-		// Get inner text
-		err = chromedp.Run(chromedpCtx,
-			chromedp.TextContent(fmt.Sprintf(`a[href="%s"]`, href), &text, chromedp.ByQuery),
-		)
-		if err != nil {
-			panic(err)
-		}
-		output = append(output, AcademicCalendar{text, href, time})
-	}
-
-	return output
 }
 
 func downloadPdfFromBox(href string, filename string, outDir string) {
