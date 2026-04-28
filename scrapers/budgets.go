@@ -131,7 +131,6 @@ func downloadPdf(href string, filename string, outDir string) {
 	outYearDir := filepath.Join(outDir, match)
 
 	// Make output folder
-	os.RemoveAll(outYearDir)
 	err = os.MkdirAll(outYearDir, 0777)
 	if err != nil {
 		panic(err)
