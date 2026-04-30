@@ -47,7 +47,7 @@ var budgetPrompt = `Parse the content of these PDFs and generate the following J
       total: number
     },
     operating_expenses: {
-      name: "Operating Expenses", // From the Operating Budget - Expenses by Functional Classification table
+      name: "Operating Expenses", // Right under, from the same Operating Budget - Expenses by Functional Classification table
       rows: [
         {
           label: string, // Instruction, Academic Support, Research, ...
@@ -57,7 +57,7 @@ var budgetPrompt = `Parse the content of these PDFs and generate the following J
       total: number
     },
     budgeted_nonoperating_revenues: {
-      name: "Budgeted Nonoperating Revenues (Expenses)", // From the Operating Budget - Expenses by Functional Classification table
+      name: "Budgeted Nonoperating Revenues (Expenses)", // Right under, from the same Operating Budget - Expenses by Functional Classification table
       rows: [
         {
           label: string, // State Appropriations, Federal Sponsored Programs - Nonoperating, State/Local Sponsored Programs - Nonoperating, ...
@@ -65,6 +65,76 @@ var budgetPrompt = `Parse the content of these PDFs and generate the following J
         }
       ],
       total: number
+    },
+		salaries_doe_and_instructional_admin: {
+      name: "Summary of Faculty Salaries, Departmental Operating Expenses, and Instructional Administration",
+      rows: [
+        {
+          label: string, // Provost and V.P. Academic Affairs, each school, Other Instructional Support
+          value: { // Use the values from the latest FY (last 4 columns)
+						total: number,
+						faculty_salaries: number,
+						departmental_operating_expenses: number,
+						instructional_administration: number
+					}
+        }
+      ],
+      total: {
+				total: number,
+				faculty_salaries: number,
+				departmental_operating_expenses: number,
+				instructional_administration: number
+			}
+    },
+		service_departments_funds: {
+      name: "Service Departments and Revolving Funds", // In the Service Department Funds section
+      rows: [
+        {
+          name: string, // Sub tables by school and other categories
+          rows: [
+            {
+              label: string,
+              value: {
+                estimated_income: number,
+                budgeted_expenses: number
+              }
+            }
+          ],
+          total: {
+            estimated_income: number,
+            budgeted_expenses: number
+          }
+        }
+      ],
+      total: {
+        estimated_income: number,
+        budgeted_expenses: number
+      }
+    },
+		designated_funds: {
+      name: "Designated Funds", // In the Designated Funds section
+      rows: [
+        {
+          name: string, // Sub tables by school and other categories
+          rows: [
+            {
+              label: string,
+              value: {
+                estimated_income: number,
+                budgeted_expenses: number
+              }
+            }
+          ],
+          total: {
+            estimated_income: number,
+            budgeted_expenses: number
+          }
+        }
+      ],
+      total: {
+        estimated_income: number,
+        budgeted_expenses: number
+      }
     },
     budgeted_tuition_and_student_fees: {
       name: "Budgeted Tuition and Student Fees", // In the Designated Funds section
@@ -82,31 +152,11 @@ var budgetPrompt = `Parse the content of these PDFs and generate the following J
       ],
       total: number
     },
-    budget_by_school: {
-      name: "Budget By School", // Sections: Educational and General Funds, Service Department Funds, Designated Funds, Auxiliary Enterprises Funds, Restricted Gift Funds
-      rows: [
-        {
-          name: string, // <Schools>
-          rows: [
-            {
-              label: "Salaries & Wages", // From a table for each school in the Educational and General Funds section
-              value: number
-            },
-            {
-              label: string, // Items from the Service Department and Revolving Funds table in the Service Department Funds section, items from the Designated Funds table in the Designated Funds section, items from the Auxiliary Expenses table in the Auxiliary Enterprises Funds section, items from the Restricted Funds table in the Restricted Gift Funds section
-              value: number // The sum of Estimated Income (positive) and Budgeted Expenses (negative)
-            }
-          ],
-          total: number
-        }
-      ],
-      total: number
-    },
     auxiliary_expenses: {
       name: "Auxiliary Expenses", // In the Auxiliary Enterprises Funds section
       rows: [
         {
-          name: string, // ..., Facilities and Economic Dev, Student Affairs, ...
+          name: string, // Sub tables by school and other categories including Facilities and Economic Dev, Student Affairs, ...
           rows: [
             {
               label: string,
@@ -114,9 +164,7 @@ var budgetPrompt = `Parse the content of these PDFs and generate the following J
                 estimated_income: number,
                 budgeted_expenses: number,
                 debt_service: number,
-                excess_income: number,
-                beginning_balance: number,
-                ending_balance: number
+								other: number
               }
             }
           ],
@@ -124,9 +172,7 @@ var budgetPrompt = `Parse the content of these PDFs and generate the following J
             estimated_income: number,
             budgeted_expenses: number,
             debt_service: number,
-            excess_income: number,
-            beginning_balance: number,
-            ending_balance: number
+						other: number
           }
         }
       ],
@@ -134,15 +180,39 @@ var budgetPrompt = `Parse the content of these PDFs and generate the following J
         estimated_income: number,
         budgeted_expenses: number,
         debt_service: number,
-        excess_income: number,
-        beginning_balance: number,
-        ending_balance: number
+				other: number
+      }
+    },
+		restricted_funds: {
+      name: "Restricted Funds", // In the Restricted Gift Funds section, Endowments table
+      rows: [
+        {
+          name: string, // Sub tables by school and other categories
+          rows: [
+            {
+              label: string,
+              value: {
+                estimated_income: number,
+                budgeted_expenses: number
+              }
+            }
+          ],
+          total: {
+            estimated_income: number,
+            budgeted_expenses: number
+          }
+        }
+      ],
+      total: {
+        estimated_income: number,
+        budgeted_expenses: number
       }
     }
   },
   annual_financial_report: { // Data only from the Annual Financial Report file
+		// All from the Exhibit B Statement of Revenues, Expenses, and Changes in Net Position table
     operating_revenues: {
-      name: "Operating Revenues", // From the Exhibit B Statement of Revenues, Expenses, and Changes in Net Position table
+      name: "Operating Revenues",
       rows: [
         {
           label: string, // Student Tuition and Fees, Discounts and Allowances, Federal Sponsored Programs, ...
@@ -152,7 +222,7 @@ var budgetPrompt = `Parse the content of these PDFs and generate the following J
       total: number
     },
     operating_expenses: {
-      name: "Operating Expenses", // From the Exhibit B Statement of Revenues, Expenses, and Changes in Net Position table
+      name: "Operating Expenses",
       rows: [
         {
           label: string, // Instruction, Research, Public Service, ...
@@ -161,8 +231,8 @@ var budgetPrompt = `Parse the content of these PDFs and generate the following J
       ],
       total: number
     },
-    budgeted_nonoperating_revenues: {
-      name: "Nonoperating Revenues (Expenses)", // From the Exhibit B Statement of Revenues, Expenses, and Changes in Net Position table
+    nonoperating_revenues: {
+      name: "Nonoperating Revenues (Expenses)",
       rows: [
         {
           label: string, // State Appropriations, Federal Nonexchange Sponsored Programs, Federal Nonexchange Pass-Through, ...
@@ -177,6 +247,8 @@ var budgetPrompt = `Parse the content of these PDFs and generate the following J
 	notes: string // Notes or comments about the parsing, such as any assumptions made, any values that were unclear or missing, or any other relevant information.
 }
 
+- The UTD schools are: School of Arts, Humanities, and Technology; School of Behavioral and Brain Sciences; School of Economic, Political and Policy Sciences; School of Engineering and Computer Science; School of Interdisciplinary Studies; School of Management; School of Natural Sciences and Mathematics
+  - In older years: School of Arts, Technology, and Emerging Communication; School of Arts & Humanities
 - Always use the data listed for %s, not any previous years.
 - Do not infer, estimate, or guess any values. 
 - If a value is missing or unclear, return null for that field.
@@ -299,9 +371,6 @@ func parseBudgetPdfs(paths []string) (schema.Budget, error) {
 		return schema.Budget{}, err
 	}
 
-	log.Print(promptFilled)
-	log.Print(result)
-
 	// Skip AI if cache found
 	if result != "" {
 		log.Printf("Cache found for %s!", name)
@@ -317,7 +386,7 @@ func parseBudgetPdfs(paths []string) (schema.Budget, error) {
 
 		// Send request with default config
 		response, err := geminiClient.Models.GenerateContent(context.Background(),
-			"gemini-2.5-flash",
+			"gemini-2.5-pro",
 			genai.Text(promptFilled),
 			// Enforce response schema
 			&genai.GenerateContentConfig{
@@ -331,7 +400,11 @@ func parseBudgetPdfs(paths []string) (schema.Budget, error) {
 
 		// Get response
 		result = response.Candidates[0].Content.Parts[0].Text
-		log.Print(response.UsageMetadata.PromptTokenCount, response.UsageMetadata.ThoughtsTokenCount, response.UsageMetadata.TotalTokenCount)
+		log.Print(result)
+		log.Print("Token counts:")
+		log.Printf("Prompt: %d", response.UsageMetadata.PromptTokenCount)
+		log.Printf("Thoughts: %d", response.UsageMetadata.ThoughtsTokenCount)
+		log.Printf("Total: %d", response.UsageMetadata.TotalTokenCount)
 
 		// Set cache for next time
 		err = setBudgetCache(hash, result)
