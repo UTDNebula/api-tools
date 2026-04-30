@@ -145,6 +145,8 @@ func main() {
 			parser.ParseDiscounts(*inDir, *outDir)
 		case *degrees:
 			parser.ParseDegrees(*inDir, *outDir)
+		case *budgets:
+			parser.ParseBudgets(*inDir, *outDir)
 		default:
 			parser.Parse(*inDir, *outDir, *csvDir, *skipValidation)
 		}

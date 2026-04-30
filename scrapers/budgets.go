@@ -22,7 +22,6 @@ import (
 type Budget struct {
 	Title string
 	Href  string
-	Type  string
 }
 
 func ScrapeBudgets(outDir string) {
@@ -67,7 +66,6 @@ func ScrapeBudgets(outDir string) {
 		budgets = append(budgets, Budget{
 			Title: link.Text,
 			Href:  link.Href,
-			Type:  "financialReport",
 		})
 	}
 
@@ -84,7 +82,6 @@ func ScrapeBudgets(outDir string) {
 		budgets = append(budgets, Budget{
 			Title: link.Text,
 			Href:  link.Href,
-			Type:  "budgetReport",
 		})
 	}
 
@@ -95,7 +92,7 @@ func ScrapeBudgets(outDir string) {
 	for _, budget := range budgets {
 		downloadPdf(
 			budget.Href,
-			budget.Type+"-"+budget.Title,
+			budget.Title,
 			outSubDir,
 		)
 	}

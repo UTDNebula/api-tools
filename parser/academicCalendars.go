@@ -18,7 +18,6 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"reflect"
@@ -31,12 +30,8 @@ import (
 	"google.golang.org/genai"
 )
 
-// Store client to only create once
-var once sync.Once
-var geminiClient *genai.Client
-
 // What gets sent to Gemini, with the PDF content added
-var prompt = `Parse this PDF content and generate the following JSON schema.
+var academicCalendarPrompt = `Parse this PDF content and generate the following JSON schema.
 
 {
   _id: %s,
@@ -100,14 +95,14 @@ func ParseAcademicCalendars(inDir string, outDir string) {
 			for path := range jobs {
 				log.Printf("Parsing %s...", filepath.Base(path))
 
-				academicCalendar, err := parsePdf(path)
+				academicCalendar, err := parseAcademicCalendarPdf(path)
 				if err != nil {
 					if strings.Contains(err.Error(), "429") {
 						// Exponential-ish backoff up to 60s for 429 rate limiting
 						backoffs := []time.Duration{20 * time.Second, 40 * time.Second, 60 * time.Second}
 						for _, delay := range backoffs {
 							time.Sleep(delay)
-							academicCalendar, err = parsePdf(path)
+							academicCalendar, err = parseAcademicCalendarPdf(path)
 							if err == nil || !strings.Contains(err.Error(), "429") {
 								break
 							}
@@ -150,7 +145,7 @@ func ParseAcademicCalendars(inDir string, outDir string) {
 }
 
 // Read a PDF, build a prompt for Gemini to parse it, check if it has already been asked in the cache, and ask Gemini if not
-func parsePdf(path string) (schema.AcademicCalendar, error) {
+func parseAcademicCalendarPdf(path string) (schema.AcademicCalendar, error) {
 	// "Fall 2025" to "25F"
 	filename := filepath.Base(path)
 	filename = filename[0 : len(filename)-4]
@@ -166,18 +161,18 @@ func parsePdf(path string) (schema.AcademicCalendar, error) {
 	timeline := filenameParts[0]
 
 	// Read PDF
-	content, err := readPdf(path)
+	content, err := readAcademicCalendarPdf(path)
 	if err != nil {
 		return schema.AcademicCalendar{}, err
 	}
 
 	// Build prompt
-	promptFilled := fmt.Sprintf(prompt, name, timeline, content)
+	promptFilled := fmt.Sprintf(academicCalendarPrompt, name, timeline, content)
 
 	// Check cache
 	hashByte := sha256.Sum256([]byte(promptFilled))
 	hash := hex.EncodeToString(hashByte[:]) + ".json"
-	result, err := checkCache(hash)
+	result, err := checkAcademicCalendarCache(hash)
 	if err != nil {
 		return schema.AcademicCalendar{}, err
 	}
@@ -190,7 +185,7 @@ func parsePdf(path string) (schema.AcademicCalendar, error) {
 		log.Printf("No cache for %s, asking Gemini.", filename)
 
 		// AI
-		geminiClient := getGeminiClient()
+		geminiClient := utils.GetGeminiClient()
 
 		// Response schema
 		calendarSchema := utils.StructToSchema(reflect.TypeOf(schema.AcademicCalendar{}))
@@ -199,6 +194,7 @@ func parsePdf(path string) (schema.AcademicCalendar, error) {
 		response, err := geminiClient.Models.GenerateContent(context.Background(),
 			"gemini-2.5-pro",
 			genai.Text(promptFilled),
+			// Enforce response schema
 			&genai.GenerateContentConfig{
 				ResponseMIMEType: "application/json",
 				ResponseSchema:   calendarSchema,
@@ -212,7 +208,7 @@ func parsePdf(path string) (schema.AcademicCalendar, error) {
 		result = response.Candidates[0].Content.Parts[0].Text
 
 		// Set cache for next time
-		err = setCache(hash, result)
+		err = setAcademicCalendarCache(hash, result)
 		if err != nil {
 			return schema.AcademicCalendar{}, err
 		}
@@ -230,7 +226,7 @@ func parsePdf(path string) (schema.AcademicCalendar, error) {
 
 // Read the text from the first page of a PDF
 // Using external program pdftotext
-func readPdf(path string) (string, error) {
+func readAcademicCalendarPdf(path string) (string, error) {
 	cmd := exec.Command("pdftotext", "-l", "1", "-raw", path, "-")
 
 	var out bytes.Buffer
@@ -246,8 +242,8 @@ func readPdf(path string) (string, error) {
 }
 
 // Check cache for a response to the same prompt
-func checkCache(hash string) (string, error) {
-	apiUrl, apiBucket, apiKey, apiStorageKey, err := getNebulaKeys()
+func checkAcademicCalendarCache(hash string) (string, error) {
+	apiUrl, apiBucket, apiKey, apiStorageKey, err := getAcademicCalendarNebulaKeys()
 	if err != nil {
 		return "", err
 	}
@@ -300,8 +296,8 @@ func checkCache(hash string) (string, error) {
 }
 
 // Upload AI response to cache
-func setCache(hash string, result string) error {
-	apiUrl, apiBucket, apiKey, apiStorageKey, err := getNebulaKeys()
+func setAcademicCalendarCache(hash string, result string) error {
+	apiUrl, apiBucket, apiKey, apiStorageKey, err := getAcademicCalendarNebulaKeys()
 	if err != nil {
 		return err
 	}
@@ -327,7 +323,7 @@ func setCache(hash string, result string) error {
 }
 
 // Get all the keys to access the Nebula API storage routes
-func getNebulaKeys() (string, string, string, string, error) {
+func getAcademicCalendarNebulaKeys() (string, string, string, string, error) {
 	apiUrl, err := utils.GetEnv("NEBULA_API_URL")
 	if err != nil {
 		return "", "", "", "", err
@@ -346,36 +342,4 @@ func getNebulaKeys() (string, string, string, string, error) {
 	}
 
 	return apiUrl, apiBucket, apiKey, apiStorageKey, nil
-}
-
-// Create client only once
-// Auth is from GOOGLE_GENAI_USE_VERTEXAI, GOOGLE_CLOUD_PROJECT and GOOGLE_APPLICATION_CREDENTIALS environment variables and service account JSON which is created from GEMINI_SERVICE_ACCOUNT
-func getGeminiClient() *genai.Client {
-	once.Do(func() {
-		// Create JSON file
-		serviceAccount, err := utils.GetEnv("GEMINI_SERVICE_ACCOUNT")
-		if err != nil {
-			panic(err)
-		}
-		jsonFile, err := utils.GetEnv("GOOGLE_APPLICATION_CREDENTIALS")
-		if err != nil {
-			panic(err)
-		}
-		err = os.WriteFile(jsonFile, []byte(serviceAccount), 0644)
-		if err != nil {
-			panic(err)
-		}
-
-		// Create client
-		geminiClient, err = genai.NewClient(context.Background(),
-			&genai.ClientConfig{
-				Project:  "api-tools-451421",
-				Location: "us-central1",
-				Backend:  genai.BackendVertexAI,
-			})
-		if err != nil {
-			panic(err)
-		}
-	})
-	return geminiClient
 }

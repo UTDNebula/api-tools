@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"sync"
 	"time"
 
 	"strings"
@@ -357,9 +358,13 @@ func ExtractTextAndHref(nodes []*cdp.Node, chromedpCtx context.Context) []LinkRe
 
 func StructToSchema(t reflect.Type) *genai.Schema {
 	// Handle pointers
+	isNullable := false
 	if t.Kind() == reflect.Ptr {
+		isNullable = true
 		t = t.Elem()
 	}
+
+	var schema *genai.Schema
 
 	switch t.Kind() {
 	case reflect.Struct:
@@ -377,31 +382,72 @@ func StructToSchema(t reflect.Type) *genai.Schema {
 			name := strings.Split(jsonTag, ",")[0]
 
 			properties[name] = StructToSchema(field.Type)
-			required = append(required, name)
+			if field.Type.Kind() != reflect.Ptr {
+				required = append(required, name)
+			}
 		}
 
-		return &genai.Schema{
+		schema = &genai.Schema{
 			Type:       genai.TypeObject,
 			Properties: properties,
 			Required:   required,
 		}
 
 	case reflect.Slice, reflect.Array:
-		return &genai.Schema{
+		schema = &genai.Schema{
 			Type:  genai.TypeArray,
 			Items: StructToSchema(t.Elem()),
 		}
 
 	case reflect.String:
-		return &genai.Schema{Type: genai.TypeString}
+		schema = &genai.Schema{Type: genai.TypeString}
 
 	case reflect.Int, reflect.Int64, reflect.Float64:
-		return &genai.Schema{Type: genai.TypeNumber}
+		schema = &genai.Schema{Type: genai.TypeNumber}
 
 	case reflect.Bool:
-		return &genai.Schema{Type: genai.TypeBoolean}
+		schema = &genai.Schema{Type: genai.TypeBoolean}
 
 	default:
-		return &genai.Schema{Type: genai.TypeString}
+		schema = &genai.Schema{Type: genai.TypeString}
 	}
+
+	schema.Nullable = &isNullable
+	return schema
+}
+
+// Store Gemini client to only create once
+var once sync.Once
+var geminiClient *genai.Client
+
+// Create client only once
+// Auth is from GOOGLE_GENAI_USE_VERTEXAI, GOOGLE_CLOUD_PROJECT and GOOGLE_APPLICATION_CREDENTIALS environment variables and service account JSON which is created from GEMINI_SERVICE_ACCOUNT
+func GetGeminiClient() *genai.Client {
+	once.Do(func() {
+		// Create JSON file
+		serviceAccount, err := GetEnv("GEMINI_SERVICE_ACCOUNT")
+		if err != nil {
+			panic(err)
+		}
+		jsonFile, err := GetEnv("GOOGLE_APPLICATION_CREDENTIALS")
+		if err != nil {
+			panic(err)
+		}
+		err = os.WriteFile(jsonFile, []byte(serviceAccount), 0644)
+		if err != nil {
+			panic(err)
+		}
+
+		// Create client
+		geminiClient, err = genai.NewClient(context.Background(),
+			&genai.ClientConfig{
+				Project:  "api-tools-451421",
+				Location: "us-central1",
+				Backend:  genai.BackendVertexAI,
+			})
+		if err != nil {
+			panic(err)
+		}
+	})
+	return geminiClient
 }
