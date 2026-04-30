@@ -125,7 +125,7 @@ func downloadPdf(href string, filename string, outDir string) {
 	// Get sub folder from output folder
 	re := regexp.MustCompile(`FY\d{2}`)
 	match := re.FindString(filename)
-	outYearDir := filepath.Join(outDir, match)
+	outYearDir := filepath.Join(outDir, "20"+match[len(match)-2:])
 
 	// Make output folder
 	err = os.MkdirAll(outYearDir, 0777)

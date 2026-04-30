@@ -55,7 +55,8 @@ func main() {
 
 	// Flags for parsing
 	parse := flag.Bool("parse", false, "Puts the tool into parsing mode.")
-	csvDir := flag.String("csv", "./static-data/grades", "Alongside -parse, specifies the path to the directory of CSV files containing grade data.")
+	gradesDir := flag.String("gradesDir", "./static-data/grades", "Alongside -parse, specifies the path to the directory of CSV files containing grade data.")
+	budgetsDir := flag.String("budgetsDir", "./static-data/budgets", "Alongside -parse, specifies the path to the directory of PDF files containing budget data.")
 	skipValidation := flag.Bool("skipv", false, "Alongside -parse, signifies that the post-parsing validation should be skipped. Be careful with this!")
 
 	// Flags for uploading data
@@ -146,9 +147,9 @@ func main() {
 		case *degrees:
 			parser.ParseDegrees(*inDir, *outDir)
 		case *budgets:
-			parser.ParseBudgets(*inDir, *outDir)
+			parser.ParseBudgets(*inDir, *outDir, *budgetsDir)
 		default:
-			parser.Parse(*inDir, *outDir, *csvDir, *skipValidation)
+			parser.Parse(*inDir, *outDir, *gradesDir, *skipValidation)
 		}
 	case *upload:
 		switch {

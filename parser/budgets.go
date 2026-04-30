@@ -252,12 +252,13 @@ var budgetPrompt = `Parse the content of these PDFs and generate the following J
 - Always use the data listed for %s, not any previous years.
 - Do not infer, estimate, or guess any values. 
 - If a value is missing or unclear, return null for that field.
+- Only values surrounded by parentheses in the tables should be considered negative.
 
 Content of PDFs:
 
 %s`
 
-func ParseBudgets(inDir string, outDir string) {
+func ParseBudgets(inDir string, outDir string, budgetsDir string) {
 	// Get sub folder from output folder
 	inSubDir := filepath.Join(inDir, "budgets")
 
@@ -306,6 +307,9 @@ func ParseBudgets(inDir string, outDir string) {
 		}()
 	}
 
+	yearsScraped := make(map[string]bool)
+
+	// Traverse scraped directory, storing years found
 	err := filepath.WalkDir(inSubDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -315,6 +319,8 @@ func ParseBudgets(inDir string, outDir string) {
 			return nil
 		}
 		if d.IsDir() { // Is a folder
+			year := filepath.Base(path)
+			yearsScraped[year] = true
 			var files []string
 			err := filepath.WalkDir(path, func(path string, d fs.DirEntry, err error) error {
 				if err != nil {
@@ -329,6 +335,40 @@ func ParseBudgets(inDir string, outDir string) {
 				return err
 			}
 			jobs <- files
+		}
+		return nil
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	// Traverse backup directory, only adding jobs for years not found in scraped directory
+	err = filepath.WalkDir(budgetsDir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		// Skip the root "budgets" directory itself
+		if path == budgetsDir {
+			return nil
+		}
+		if d.IsDir() { // Is a folder
+			year := filepath.Base(path)
+			if !yearsScraped[year] {
+				var files []string
+				err := filepath.WalkDir(path, func(path string, d fs.DirEntry, err error) error {
+					if err != nil {
+						return err
+					}
+					if !d.IsDir() { // Is a file
+						files = append(files, path)
+					}
+					return nil
+				})
+				if err != nil {
+					return err
+				}
+				jobs <- files
+			}
 		}
 		return nil
 	})
