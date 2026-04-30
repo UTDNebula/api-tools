@@ -55,7 +55,7 @@ func main() {
 
 	// Flags for parsing
 	parse := flag.Bool("parse", false, "Puts the tool into parsing mode.")
-	csvDir := flag.String("csv", "./grade-data", "Alongside -parse, specifies the path to the directory of CSV files containing grade data.")
+	csvDir := flag.String("csv", "./static-data/grades", "Alongside -parse, specifies the path to the directory of CSV files containing grade data.")
 	skipValidation := flag.Bool("skipv", false, "Alongside -parse, signifies that the post-parsing validation should be skipped. Be careful with this!")
 
 	// Flags for uploading data

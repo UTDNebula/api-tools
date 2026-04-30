@@ -6,7 +6,7 @@ Project maintained by [Nebula Labs](https://about.utdnebula.com).
 
 ### Design
 
-#### - The `grade-data` directory contains .csv files of UTD grade data. 
+#### - The `static-data/grades` directory contains .csv files of UTD grade data. 
   - Files are named by year and semester, with a suffix of `S`, `U`, or `F` denoting Spring, Summer, and Fall semesters, respectively.
   - This means that, for example, `22F.csv` corresponds to the 2022 Fall semester, whereas `18U.csv` corresponds with the 2018 Summer semester.
   - This grade data is collected independently from the scrapers, and is used during the parsing process.
@@ -79,7 +79,7 @@ Run the tool by changing directory using `cd` to the `api-tools` directory and r
 | `./api-tools -parse -academicCalendars` | Parses academic calendar PDFs. |
 | `./api-tools -parse -astra` | Parses Astra data. |
 | `./api-tools -parse -cometCalendar` | Parses Comet Calendar data. |
-| `./api-tools -parse -csv [directory]` | Outputs grade data CSVs (default: `./grade-data`). |
+| `./api-tools -parse -csv [directory]` | Outputs grade data CSVs (default: `./static-data/grades`). |
 | `./api-tools -parse -discounts` | Parses discount programs HTML. |
 | `./api-tools -parse -degrees` | Parses degrees from HTML. |
 | `./api-tools -parse -map` | Parses UTD Map data. |
