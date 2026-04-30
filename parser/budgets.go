@@ -258,7 +258,7 @@ Content of PDFs:
 
 %s`
 
-func ParseBudgets(inDir string, outDir string, budgetsDir string) {
+func ParseBudgets(inDir string, outDir string, budgetsDir string, useBackupBudgets bool) {
 	// Get sub folder from output folder
 	inSubDir := filepath.Join(inDir, "budgets")
 
@@ -342,38 +342,40 @@ func ParseBudgets(inDir string, outDir string, budgetsDir string) {
 		panic(err)
 	}
 
-	// Traverse backup directory, only adding jobs for years not found in scraped directory
-	err = filepath.WalkDir(budgetsDir, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		// Skip the root "budgets" directory itself
-		if path == budgetsDir {
-			return nil
-		}
-		if d.IsDir() { // Is a folder
-			year := filepath.Base(path)
-			if !yearsScraped[year] {
-				var files []string
-				err := filepath.WalkDir(path, func(path string, d fs.DirEntry, err error) error {
+	if useBackupBudgets {
+		// Traverse backup directory, only adding jobs for years not found in scraped directory
+		err = filepath.WalkDir(budgetsDir, func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			// Skip the root "budgets" directory itself
+			if path == budgetsDir {
+				return nil
+			}
+			if d.IsDir() { // Is a folder
+				year := filepath.Base(path)
+				if !yearsScraped[year] {
+					var files []string
+					err := filepath.WalkDir(path, func(path string, d fs.DirEntry, err error) error {
+						if err != nil {
+							return err
+						}
+						if !d.IsDir() { // Is a file
+							files = append(files, path)
+						}
+						return nil
+					})
 					if err != nil {
 						return err
 					}
-					if !d.IsDir() { // Is a file
-						files = append(files, path)
-					}
-					return nil
-				})
-				if err != nil {
-					return err
+					jobs <- files
 				}
-				jobs <- files
 			}
+			return nil
+		})
+		if err != nil {
+			panic(err)
 		}
-		return nil
-	})
-	if err != nil {
-		panic(err)
 	}
 
 	close(jobs)
