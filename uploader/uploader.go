@@ -175,6 +175,10 @@ func UploadData[T any](client *mongo.Client, ctx context.Context, fptr *os.File,
 		}
 
 	} else {
+		if fileName != "budgets" {
+			log.Panicf("Uploading without the -replace flag is not currently supported for anything but budgets.")
+		}
+
 		// If a temp collection already exists, drop it
 		tempCollection := getCollection(client, "temp")
 		err = tempCollection.Drop(ctx)
