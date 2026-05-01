@@ -10,9 +10,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"reflect"
 	"regexp"
-	"sync"
 	"time"
 
 	"strings"
@@ -21,7 +19,6 @@ import (
 	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
-	"google.golang.org/genai"
 )
 
 // Headless toggles whether chromedp runs without a visible browser window.
@@ -354,100 +351,4 @@ func ExtractTextAndHref(nodes []*cdp.Node, chromedpCtx context.Context) []LinkRe
 	}
 
 	return output
-}
-
-func StructToSchema(t reflect.Type) *genai.Schema {
-	// Handle pointers
-	isNullable := false
-	if t.Kind() == reflect.Ptr {
-		isNullable = true
-		t = t.Elem()
-	}
-
-	var schema *genai.Schema
-
-	switch t.Kind() {
-	case reflect.Struct:
-		properties := make(map[string]*genai.Schema)
-		var required []string
-
-		for i := 0; i < t.NumField(); i++ {
-			field := t.Field(i)
-			// Use the JSON tag for the property name
-			jsonTag := field.Tag.Get("json")
-			if jsonTag == "" || jsonTag == "-" {
-				continue
-			}
-			// Handle comma-separated tags like "name,omitempty"
-			name := strings.Split(jsonTag, ",")[0]
-
-			properties[name] = StructToSchema(field.Type)
-			if field.Type.Kind() != reflect.Ptr {
-				required = append(required, name)
-			}
-		}
-
-		schema = &genai.Schema{
-			Type:       genai.TypeObject,
-			Properties: properties,
-			Required:   required,
-		}
-
-	case reflect.Slice, reflect.Array:
-		schema = &genai.Schema{
-			Type:  genai.TypeArray,
-			Items: StructToSchema(t.Elem()),
-		}
-
-	case reflect.String:
-		schema = &genai.Schema{Type: genai.TypeString}
-
-	case reflect.Int, reflect.Int64, reflect.Float64:
-		schema = &genai.Schema{Type: genai.TypeNumber}
-
-	case reflect.Bool:
-		schema = &genai.Schema{Type: genai.TypeBoolean}
-
-	default:
-		schema = &genai.Schema{Type: genai.TypeString}
-	}
-
-	schema.Nullable = &isNullable
-	return schema
-}
-
-// Store Gemini client to only create once
-var once sync.Once
-var geminiClient *genai.Client
-
-// Create client only once
-// Auth is from GOOGLE_GENAI_USE_VERTEXAI, GOOGLE_CLOUD_PROJECT and GOOGLE_APPLICATION_CREDENTIALS environment variables and service account JSON which is created from GEMINI_SERVICE_ACCOUNT
-func GetGeminiClient() *genai.Client {
-	once.Do(func() {
-		// Create JSON file
-		serviceAccount, err := GetEnv("GEMINI_SERVICE_ACCOUNT")
-		if err != nil {
-			panic(err)
-		}
-		jsonFile, err := GetEnv("GOOGLE_APPLICATION_CREDENTIALS")
-		if err != nil {
-			panic(err)
-		}
-		err = os.WriteFile(jsonFile, []byte(serviceAccount), 0644)
-		if err != nil {
-			panic(err)
-		}
-
-		// Create client
-		geminiClient, err = genai.NewClient(context.Background(),
-			&genai.ClientConfig{
-				Project:  "api-tools-451421",
-				Location: "us-central1",
-				Backend:  genai.BackendVertexAI,
-			})
-		if err != nil {
-			panic(err)
-		}
-	})
-	return geminiClient
 }

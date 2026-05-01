@@ -8,17 +8,13 @@ complicated installation process, or errored on one of the PDFs.
 package parser
 
 import (
-	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/fs"
 	"log"
-	"net/http"
-	"os/exec"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -389,12 +385,17 @@ func ParseBudgets(inDir string, outDir string, budgetsDir string, useBackupBudge
 
 // Read a PDF, build a prompt for Gemini to parse it, check if it has already been asked in the cache, and ask Gemini if not
 func parseBudgetPdfs(paths []string) (schema.Budget, error) {
+	apiBucket, err := getBudgetBucket()
+	if err != nil {
+		return schema.Budget{}, err
+	}
+
 	year := filepath.Base(filepath.Dir(paths[0]))
 
 	// Read PDFs
 	var contentBuilder strings.Builder
 	for _, path := range paths {
-		content, err := readBudgetPdf(path)
+		content, err := utils.ReadPdf(path, -1)
 		if err != nil {
 			return schema.Budget{}, err
 		}
@@ -409,7 +410,7 @@ func parseBudgetPdfs(paths []string) (schema.Budget, error) {
 	// Check cache
 	hashByte := sha256.Sum256([]byte(promptFilled))
 	hash := hex.EncodeToString(hashByte[:]) + ".json"
-	result, err := checkBudgetCache(hash)
+	result, err := utils.CheckCache(hash, apiBucket)
 	if err != nil {
 		return schema.Budget{}, err
 	}
@@ -449,7 +450,7 @@ func parseBudgetPdfs(paths []string) (schema.Budget, error) {
 		log.Printf("Total: %d", response.UsageMetadata.TotalTokenCount)
 
 		// Set cache for next time
-		err = setBudgetCache(hash, result)
+		err = utils.SetCache(hash, result, apiBucket)
 		if err != nil {
 			return schema.Budget{}, err
 		}
@@ -465,122 +466,11 @@ func parseBudgetPdfs(paths []string) (schema.Budget, error) {
 	return budget, nil
 }
 
-// Read the text from the whole PDF
-// Using external program pdftotext
-func readBudgetPdf(path string) (string, error) {
-	cmd := exec.Command("pdftotext", "-raw", path, "-")
-
-	var out bytes.Buffer
-	var stderr bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &stderr
-
-	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf("failed to run pdftotext: %v (%s)", err, stderr.String())
-	}
-
-	return out.String(), nil
-}
-
-// Check cache for a response to the same prompt
-func checkBudgetCache(hash string) (string, error) {
-	apiUrl, apiBucket, apiKey, apiStorageKey, err := getBudgetNebulaKeys()
-	if err != nil {
-		return "", err
-	}
-
-	client := &http.Client{}
-
-	// Make request
-	req, err := http.NewRequest("GET", apiUrl+"storage/"+apiBucket+"/"+hash, nil)
-	if err != nil {
-		return "", err
-	}
-	req.Header.Add("x-api-key", apiKey)
-	req.Header.Add("x-storage-key", apiStorageKey)
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	// Read the response body
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-	var parsedBody schema.APIResponse[schema.ObjectInfo]
-	err = json.Unmarshal([]byte(body), &parsedBody)
-	if err != nil {
-		// If this errors, return ("", nil) to indicate not found
-		return "", nil
-	}
-
-	// Fetch object
-	req, err = http.NewRequest("GET", parsedBody.Data.MediaLink, nil)
-	if err != nil {
-		return "", err
-	}
-	resp, err = client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	// Read the response body
-	body, err = io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-
-	return string(body), nil
-}
-
-// Upload AI response to cache
-func setBudgetCache(hash string, result string) error {
-	apiUrl, apiBucket, apiKey, apiStorageKey, err := getBudgetNebulaKeys()
-	if err != nil {
-		return err
-	}
-
-	// Make request
-	jsonStr := []byte(result)
-	bodyReader := bytes.NewBuffer(jsonStr)
-	req, err := http.NewRequest("POST", apiUrl+"storage/"+apiBucket+"/"+hash, bodyReader)
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Add("x-api-key", apiKey)
-	req.Header.Add("x-storage-key", apiStorageKey)
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	return nil
-}
-
-// Get all the keys to access the Nebula API storage routes
-func getBudgetNebulaKeys() (string, string, string, string, error) {
-	apiUrl, err := utils.GetEnv("NEBULA_API_URL")
-	if err != nil {
-		return "", "", "", "", err
-	}
+// Get the storage bucket for the budget cache
+func getBudgetBucket() (string, error) {
 	apiBucket, err := utils.GetEnv("NEBULA_API_BUDGET_STORAGE_BUCKET")
 	if err != nil {
-		return "", "", "", "", err
+		return "", err
 	}
-	apiKey, err := utils.GetEnv("NEBULA_API_KEY")
-	if err != nil {
-		return "", "", "", "", err
-	}
-	apiStorageKey, err := utils.GetEnv("NEBULA_API_STORAGE_KEY")
-	if err != nil {
-		return "", "", "", "", err
-	}
-
-	return apiUrl, apiBucket, apiKey, apiStorageKey, nil
+	return apiBucket, nil
 }

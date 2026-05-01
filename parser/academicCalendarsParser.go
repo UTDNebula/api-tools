@@ -8,17 +8,13 @@ complicated installation process, or errored on one of the PDFs.
 package parser
 
 import (
-	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/fs"
 	"log"
-	"net/http"
-	"os/exec"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -146,6 +142,11 @@ func ParseAcademicCalendars(inDir string, outDir string) {
 
 // Read a PDF, build a prompt for Gemini to parse it, check if it has already been asked in the cache, and ask Gemini if not
 func parseAcademicCalendarPdf(path string) (schema.AcademicCalendar, error) {
+	apiBucket, err := getAcademicCalendarBucket()
+	if err != nil {
+		return schema.AcademicCalendar{}, err
+	}
+
 	// "Fall 2025" to "25F"
 	filename := filepath.Base(path)
 	filename = filename[0 : len(filename)-4]
@@ -161,7 +162,7 @@ func parseAcademicCalendarPdf(path string) (schema.AcademicCalendar, error) {
 	timeline := filenameParts[0]
 
 	// Read PDF
-	content, err := readAcademicCalendarPdf(path)
+	content, err := utils.ReadPdf(path, 1)
 	if err != nil {
 		return schema.AcademicCalendar{}, err
 	}
@@ -172,7 +173,7 @@ func parseAcademicCalendarPdf(path string) (schema.AcademicCalendar, error) {
 	// Check cache
 	hashByte := sha256.Sum256([]byte(promptFilled))
 	hash := hex.EncodeToString(hashByte[:]) + ".json"
-	result, err := checkAcademicCalendarCache(hash)
+	result, err := utils.CheckCache(hash, apiBucket)
 	if err != nil {
 		return schema.AcademicCalendar{}, err
 	}
@@ -208,7 +209,7 @@ func parseAcademicCalendarPdf(path string) (schema.AcademicCalendar, error) {
 		result = response.Candidates[0].Content.Parts[0].Text
 
 		// Set cache for next time
-		err = setAcademicCalendarCache(hash, result)
+		err = utils.SetCache(hash, result, apiBucket)
 		if err != nil {
 			return schema.AcademicCalendar{}, err
 		}
@@ -224,122 +225,11 @@ func parseAcademicCalendarPdf(path string) (schema.AcademicCalendar, error) {
 	return academicCalendar, nil
 }
 
-// Read the text from the first page of a PDF
-// Using external program pdftotext
-func readAcademicCalendarPdf(path string) (string, error) {
-	cmd := exec.Command("pdftotext", "-l", "1", "-raw", path, "-")
-
-	var out bytes.Buffer
-	var stderr bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &stderr
-
-	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf("failed to run pdftotext: %v (%s)", err, stderr.String())
-	}
-
-	return out.String(), nil
-}
-
-// Check cache for a response to the same prompt
-func checkAcademicCalendarCache(hash string) (string, error) {
-	apiUrl, apiBucket, apiKey, apiStorageKey, err := getAcademicCalendarNebulaKeys()
-	if err != nil {
-		return "", err
-	}
-
-	client := &http.Client{}
-
-	// Make request
-	req, err := http.NewRequest("GET", apiUrl+"storage/"+apiBucket+"/"+hash, nil)
-	if err != nil {
-		return "", err
-	}
-	req.Header.Add("x-api-key", apiKey)
-	req.Header.Add("x-storage-key", apiStorageKey)
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	// Read the response body
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-	var parsedBody schema.APIResponse[schema.ObjectInfo]
-	err = json.Unmarshal([]byte(body), &parsedBody)
-	if err != nil {
-		// If this errors, return ("", nil) to indicate not found
-		return "", nil
-	}
-
-	// Fetch object
-	req, err = http.NewRequest("GET", parsedBody.Data.MediaLink, nil)
-	if err != nil {
-		return "", err
-	}
-	resp, err = client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	// Read the response body
-	body, err = io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-
-	return string(body), nil
-}
-
-// Upload AI response to cache
-func setAcademicCalendarCache(hash string, result string) error {
-	apiUrl, apiBucket, apiKey, apiStorageKey, err := getAcademicCalendarNebulaKeys()
-	if err != nil {
-		return err
-	}
-
-	// Make request
-	jsonStr := []byte(result)
-	bodyReader := bytes.NewBuffer(jsonStr)
-	req, err := http.NewRequest("POST", apiUrl+"storage/"+apiBucket+"/"+hash, bodyReader)
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Add("x-api-key", apiKey)
-	req.Header.Add("x-storage-key", apiStorageKey)
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	return nil
-}
-
-// Get all the keys to access the Nebula API storage routes
-func getAcademicCalendarNebulaKeys() (string, string, string, string, error) {
-	apiUrl, err := utils.GetEnv("NEBULA_API_URL")
-	if err != nil {
-		return "", "", "", "", err
-	}
+// Get the storage bucket for the academic calendar cache
+func getAcademicCalendarBucket() (string, error) {
 	apiBucket, err := utils.GetEnv("NEBULA_API_STORAGE_BUCKET")
 	if err != nil {
-		return "", "", "", "", err
+		return "", err
 	}
-	apiKey, err := utils.GetEnv("NEBULA_API_KEY")
-	if err != nil {
-		return "", "", "", "", err
-	}
-	apiStorageKey, err := utils.GetEnv("NEBULA_API_STORAGE_KEY")
-	if err != nil {
-		return "", "", "", "", err
-	}
-
-	return apiUrl, apiBucket, apiKey, apiStorageKey, nil
+	return apiBucket, nil
 }
