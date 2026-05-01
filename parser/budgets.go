@@ -276,8 +276,8 @@ func ParseBudgets(inDir string, outDir string, budgetsDir string, useBackupBudge
 		go func() {
 			defer wg.Done()
 			for paths := range jobs {
-				name := filepath.Base(filepath.Dir(paths[0]))
-				log.Printf("Parsing %s...", name)
+				year := filepath.Base(filepath.Dir(paths[0]))
+				log.Printf("Parsing %s...", year)
 
 				budget, err := parseBudgetPdfs(paths)
 				if err != nil {
@@ -302,7 +302,7 @@ func ParseBudgets(inDir string, outDir string, budgetsDir string, useBackupBudge
 				result = append(result, budget)
 				mu.Unlock()
 
-				log.Printf("Parsed %s!", name)
+				log.Printf("Parsed %s!", year)
 			}
 		}()
 	}
@@ -342,6 +342,7 @@ func ParseBudgets(inDir string, outDir string, budgetsDir string, useBackupBudge
 		panic(err)
 	}
 
+	// If we're including the backup budgets, since UTD has removed some older PDFs from the website
 	if useBackupBudgets {
 		// Traverse backup directory, only adding jobs for years not found in scraped directory
 		err = filepath.WalkDir(budgetsDir, func(path string, d fs.DirEntry, err error) error {
@@ -388,7 +389,7 @@ func ParseBudgets(inDir string, outDir string, budgetsDir string, useBackupBudge
 
 // Read a PDF, build a prompt for Gemini to parse it, check if it has already been asked in the cache, and ask Gemini if not
 func parseBudgetPdfs(paths []string) (schema.Budget, error) {
-	name := filepath.Base(filepath.Dir(paths[0]))
+	year := filepath.Base(filepath.Dir(paths[0]))
 
 	// Read PDFs
 	var contentBuilder strings.Builder
@@ -403,7 +404,7 @@ func parseBudgetPdfs(paths []string) (schema.Budget, error) {
 	content := contentBuilder.String()
 
 	// Build prompt
-	promptFilled := fmt.Sprintf(budgetPrompt, name, name, content)
+	promptFilled := fmt.Sprintf(budgetPrompt, year, year, content)
 
 	// Check cache
 	hashByte := sha256.Sum256([]byte(promptFilled))
@@ -415,10 +416,10 @@ func parseBudgetPdfs(paths []string) (schema.Budget, error) {
 
 	// Skip AI if cache found
 	if result != "" {
-		log.Printf("Cache found for %s!", name)
+		log.Printf("Cache found for %s!", year)
 	} else {
 		// Cache not found
-		log.Printf("No cache for %s, asking Gemini.", name)
+		log.Printf("No cache for %s, asking Gemini.", year)
 
 		// AI
 		geminiClient := utils.GetGeminiClient()
@@ -442,7 +443,6 @@ func parseBudgetPdfs(paths []string) (schema.Budget, error) {
 
 		// Get response
 		result = response.Candidates[0].Content.Parts[0].Text
-		log.Print(result)
 		log.Print("Token counts:")
 		log.Printf("Prompt: %d", response.UsageMetadata.PromptTokenCount)
 		log.Printf("Thoughts: %d", response.UsageMetadata.ThoughtsTokenCount)

@@ -108,6 +108,7 @@ func downloadPdf(href string, filename string, outDir string) {
 		panic(err)
 	}
 
+	// Use a user agent and referer to avoid 599 errors
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/110.0")
 	req.Header.Set("Referer", "https://finance.utdallas.edu/for-others/public-reports/")
 
