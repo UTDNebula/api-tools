@@ -50,7 +50,7 @@ func ScrapeAcademicCalendars(outDir string) {
 	// Selector for the scraping the calendar nodes
 	currentSel := `a.wp-block-button__link`
 	futureSel := `//h2[normalize-space(text())="Future Terms"]/following-sibling::ul[1]//a`
-	pastSel := `//h2[normalize-space(text())="Future Terms"]/following-sibling::ul[1]//a`
+	pastSel := `//h2[normalize-space(text())="Past Terms"]/following-sibling::div[1]//a`
 
 	// Extract data from links
 	// Current
