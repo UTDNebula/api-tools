@@ -243,8 +243,7 @@ var budgetPrompt = `Parse the content of these PDFs and generate the following J
     },
     beginning_net_position: number,
     ending_net_position: number
-  },
-	notes: string // Notes or comments about the parsing, such as any assumptions made, any values that were unclear or missing, or any other relevant information.
+  }
 }
 
 - Use the full UTD school names in this title text: School of Arts, Humanities, and Technology; School of Behavioral and Brain Sciences; School of Economic, Political and Policy Sciences; School of Engineering and Computer Science; School of Interdisciplinary Studies; School of Management; School of Natural Sciences and Mathematics.
