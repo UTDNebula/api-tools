@@ -247,8 +247,9 @@ var budgetPrompt = `Parse the content of these PDFs and generate the following J
 	notes: string // Notes or comments about the parsing, such as any assumptions made, any values that were unclear or missing, or any other relevant information.
 }
 
-- The UTD schools are: School of Arts, Humanities, and Technology; School of Behavioral and Brain Sciences; School of Economic, Political and Policy Sciences; School of Engineering and Computer Science; School of Interdisciplinary Studies; School of Management; School of Natural Sciences and Mathematics
-  - In older years: School of Arts, Technology, and Emerging Communication; School of Arts & Humanities
+- Use the full UTD school names in this title text: School of Arts, Humanities, and Technology; School of Behavioral and Brain Sciences; School of Economic, Political and Policy Sciences; School of Engineering and Computer Science; School of Interdisciplinary Studies; School of Management; School of Natural Sciences and Mathematics.
+  - In older years: School of Arts, Technology, and Emerging Communication; School of Arts & Humanities.
+	- Replace Brian with Brain in the School of Behavioral and Brain Sciences name if it is misspelled in the PDF.
 - Always use the data listed for %s, not any previous years.
 - Do not infer, estimate, or guess any values. 
 - If a value is missing or unclear, return null for that field.

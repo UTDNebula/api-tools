@@ -164,6 +164,8 @@ func main() {
 			uploader.UploadDiscounts(*inDir)
 		case *degrees:
 			uploader.UploadDegrees(*inDir)
+		case *budgets:
+			uploader.UploadBudgets(*inDir)
 		default:
 			uploader.Upload(*inDir, *replace, *staticOnly)
 		}
