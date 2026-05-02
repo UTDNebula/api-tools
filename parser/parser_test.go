@@ -132,7 +132,7 @@ func updateTestData() error {
 	}
 	defer os.RemoveAll(tempDir)
 
-	GradeMap, err = loadGrades("../grade-data")
+	GradeMap, err = loadGrades("../static-data/grades")
 	if err != nil {
 		return err
 	}
@@ -217,7 +217,7 @@ func updateTestData() error {
 
 	//rerun parser to get Courses.json, Sections.json, Professors.json
 
-	Parse(tempDir, tempDir, "../grade-data", false)
+	Parse(tempDir, tempDir, "../static-data/grades", false)
 
 	targetDir := "testdata"
 
@@ -294,7 +294,7 @@ func clearGlobals() {
 func TestParse(t *testing.T) {
 	tempDir := t.TempDir()
 
-	Parse("testdata", tempDir, "../grade-data", false)
+	Parse("testdata", tempDir, "../static-data/grades", false)
 
 	OutputCourses, err := unmarshallFile[[]schema.Course](filepath.Join(tempDir, "courses.json"))
 	if err != nil {

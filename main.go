@@ -50,10 +50,14 @@ func main() {
 	academicCalendars := flag.Bool("academicCalendars", false, "Alongside -scrape, -parse, or -upload, signifies that the academic calendars should be scraped/parsed/uploaded.")
 	// Flag for degree scraping and parsing
 	degrees := flag.Bool("degrees", false, "Alongside -scrape, -parse, or -upload. Signifies that the degrees should be scraped/parsed/uploaded.")
+	// Flag for budget scraping
+	budgets := flag.Bool("budgets", false, "Alongside -scrape, -parse, or -upload, signifies that the budgets should be scraped/parsed/uploaded.")
 
 	// Flags for parsing
 	parse := flag.Bool("parse", false, "Puts the tool into parsing mode.")
-	csvDir := flag.String("csv", "./grade-data", "Alongside -parse, specifies the path to the directory of CSV files containing grade data.")
+	gradesDir := flag.String("gradesDir", "./static-data/grades", "Alongside -parse, specifies the path to the directory of CSV files containing grade data.")
+	useBackupBudgets := flag.Bool("useBackupBudgets", false, "Alongside -parse, specifies that backup budget data should also be parsed.")
+	budgetsDir := flag.String("budgetsDir", "./static-data/budgets", "Alongside -parse, specifies the path to the directory of PDF files containing budget data.")
 	skipValidation := flag.Bool("skipv", false, "Alongside -parse, signifies that the post-parsing validation should be skipped. Be careful with this!")
 
 	// Flags for uploading data
@@ -122,6 +126,8 @@ func main() {
 			scrapers.ScrapeAcademicCalendars(*outDir)
 		case *degrees:
 			scrapers.ScrapeDegrees(*outDir)
+		case *budgets:
+			scrapers.ScrapeBudgets(*outDir)
 		default:
 			log.Panic("You must specify which type of scraping you would like to perform with one of the scraping flags!")
 		}
@@ -141,8 +147,10 @@ func main() {
 			parser.ParseDiscounts(*inDir, *outDir)
 		case *degrees:
 			parser.ParseDegrees(*inDir, *outDir)
+		case *budgets:
+			parser.ParseBudgets(*inDir, *outDir, *budgetsDir, *useBackupBudgets)
 		default:
-			parser.Parse(*inDir, *outDir, *csvDir, *skipValidation)
+			parser.Parse(*inDir, *outDir, *gradesDir, *skipValidation)
 		}
 	case *upload:
 		switch {
@@ -156,6 +164,8 @@ func main() {
 			uploader.UploadDiscounts(*inDir)
 		case *degrees:
 			uploader.UploadDegrees(*inDir)
+		case *budgets:
+			uploader.UploadBudgets(*inDir)
 		default:
 			uploader.Upload(*inDir, *replace, *staticOnly)
 		}
