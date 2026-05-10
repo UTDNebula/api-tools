@@ -27,6 +27,7 @@ import (
 )
 
 // What gets sent to Gemini, with the PDF content added
+// WARNING: Changes to this prompt will invalidate all cached AI responses, only change if necessary
 var budgetPrompt = `Parse the content of these PDFs and generate the following JSON schema.
 
 {
@@ -242,7 +243,7 @@ var budgetPrompt = `Parse the content of these PDFs and generate the following J
   }
 }
 
-- Use the full UTD school names in this title text: School of Arts, Humanities, and Technology; School of Behavioral and Brain Sciences; School of Economic, Political and Policy Sciences; School of Engineering and Computer Science; School of Interdisciplinary Studies; School of Management; School of Natural Sciences and Mathematics.
+- Use the full UTD school names in this title-case text: School of Arts, Humanities, and Technology; School of Behavioral and Brain Sciences; School of Economic, Political and Policy Sciences; School of Engineering and Computer Science; School of Interdisciplinary Studies; School of Management; School of Natural Sciences and Mathematics.
   - In older years: School of Arts, Technology, and Emerging Communication; School of Arts & Humanities.
 	- Replace Brian with Brain in the School of Behavioral and Brain Sciences name if it is misspelled in the PDF.
 - Always use the data listed for %s, not any previous years.
