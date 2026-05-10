@@ -18,7 +18,11 @@ import (
 	"github.com/UTDNebula/api-tools/utils"
 	"github.com/UTDNebula/nebula-api/api/schema"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
+
+const COURSE_VECTOR_INDEX = "course_embedding_index"
 
 // Fetch the list of CS courses of 2025 for testing
 func FetchTestCourses(outDir string) {
@@ -28,10 +32,7 @@ func FetchTestCourses(outDir string) {
 	var currentCourses []schema.Course
 
 	courseCollection := getCollection(connectDBFunc(), "courses")
-	cursor, err := courseCollection.Find(ctx, bson.M{
-		"subject_prefix": "CS",
-		"catalog_year":   "25",
-	})
+	cursor, err := courseCollection.Find(ctx, bson.M{"catalog_year": "25"})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -51,10 +52,49 @@ func FetchTestCourses(outDir string) {
 }
 
 func UploadCourseEmbedding(inDir string) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*5)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
 	client := connectDB()
+
+	// Check if the vector index exists
+	embeddingCollection := getCollection(client, "courseEmbeddings")
+	opts := options.SearchIndexes().SetName(COURSE_VECTOR_INDEX)
+	var vectorIndexes []bson.M
+	cursor, err := embeddingCollection.SearchIndexes().List(ctx, opts)
+	if err != nil {
+		panic(err)
+	}
+	defer cursor.Close(ctx)
+	if err = cursor.All(ctx, &vectorIndexes); err != nil {
+		panic(err)
+	}
+	if len(vectorIndexes) == 0 {
+		log.Println("Vector index doesn't exist, creating one...")
+
+		// Create vector index if it doesn't exist yet
+		definition := bson.D{
+			{Key: "mappings", Value: bson.D{
+				{Key: "dynamic", Value: false},
+				{Key: "fields", Value: bson.D{
+					{Key: "embedding", Value: bson.D{
+						{Key: "type", Value: "vector"},
+						{Key: "numDimensions", Value: 1024},
+						{Key: "similarity", Value: "cosine"},
+					}},
+				}},
+			}},
+		}
+		_, err = embeddingCollection.SearchIndexes().CreateOne(ctx, mongo.SearchIndexModel{
+			Definition: definition,
+			Options:    opts,
+		})
+		if err != nil {
+			panic(err)
+		}
+
+		log.Println("Created vector index!")
+	}
 
 	// Open data file for reading
 	file, err := os.Open(fmt.Sprintf("%s/courseEmbeddings.json", inDir))
@@ -92,6 +132,8 @@ func CourseEmbedder(inDir string, outDir string) {
 	if err != nil {
 		panic(err)
 	}
+
+	log.Println("Embedding course data...")
 
 	var semanticInputs []string
 	for _, course := range courses {
@@ -137,4 +179,5 @@ func CourseEmbedder(inDir string, outDir string) {
 	}
 
 	utils.WriteJSON(fmt.Sprintf("%s/courseEmbeddings.json", outDir), embeddings)
+	log.Println("Embeded course data!")
 }
