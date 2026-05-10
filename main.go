@@ -66,6 +66,9 @@ func main() {
 	staticOnly := flag.Bool("static", false, "Alongside -upload, specifies that we should only build and upload the static aggregations.")
 	events := flag.Bool("events", false, "Alongside -upload, signifies that Astra, Mazevo, and the Comet Calendar should be uploaded.")
 
+	// Flags for embedding data
+	embedding := flag.Bool("embedding", false, "Embedding the data")
+
 	// Flags for logging
 	verbose := flag.Bool("verbose", false, "Enables verbose logging, good for debugging purposes.")
 
@@ -166,9 +169,14 @@ func main() {
 			uploader.UploadDegrees(*inDir)
 		case *budgets:
 			uploader.UploadBudgets(*inDir)
+		case *embedding:
+			uploader.UploadCourseEmbedding(*inDir)
 		default:
 			uploader.Upload(*inDir, *replace, *staticOnly)
 		}
+
+	case *embedding:
+		uploader.CourseEmbedder(*inDir, *outDir)
 	default:
 		flag.PrintDefaults()
 		return
