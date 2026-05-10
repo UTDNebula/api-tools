@@ -13,9 +13,11 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"slices"
 	"time"
 
 	"github.com/UTDNebula/api-tools/utils"
+	"github.com/UTDNebula/nebula-api/api/controllers"
 	"github.com/UTDNebula/nebula-api/api/schema"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -51,6 +53,7 @@ func FetchTestCourses(outDir string) {
 	utils.WriteJSON(fmt.Sprintf("%s/courseEmbeddingInputs.json", outDir), currentCourses)
 }
 
+// UploadCourseEmbedding uploads the course embedding data into the MongoDB collection
 func UploadCourseEmbedding(inDir string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
@@ -93,6 +96,8 @@ func UploadCourseEmbedding(inDir string) {
 			panic(err)
 		}
 
+		// TODO: Wait until it's queryable
+
 		log.Println("Created vector index!")
 	}
 
@@ -104,12 +109,6 @@ func UploadCourseEmbedding(inDir string) {
 	defer file.Close()
 
 	UploadData[schema.CourseEmbedding](client, ctx, file, true)
-}
-
-type EmbeddingResponse struct {
-	Data []struct {
-		Embedding []float64 `json:"embedding"`
-	} `json:"data"`
 }
 
 // Embed the list of courses
@@ -133,49 +132,57 @@ func CourseEmbedder(inDir string, outDir string) {
 		panic(err)
 	}
 
-	log.Println("Embedding course data...")
-
-	var semanticInputs []string
-	for _, course := range courses {
-		semanticInputs = append(semanticInputs, fmt.Sprintf(
-			"Subject: %s. Course: %s. Description: %s. Level: %s.\n",
-			course.Subject_prefix,
-			course.Title,
-			course.Description,
-			course.Class_level,
-		))
-	}
-	body, _ := json.Marshal(map[string]any{
-		"input": semanticInputs,
-		"model": "voyage-4-large",
-	})
-
-	request, _ := http.NewRequest("POST", embeddingURL, bytes.NewBuffer(body))
-	request.Header.Set("Authorization", "Bearer "+embeddingKey)
-	request.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{}
-	response, err := client.Do(request)
-	if err != nil {
-		panic(err)
-	}
-	defer response.Body.Close()
-
-	bytes, err := io.ReadAll(response.Body)
-	if err != nil {
-		panic(err)
-	}
+	log.Printf("Embedding %d course data...\n", len(courses))
 
 	var embeddings []schema.CourseEmbedding
-	var result EmbeddingResponse
-	if err := json.Unmarshal(bytes, &result); err != nil {
-		panic(err)
-	}
-	for i, embedding := range result.Data {
-		embeddings = append(embeddings, schema.CourseEmbedding{
-			Id:        courses[i].Id,
-			Embedding: embedding.Embedding,
+
+	const batchSize = 100
+	batchStart := 0
+	for courseBatch := range slices.Chunk(courses, batchSize) {
+		var semanticInputs []string
+		for _, course := range courseBatch {
+			// TODO: Need to put syllabus data into this
+			semanticInputs = append(semanticInputs, fmt.Sprintf(
+				"Subject: %s. Course: %s. Description: %s. Level: %s.\n",
+				course.Subject_prefix,
+				course.Title,
+				course.Description,
+				course.Class_level,
+			))
+		}
+		body, _ := json.Marshal(map[string]any{
+			"input": semanticInputs,
+			"model": "voyage-4-large",
 		})
+
+		request, _ := http.NewRequest("POST", embeddingURL, bytes.NewBuffer(body))
+		request.Header.Set("Authorization", "Bearer "+embeddingKey)
+		request.Header.Set("Content-Type", "application/json")
+
+		client := &http.Client{}
+		response, err := client.Do(request)
+		if err != nil {
+			panic(err)
+		}
+
+		bytes, err := io.ReadAll(response.Body)
+		if err != nil {
+			panic(err)
+		}
+		response.Body.Close()
+
+		var result controllers.EmbeddingResponse
+		if err := json.Unmarshal(bytes, &result); err != nil {
+			panic(err)
+		}
+		for i, embedding := range result.Data {
+			embeddings = append(embeddings, schema.CourseEmbedding{
+				Id:        courses[i+batchStart].Id,
+				Embedding: embedding.Embedding,
+			})
+		}
+
+		batchStart += batchSize
 	}
 
 	utils.WriteJSON(fmt.Sprintf("%s/courseEmbeddings.json", outDir), embeddings)
