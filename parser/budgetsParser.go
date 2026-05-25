@@ -12,9 +12,11 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/fs"
 	"log"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -337,7 +339,8 @@ func ParseBudgets(inDir string, outDir string, budgetsDir string, useBackupBudge
 		}
 		return nil
 	})
-	if err != nil {
+	// If error other than directory not existing, and we're not using backup budgets, panic
+	if err != nil && !(errors.Is(err, os.ErrNotExist) && useBackupBudgets) {
 		panic(err)
 	}
 
