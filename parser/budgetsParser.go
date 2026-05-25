@@ -447,10 +447,6 @@ func parseBudgetPdfs(paths []string) (schema.Budget, error) {
 
 		// Get response
 		result = response.Candidates[0].Content.Parts[0].Text
-		log.Print("Token counts:")
-		log.Printf("Prompt: %d", response.UsageMetadata.PromptTokenCount)
-		log.Printf("Thoughts: %d", response.UsageMetadata.ThoughtsTokenCount)
-		log.Printf("Total: %d", response.UsageMetadata.TotalTokenCount)
 
 		// Set cache for next time
 		err = utils.SetCache(hash, result, apiBucket)
