@@ -253,7 +253,7 @@ var budgetPrompt = `Parse the content of these PDFs and generate the following J
 - If a value is missing or unclear, return null for that field.
 - Only values surrounded by parentheses in the tables should be considered negative.
 - In FY 2023 and earlier, Service Departments Funds, Designated Funds, Auxiliary Expenses, and Restricted Funds are not grouped by school and are too long to parse. Thus these tables should be omitted, only for these years.
-- In FY 2019 and earleir, some of the PDFs have been scanned in and thus many pages may be missing in the text extraction. If much or all but the preamble of a PDF is missing, exclude it from the output.
+- In FY 2019 and earlier, some of the PDFs have been scanned in and thus many pages may be missing in the text extraction. If much or all but the preamble of a PDF is missing, exclude it from the output.
 
 Content of PDFs:
 
