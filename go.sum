@@ -64,6 +64,8 @@ github.com/UTDNebula/nebula-api/api v0.0.0-20260327185527-807066607244 h1:vp2hsJ
 github.com/UTDNebula/nebula-api/api v0.0.0-20260327185527-807066607244/go.mod h1:lp0oZHhVmqAqm0gf6Ald2jZXepZ0xFheTsW76T9wC7I=
 github.com/UTDNebula/nebula-api/api v0.0.0-20260501050907-0dea4acc1dfe h1:/y+M3Up3U7PKvWV7yyZ7ouvNd8081Zwmd4p5NFD3kk4=
 github.com/UTDNebula/nebula-api/api v0.0.0-20260501050907-0dea4acc1dfe/go.mod h1:i+PQZZ3qPtE4UxXkp3tQ46NWpzB8Of2/VNl0iZ/uv9I=
+github.com/UTDNebula/nebula-api/api v0.0.0-20260525024309-4ea6ee54dd91 h1:KUwnKeedRHYncIcVYHMtXVmGUSp0LTxnbtO566GqC+c=
+github.com/UTDNebula/nebula-api/api v0.0.0-20260525024309-4ea6ee54dd91/go.mod h1:i+PQZZ3qPtE4UxXkp3tQ46NWpzB8Of2/VNl0iZ/uv9I=
 github.com/andybalholm/cascadia v1.3.1 h1:nhxRkql1kdYCc8Snf7D5/D3spOX+dBgjA6u8x004T2c=
 github.com/andybalholm/cascadia v1.3.1/go.mod h1:R4bJ1UQfqADjvDa4P6HZHLh/3OxWWEqc0Sk8XGwHqvA=
 github.com/andybalholm/cascadia v1.3.3 h1:AG2YHrzJIm4BZ19iwJ/DAua6Btl3IwJX+VI4kktS1LM=
