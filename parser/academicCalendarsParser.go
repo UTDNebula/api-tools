@@ -27,6 +27,7 @@ import (
 )
 
 // What gets sent to Gemini, with the PDF content added
+// WARNING: Changes to this prompt will invalidate all cached AI responses, only change if necessary
 var academicCalendarPrompt = `Parse this PDF content and generate the following JSON schema.
 
 {

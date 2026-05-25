@@ -12,9 +12,11 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/fs"
 	"log"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -27,6 +29,7 @@ import (
 )
 
 // What gets sent to Gemini, with the PDF content added
+// WARNING: Changes to this prompt will invalidate all cached AI responses, only change if necessary
 var budgetPrompt = `Parse the content of these PDFs and generate the following JSON schema.
 
 {
@@ -242,13 +245,15 @@ var budgetPrompt = `Parse the content of these PDFs and generate the following J
   }
 }
 
-- Use the full UTD school names in this title text: School of Arts, Humanities, and Technology; School of Behavioral and Brain Sciences; School of Economic, Political and Policy Sciences; School of Engineering and Computer Science; School of Interdisciplinary Studies; School of Management; School of Natural Sciences and Mathematics.
+- Use the full UTD school names in this title-case text: School of Arts, Humanities, and Technology; School of Behavioral and Brain Sciences; School of Economic, Political and Policy Sciences; School of Engineering and Computer Science; School of Interdisciplinary Studies; School of Management; School of Natural Sciences and Mathematics.
   - In older years: School of Arts, Technology, and Emerging Communication; School of Arts & Humanities.
 	- Replace Brian with Brain in the School of Behavioral and Brain Sciences name if it is misspelled in the PDF.
 - Always use the data listed for %s, not any previous years.
 - Do not infer, estimate, or guess any values. 
 - If a value is missing or unclear, return null for that field.
 - Only values surrounded by parentheses in the tables should be considered negative.
+- In FY 2023 and earlier, Service Departments Funds, Designated Funds, Auxiliary Expenses, and Restricted Funds are not grouped by school and are too long to parse. Thus these tables should be omitted, only for these years.
+- In FY 2019 and earlier, some of the PDFs have been scanned in and thus many pages may be missing in the text extraction. If much or all but the preamble of a PDF is missing, exclude it from the output.
 
 Content of PDFs:
 
@@ -334,7 +339,8 @@ func ParseBudgets(inDir string, outDir string, budgetsDir string, useBackupBudge
 		}
 		return nil
 	})
-	if err != nil {
+	// If error other than directory not existing, and we're not using backup budgets, panic
+	if err != nil && !(errors.Is(err, os.ErrNotExist) && useBackupBudgets) {
 		panic(err)
 	}
 
@@ -444,10 +450,6 @@ func parseBudgetPdfs(paths []string) (schema.Budget, error) {
 
 		// Get response
 		result = response.Candidates[0].Content.Parts[0].Text
-		log.Print("Token counts:")
-		log.Printf("Prompt: %d", response.UsageMetadata.PromptTokenCount)
-		log.Printf("Thoughts: %d", response.UsageMetadata.ThoughtsTokenCount)
-		log.Printf("Total: %d", response.UsageMetadata.TotalTokenCount)
 
 		// Set cache for next time
 		err = utils.SetCache(hash, result, apiBucket)
