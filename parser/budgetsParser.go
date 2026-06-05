@@ -9,8 +9,6 @@ package parser
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -29,7 +27,8 @@ import (
 )
 
 // What gets sent to Gemini, with the PDF content added
-// WARNING: Changes to this prompt will invalidate all cached AI responses, only change if necessary
+// WARNING: Changes to this prompt WILL NOT invalidate cached AI responses. Caching is made only based off of year
+// FOR CHANGES TO THIS PROMPT TO TAKE EFFECT THE GCP CACHE FILE MUST BE DELETED MANUALLY. The API project lead can do this for a PR
 var budgetPrompt = `Parse the content of these PDFs and generate the following JSON schema.
 
 {
@@ -414,9 +413,8 @@ func parseBudgetPdfs(paths []string) (schema.Budget, error) {
 	promptFilled := fmt.Sprintf(budgetPrompt, year, year, content)
 
 	// Check cache
-	hashByte := sha256.Sum256([]byte(promptFilled))
-	hash := hex.EncodeToString(hashByte[:]) + ".json"
-	result, err := utils.CheckCache(hash, apiBucket)
+	cacheName := year + ".json"
+	result, err := utils.CheckCache(cacheName, apiBucket)
 	if err != nil {
 		return schema.Budget{}, err
 	}
@@ -452,7 +450,7 @@ func parseBudgetPdfs(paths []string) (schema.Budget, error) {
 		result = response.Candidates[0].Content.Parts[0].Text
 
 		// Set cache for next time
-		err = utils.SetCache(hash, result, apiBucket)
+		err = utils.SetCache(cacheName, result, apiBucket)
 		if err != nil {
 			return schema.Budget{}, err
 		}
