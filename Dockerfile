@@ -34,6 +34,9 @@ COPY runners /app/runners
 RUN chmod +x /app/runners/setup.sh
 ENTRYPOINT ["/app/runners/setup.sh"]
 
+# Copy static-data folder for budgets and grades
+COPY static-data /app/static-data
+
 # Optional .env copy for development
 FROM base AS local
 COPY .env /app/.env
