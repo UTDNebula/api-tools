@@ -13,7 +13,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/UTDNebula/api-tools/utils"
+	. "github.com/UTDNebula/api-tools/utils"
 	"github.com/chromedp/cdproto/network"
 
 	"github.com/chromedp/chromedp"
@@ -27,14 +27,14 @@ func ScrapeMazevo(outDir string) {
 		panic(err)
 	}
 
-	ctx, cancel := utils.InitChromeDp()
+	ctx, cancel := InitChromeDp()
 	defer cancel()
 	var reqID network.RequestID // ID for requests
 	var eventsStart time.Time   // Start time of events request
 	var eventsEnd time.Time     // End time of events request
 
 	isPending := false
-	isReceived := make(chan bool, 1)
+	receivedChan := make(chan struct{})
 
 	chromedp.ListenTarget(ctx, func(ev any) {
 		switch ev := ev.(type) {
@@ -75,34 +75,51 @@ func ScrapeMazevo(outDir string) {
 			// Signal that response is finished loading
 			if isPending && ev.RequestID == reqID {
 				isPending = false
-				isReceived <- true
+				receivedChan <- struct{}{}
 			}
 		}
 
 	})
+
+	scrapeLoop := func(ctx context.Context) error {
+		// Wait until events have been received
+		<-receivedChan
+
+		// Read Response (JSON)
+		bodyBytes, err := network.GetResponseBody(reqID).Do(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to get body: %w", err)
+		}
+		log.Printf("Scraped Mazevo from %s to %s!", eventsStart.Format(time.DateTime), eventsEnd.Format(time.DateTime))
+
+		// Write event data to output file
+		fptr, err := os.Create(fmt.Sprintf("%s/mazevoScraped.json", outDir))
+		if err != nil {
+			return err
+		}
+		_, err = fptr.Write(bodyBytes)
+		if err != nil {
+			return err
+		}
+
+		// Click next month
+		err = chromedp.Click("[aria-label=\"Move to Next Month\"]", chromedp.NodeVisible).Do(ctx)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
 	_, err = chromedp.RunResponse(ctx,
 		chromedp.Navigate("https://east.mymazevo.com/calendar/4219c6df695c03860350ea213837fe59"),
 		chromedp.Sleep(5*time.Second),
 		chromedp.Click("input#displayMonth", chromedp.NodeVisible),
 		chromedp.ActionFunc(func(ctx context.Context) error {
-			// TODO: Account for error or network issue here
-			// Wait until events have been received
-			<-isReceived
-
-			bodyBytes, err := network.GetResponseBody(reqID).Do(ctx)
-			if err != nil {
-				return fmt.Errorf("failed to get body: %w", err)
-			}
-			log.Printf("Scraped Mazevo from %s to %s!", eventsStart.Format(time.DateTime), eventsEnd.Format(time.DateTime))
-
-			// Write event data to output file
-			fptr, err := os.Create(fmt.Sprintf("%s/mazevoScraped.json", outDir))
-			if err != nil {
-				panic(err)
-			}
-			_, err = fptr.Write(bodyBytes)
-			if err != nil {
-				panic(err)
+			for range 6 { // Scrape 6 months
+				err := scrapeLoop(ctx)
+				if err != nil {
+					return err
+				}
 			}
 			return nil
 		}),
