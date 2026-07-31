@@ -434,7 +434,7 @@ func parseBudgetPdfs(paths []string) (schema.Budget, error) {
 
 		// Send request with default config
 		response, err := geminiClient.Models.GenerateContent(context.Background(),
-			"gemini-2.5-pro",
+			"gemini-3.6-flash",
 			genai.Text(promptFilled),
 			// Enforce response schema
 			&genai.GenerateContentConfig{
