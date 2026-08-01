@@ -26,7 +26,7 @@ func ScrapeMazevo(outDir string) {
 	outDir = filepath.Join(outDir, "Mazevo")
 	err := os.MkdirAll(outDir, 0777)
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 
 	ctx, cancel := InitChromeDp()
@@ -107,7 +107,7 @@ func ScrapeMazevo(outDir string) {
 		// Click next month
 		err = chromedp.Click("[aria-label=\"Move to Next Month\"]", chromedp.NodeVisible).Do(ctx)
 		if err != nil {
-			return err
+			log.Panic(err)
 		}
 		return nil
 	}
