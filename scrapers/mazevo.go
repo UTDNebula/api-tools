@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"time"
 
 	. "github.com/UTDNebula/api-tools/utils"
@@ -22,6 +23,7 @@ import (
 // ScrapeMazevo pulls Mazevo calendar events via the public API and stores the raw response.
 func ScrapeMazevo(outDir string) {
 	// Make output folder
+	outDir = filepath.Join(outDir, "Mazevo")
 	err := os.MkdirAll(outDir, 0777)
 	if err != nil {
 		panic(err)
@@ -93,13 +95,13 @@ func ScrapeMazevo(outDir string) {
 		log.Printf("Scraped Mazevo from %s to %s!", eventsStart.Format(time.DateTime), eventsEnd.Format(time.DateTime))
 
 		// Write event data to output file
-		fptr, err := os.Create(fmt.Sprintf("%s/mazevoScraped.json", outDir))
+		fptr, err := os.Create(fmt.Sprintf("%s/%s.json", outDir, eventsStart.Format("2006-01")))
 		if err != nil {
-			return err
+			log.Panic(err)
 		}
 		_, err = fptr.Write(bodyBytes)
 		if err != nil {
-			return err
+			log.Panic(err)
 		}
 
 		// Click next month
@@ -115,7 +117,7 @@ func ScrapeMazevo(outDir string) {
 		chromedp.Sleep(5*time.Second),
 		chromedp.Click("input#displayMonth", chromedp.NodeVisible),
 		chromedp.ActionFunc(func(ctx context.Context) error {
-			for range 6 { // Scrape 6 months
+			for range 12 { // Scrape 12 months
 				err := scrapeLoop(ctx)
 				if err != nil {
 					return err
