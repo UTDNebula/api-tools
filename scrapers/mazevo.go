@@ -14,7 +14,7 @@ import (
 	"path/filepath"
 	"time"
 
-	. "github.com/UTDNebula/api-tools/utils"
+	"github.com/UTDNebula/api-tools/utils"
 	"github.com/chromedp/cdproto/network"
 
 	"github.com/chromedp/chromedp"
@@ -29,7 +29,7 @@ func ScrapeMazevo(outDir string) {
 		log.Panic(err)
 	}
 
-	ctx, cancel := InitChromeDp()
+	ctx, cancel := utils.InitChromeDp()
 	defer cancel()
 	var reqID network.RequestID // ID for requests
 	var eventsStart time.Time   // Start time of events request
