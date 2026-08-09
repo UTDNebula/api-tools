@@ -78,6 +78,9 @@ func Parse(inDir string, outDir string, csvPath string, skipValidation bool) {
 		parse(path)
 	}
 
+	// Ensure professor section references remain consistent after parsing section data.
+	syncProfessorSectionLinks()
+
 	log.Printf("\nParsing complete. Created %d courses, %d sections, and %d professors.", len(Courses), len(Sections), len(Professors))
 
 	log.Print("\nParsing course requisites...")
