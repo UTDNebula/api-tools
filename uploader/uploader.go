@@ -18,6 +18,7 @@ import (
 
 	"github.com/UTDNebula/api-tools/uploader/pipelines"
 	"github.com/UTDNebula/nebula-api/api/schema"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 //  It's important to note that all of the files must be updated/uploaded TOGETHER!
@@ -239,68 +240,71 @@ func UploadData[T any](client *mongo.Client, ctx context.Context, fptr *os.File,
 		}
 
 	} else {
-		log.Panicf("Uploading without the -replace flag is not currently supported.")
-		/*
-			// If a temp collection already exists, drop it
-			tempCollection := getCollection(client, "temp")
-			err = tempCollection.Drop(ctx)
-			if err != nil {
-				log.Panic(err)
-			}
+		if fileName != "budgets" {
+			log.Panicf("Uploading without the -replace flag is not currently supported for anything but budgets.")
+		}
 
-			// Create a temporary collection
-			err := client.Database("combinedDB").CreateCollection(ctx, "temp")
-			if err != nil {
-				log.Panic(err)
-			}
+		// If a temp collection already exists, drop it
+		tempCollection := getCollection(client, "temp")
+		err = tempCollection.Drop(ctx)
+		if err != nil {
+			log.Panic(err)
+		}
 
-			// Get the temporary collection
-			tempCollection = getCollection(client, "temp")
+		// Create a temporary collection
+		err := client.Database("combinedDB").CreateCollection(ctx, "temp")
+		if err != nil {
+			log.Panic(err)
+		}
 
-			// Convert your documents to []interface{}
-			docsInterface := make([]interface{}, len(docs))
-			for i := range docs {
-				docsInterface[i] = docs[i]
-			}
+		// Get the temporary collection
+		tempCollection = getCollection(client, "temp")
 
-			// Add all documents decoded from the file into the temporary collection
-			opts := options.InsertMany().SetOrdered(false)
-			_, err = tempCollection.InsertMany(ctx, docsInterface, opts)
-			if err != nil {
-				log.Panic(err)
-			}
+		// Convert your documents to []interface{}
+		docsInterface := make([]interface{}, len(docs))
+		for i := range docs {
+			docsInterface[i] = docs[i]
+		}
 
-			// Create a merge aggregate pipeline
-			// Matched documents from the temporary collection will replace matched documents from the Mongo collection
-			// Unmatched documents from the temporary collection will be inserted into the Mongo collection
-			var matchFilters []string
-			switch fileName {
-			case "courses":
-				matchFilters = []string{"catalog_year", "course_number", "subject_prefix"}
-			case "professors":
-				matchFilters = []string{"first_name", "last_name"}
-			case "sections":
-				matchFilters = []string{"section_number", "course_reference", "academic_session"}
-			default:
-				log.Panic("Unrecognizable filename: " + fileName)
-			}
+		// Add all documents decoded from the file into the temporary collection
+		opts := options.InsertMany().SetOrdered(false)
+		_, err = tempCollection.InsertMany(ctx, docsInterface, opts)
+		if err != nil {
+			log.Panic(err)
+		}
 
-			// The documents will be added/merged into the collection with the same name as the file
-			// The filters for the merge aggregate pipeline are based on the file name
-			mergeStage := bson.D{primitive.E{Key: "$merge", Value: bson.D{primitive.E{Key: "into", Value: fileName}, primitive.E{Key: "on", Value: matchFilters}, primitive.E{Key: "whenMatched", Value: "replace"}, primitive.E{Key: "whenNotMatched", Value: "insert"}}}}
+		// Create a merge aggregate pipeline
+		// Matched documents from the temporary collection will replace matched documents from the Mongo collection
+		// Unmatched documents from the temporary collection will be inserted into the Mongo collection
+		var matchFilters []string
+		switch fileName {
+		case "courses":
+			matchFilters = []string{"catalog_year", "course_number", "subject_prefix"}
+		case "professors":
+			matchFilters = []string{"first_name", "last_name"}
+		case "sections":
+			matchFilters = []string{"section_number", "course_reference", "academic_session"}
+		case "budgets":
+			matchFilters = []string{"_id"}
+		default:
+			log.Panic("Unrecognizable filename: " + fileName)
+		}
 
-			// Execute aggregate pipeline
-			_, err = tempCollection.Aggregate(ctx, mongo.Pipeline{mergeStage})
-			if err != nil {
-				log.Panic(err)
-			}
+		// The documents will be added/merged into the collection with the same name as the file
+		// The filters for the merge aggregate pipeline are based on the file name
+		mergeStage := bson.D{primitive.E{Key: "$merge", Value: bson.D{primitive.E{Key: "into", Value: fileName}, primitive.E{Key: "on", Value: matchFilters}, primitive.E{Key: "whenMatched", Value: "replace"}, primitive.E{Key: "whenNotMatched", Value: "insert"}}}}
 
-			// Drop the temporary collection
-			err = tempCollection.Drop(ctx)
-			if err != nil {
-				log.Panic(err)
-			}
-		*/
+		// Execute aggregate pipeline
+		_, err = tempCollection.Aggregate(ctx, mongo.Pipeline{mergeStage})
+		if err != nil {
+			log.Panic(err)
+		}
+
+		// Drop the temporary collection
+		err = tempCollection.Drop(ctx)
+		if err != nil {
+			log.Panic(err)
+		}
 	}
 
 	log.Println("Done uploading " + fileName + ".json!")
