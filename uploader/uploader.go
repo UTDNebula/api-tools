@@ -138,42 +138,6 @@ func UploadData[T any](client *mongo.Client, ctx context.Context, fptr *os.File,
 		if err != nil {
 			log.Panic(err)
 		}
-
-		// If we inserted courses, sort them by prefix, number, and catalog year
-		if fileName == "courses" {
-			log.Println("Sorting courses...")
-			cursor, err := collection.Aggregate(ctx, mongo.Pipeline{
-				{
-					{Key: "$sort", Value: bson.D{
-						{Key: "subject_prefix", Value: 1},
-						{Key: "course_number", Value: 1},
-						{Key: "catalog_year", Value: 1},
-					}},
-				},
-			})
-
-			if err != nil {
-				log.Panic(err)
-			}
-
-			defer cursor.Close(ctx)
-
-			_, err = collection.DeleteMany(ctx, bson.D{})
-			if err != nil {
-				log.Panic(err)
-			}
-
-			var sorted []any
-			cursor.All(ctx, &sorted)
-
-			opts := options.InsertMany().SetOrdered(false)
-			_, err = collection.InsertMany(ctx, sorted, opts)
-			if err != nil {
-				log.Panic(err)
-			}
-			log.Println("Done sorting courses!")
-		}
-
 	} else {
 		if fileName != "budgets" {
 			log.Panicf("Uploading without the -replace flag is not currently supported for anything but budgets.")
