@@ -91,33 +91,63 @@ func UploadData[T any](client *mongo.Client, ctx context.Context, fptr *os.File,
 	}
 
 	if replace {
-
 		// Get collection
 		collection := getCollection(client, fileName)
 
-		// If we inserted discounts, text-index the collection so we can search for keywords
-		if fileName == "discounts" {
-			/*
-				// If the search indexes have been created, don't create again
-				// TODO: Find a way to dynamically avoid creating one when is has been created
-				_, err = collection.SearchIndexes().CreateOne(ctx, mongo.SearchIndexModel{
-					Definition: bson.D{
-						{Key: "mappings", Value: bson.D{
-							{Key: "dynamic", Value: true},
-							{Key: "fields", Value: bson.D{
-								{Key: "category", Value: bson.D{{Key: "type", Value: "string"}}},
-								{Key: "business", Value: bson.D{{Key: "type", Value: "string"}}},
-								{Key: "address", Value: bson.D{{Key: "type", Value: "string"}}},
-								{Key: "discount", Value: bson.D{{Key: "type", Value: "string"}}},
-							}},
+		// If we inserte courses, index the collection so we return the sorted results
+		// CreateOne is idempotent when the same index definition already exists.
+		if collection.Name() == "courses" {
+			// Subject prefix-centric course sort
+			indexName, err := collection.Indexes().CreateOne(ctx, mongo.IndexModel{
+				Keys: bson.D{
+					{Key: "subject_prefix", Value: 1},
+					{Key: "course_number", Value: 1},
+					{Key: "catalog_year", Value: 1},
+				},
+				Options: options.Index().
+					SetName("unique_prefix_course_sorts").
+					SetUnique(true),
+			})
+			if err != nil {
+				log.Panic(err)
+			}
+			log.Printf("Unique index %s is ready\n", indexName)
+
+			// Catalog year-centric course sort
+			indexName, err = collection.Indexes().CreateOne(ctx, mongo.IndexModel{
+				Keys: bson.D{
+					{Key: "catalog_year", Value: 1},
+					{Key: "subject_prefix", Value: 1},
+					{Key: "course_number", Value: 1},
+				},
+				Options: options.Index().SetName("catalog_year_course_sorts"),
+			})
+			if err != nil {
+				log.Panic(err)
+			}
+			log.Printf("Index %s is ready\n", indexName)
+		}
+
+		// If we insert discounts, text-index the collection so we can search for keywords
+		if collection.Name() == "discounts" {
+			indexName, err := collection.SearchIndexes().CreateOne(ctx, mongo.SearchIndexModel{
+				Definition: bson.D{
+					{Key: "mappings", Value: bson.D{
+						{Key: "dynamic", Value: true},
+						{Key: "fields", Value: bson.D{
+							{Key: "category", Value: bson.D{{Key: "type", Value: "string"}}},
+							{Key: "business", Value: bson.D{{Key: "type", Value: "string"}}},
+							{Key: "address", Value: bson.D{{Key: "type", Value: "string"}}},
+							{Key: "discount", Value: bson.D{{Key: "type", Value: "string"}}},
 						}},
-					},
-					Options: options.SearchIndexes().SetName("discount_searches"),
-				})
-				if err != nil {
-					log.Panic(err)
-				}
-			*/
+					}},
+				},
+				Options: options.SearchIndexes().SetName("discount_searches"),
+			})
+			if err != nil {
+				log.Panic(err)
+			}
+			log.Printf("Search index %s is ready\n", indexName)
 		}
 
 		// Delete all documents from collection
@@ -137,41 +167,6 @@ func UploadData[T any](client *mongo.Client, ctx context.Context, fptr *os.File,
 		_, err = collection.InsertMany(ctx, docsInterface, opts)
 		if err != nil {
 			log.Panic(err)
-		}
-
-		// If we inserted courses, sort them by prefix, number, and catalog year
-		if fileName == "courses" {
-			log.Println("Sorting courses...")
-			cursor, err := collection.Aggregate(ctx, mongo.Pipeline{
-				{
-					{Key: "$sort", Value: bson.D{
-						{Key: "subject_prefix", Value: 1},
-						{Key: "course_number", Value: 1},
-						{Key: "catalog_year", Value: 1},
-					}},
-				},
-			})
-
-			if err != nil {
-				log.Panic(err)
-			}
-
-			defer cursor.Close(ctx)
-
-			_, err = collection.DeleteMany(ctx, bson.D{})
-			if err != nil {
-				log.Panic(err)
-			}
-
-			var sorted []any
-			cursor.All(ctx, &sorted)
-
-			opts := options.InsertMany().SetOrdered(false)
-			_, err = collection.InsertMany(ctx, sorted, opts)
-			if err != nil {
-				log.Panic(err)
-			}
-			log.Println("Done sorting courses!")
 		}
 
 	} else {
