@@ -104,12 +104,14 @@ func UploadData[T any](client *mongo.Client, ctx context.Context, fptr *os.File,
 					{Key: "course_number", Value: 1},
 					{Key: "catalog_year", Value: 1},
 				},
-				Options: options.Index().SetName("prefix_course_sorts"),
+				Options: options.Index().
+					SetName("unique_prefix_course_sorts").
+					SetUnique(true),
 			})
 			if err != nil {
 				log.Panic(err)
 			}
-			log.Printf("Created index %s is ready\n", indexName)
+			log.Printf("Unique index %s is ready\n", indexName)
 
 			// Catalog year-centric course sort
 			indexName, err = collection.Indexes().CreateOne(ctx, mongo.IndexModel{
@@ -123,10 +125,10 @@ func UploadData[T any](client *mongo.Client, ctx context.Context, fptr *os.File,
 			if err != nil {
 				log.Panic(err)
 			}
-			log.Printf("Created index %s is ready\n", indexName)
+			log.Printf("Index %s is ready\n", indexName)
 		}
 
-		// If we inserte discounts, text-index the collection so we can search for keywords
+		// If we insert discounts, text-index the collection so we can search for keywords
 		if collection.Name() == "discounts" {
 			indexName, err := collection.SearchIndexes().CreateOne(ctx, mongo.SearchIndexModel{
 				Definition: bson.D{
@@ -145,7 +147,7 @@ func UploadData[T any](client *mongo.Client, ctx context.Context, fptr *os.File,
 			if err != nil {
 				log.Panic(err)
 			}
-			log.Printf("Created search index %s is ready\n", indexName)
+			log.Printf("Search index %s is ready\n", indexName)
 		}
 
 		// Delete all documents from collection
