@@ -6,7 +6,6 @@ This guide walks you through setting up your local development environment, conf
 
 Ensure you have the following installed:
 
-
 - Git
   - If you've never used git, need a refresher, or need help setting it up, check out [Nebula's Git Workshop](https://github.com/UTDNebula/git-workshop).
 - Go
@@ -15,7 +14,7 @@ Ensure you have the following installed:
 - **Google Chrome** or **Chromium** — Required for headless browser scraping
 - **Docker** *(Optional)* — For running containerized runners locally
 
-**Make** is a build automation tool. Feel free to check out [Makefile](../Makefile) to see exactly what's being run. 
+**Make** is a build automation tool. Feel free to check out [Makefile](../Makefile) to see exactly what's being run.
 
 If you're using Windows, instead of using `make`, you can also use our `.\build.bat` file. When you see any command starting with `make`, you can instead use `.\build.bat`. For example instead of `make setup`, you can run `.\build.bat setup`.
 
@@ -56,8 +55,6 @@ If you installed **Go** with [**Homebrew**](https://brew.sh/), you need to add G
 ### Step 3: Configure Environment Variables
 
 Make a file called `.env` at the root of the project, and copy the contents of `.env.template` into it. Some tools in `api-tools` require certain environment variables, which you can fill in `.env`. If you're not sure what to put, ask for help.
-
-<!-- TODO Explain how to get these values! -->
 
 ### Step 4: Run Code Verification & Formatting
 
