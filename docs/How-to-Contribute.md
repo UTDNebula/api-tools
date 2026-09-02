@@ -1,65 +1,45 @@
 # How to Contribute
 
-Thank you for your interest in contributing to `api-tools`! This guide covers our development workflow, coding standards, and more
+Thank you for your interest in contributing to `api-tools`! This guide covers our development workflow, coding standards, and more. Don't worry if you don't quite know what you're doing, we're here to help. We don't expect perfection and appreciate anything you can do to help!
 
 ## 1. Find something to work on
 
-<!-- Don't worry, you don't have to be perfect, we appreciate anything you can do! -->
-<!-- Look at current issues, or make a new one -->
-<!-- Ask to be assigned the issue, dicuss the issue on GitHub, Discord, or at project meetings -->
+Look at our current issues, or make your own on our [issues page](../issues).
 
+Write a comment asking if you can work on a particular issue, or assign it to yourself. You can work collaboratively, or individually on an issue.
 
+Be sure to **discuss the issue frequently** especially if you don't quite understand. You can do this on GitHub, Discord, or in person.
 
 ## 2. Create a branch
 
-Nebula recruits and members should make their changes on a branch, external contributors should work off of a fork
+Nebula recruits and members should make their changes on a branch, external contributors should work off of a fork as they do not have permission to make a branch.
 
-Our branch naming convention is `<issue-number>-<short-description-of-issue>` for example, `738-getting-started-docs`
+Our branch naming convention is `<issue-number>-<short-description-of-issue>` for example, `738-new-developer-docs`. GitHub can automatically create a branch for you following this convention if you select "Create a branch" on the right sidebar under "Development"
 
 ## 3. Make Your Changes
 
-Don't forget to format and check your code. We have helper scripts:
+It's time to code!
+
+Don't forget to format and check your code. We have helper scripts with **Make** and **build.bat**:
 
 ```bash
 make check
 ```
-or
-```cmd
-.\build.bat check
+
+Run tests with
+```bash
+make test
 ```
 
-This executes several commands to check and format your code
+Discuss your progress frequently, and push your commits to GitHub! If you get stuck anywhere we're here to help!
 
-Run the test suite to ensure no regressions were introduced:
+We'd love to see you make a draft Pull Request, so we can see your progress and help you out!
 
-- **Linux / macOS**:
-  ```bash
-  make test
-  ```
-- **Windows**:
-  ```cmd
-  build.bat test
-  ```
+## 4. Making a Pull Request (PR)
 
+Open [our Pull Request Page](../pulls), and create a PR. If you're not finished, you can make your PR a draft.
 
-## 4. Submitting a Pull Request (PR)
-
-1. **Commit Your Work**: Write concise, descriptive commit messages:
-   ```bash
-   git commit -m "feat(scrapers): add degree scraper for catalog 2026"
-   ```
-2. **Push to GitHub**:
-   ```bash
-   git push origin feat/your-feature-name
-   ```
-3. **Open a PR**:
-   - Navigate to the repository on GitHub and click **Compare & pull request**.
-   - Provide a clear summary of what changes were made and why.
-   - Mention any related issue numbers (e.g., `Closes #12`).
-   - Confirm that `make check` and `make test` pass cleanly.
-4. **Address Review Feedback**: Maintainers will review your PR and provide suggestions or approval.
-
----
+Maintainers will review your PR and provide suggestions or approval. Don't take suggestions personally, we just want to help!
 
 ## Next Step
 
