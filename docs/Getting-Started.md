@@ -20,11 +20,11 @@ If you're using Windows, instead of using `make`, you can also use our [`build.b
 
 ## Local Setup
 
-### Step 1: Clone the Repository
+### Clone the Repository
 
 Clone the repository with `git clone` and `cd` into the project directory or open it in your code editor
 
-### Step 2: Install Development Tooling
+### Install Development Tooling
 
 Install the Go static analysis and formatting tools (`staticcheck` and `goimports`):
 
@@ -58,11 +58,11 @@ If you installed **Go** with [**Homebrew**](https://brew.sh/), you need to add G
   echo 'fish_add_path (go env GOPATH)/bin' >> ~/.config/fish/config.fish
   ```
 
-### Step 3: Configure Environment Variables
+### Configure Environment Variables
 
 Make a file called `.env` at the root of the project, and copy the contents of `.env.template` into it. Some tools in `api-tools` require certain environment variables, which you can fill in `.env`. If you're not sure what to put, ask for help.
 
-### Step 4: Run Code Verification & Formatting
+### Run Code Verification & Formatting
 
 Check your code with:
 
@@ -78,7 +78,7 @@ or
 
 You'll want to run this frequently while developing
 
-### Step 5: Build the CLI Executable
+### Build the CLI Executable
 
 Compile the Go source code into a runnable binary (`./api-tools` on Linux/macOS, `api-tools.exe` on Windows):
 
@@ -92,7 +92,7 @@ or
 .\build.bat build
 ```
 
-### Step 6: Verify with Automated Tests
+### Verify with Automated Tests
 
 Run the test suite to confirm your environment is ready:
 
