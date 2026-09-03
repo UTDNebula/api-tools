@@ -17,11 +17,13 @@ flowchart LR
     C -->|Validated Models| E[3. Uploader]
     E -->|4. MongoDB Insert/Merge| F[(Nebula API Database)]
 
-    subgraph Automation
-    G[Runners\nrunners/*.sh] -.->|Orchestrates| A
+    subgraph Automation["Automation"]
+        G["Runners\nrunners/*.sh"]
+    end
+
+    G -.->|Orchestrates| A
     G -.->|Orchestrates| B
     G -.->|Orchestrates| E
-    end
 ```
 
 ---
