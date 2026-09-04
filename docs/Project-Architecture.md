@@ -66,7 +66,8 @@ flowchart LR
 
 ## Automation
 
-It is important to note that api-tools is mostly automated. Most data sources run via Shell scripts (`.sh`) that coordinate automated end-to-end execution of the pipeline on a scheduled cron job.
+It is important to note that api-tools is mostly automated.
+Most data sources run via Shell scripts (`.sh`) that coordinate automated end-to-end execution of the pipeline on a scheduled cron job in Google Cloud.
 Our Scripts are in `runners/`:
 
 - `daily.sh`: Daily scrape/parse/upload for volatile event data (Astra, Mazevo, Comet Calendar).
