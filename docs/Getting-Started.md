@@ -10,9 +10,9 @@ Ensure you have the following installed:
   - If you've never used git, need a refresher, or need help setting it up, check out [Nebula's Git Workshop](https://github.com/UTDNebula/git-workshop).
 - Go
   - You can install from the [Go website](https://go.dev/dl/), or from [Homebrew](https://brew.sh/) or another package manager for automatic updates
-- **Make** _(Linux/macOS)_ — Pre-installed on macOS (via `xcode-select --install`) and most Linux distributions (`build-essential`)
-- **Google Chrome** or **Chromium** — Required for headless browser scraping
-- **Docker** _(Optional)_ — For running containerized runners locally
+- **Make** _(Linux/macOS)_ - Pre-installed on macOS (via `xcode-select --install`) and most Linux distributions (`build-essential`)
+- **Google Chrome** or **Chromium** - Required for headless browser scraping
+- **Docker** _(Optional)_ - For running containerized runners locally
 
 **Make** is a build automation tool. Feel free to check out [`Makefile`](../Makefile) to see exactly what's being run.
 

@@ -7,7 +7,7 @@ Understanding this separation of concerns is essential before modifying or addin
 
 ## Project Pipeline
 
-The lifecycle of data moving through `api-tools` follows a four-stage progression:
+The lifecycle of data moving through `api-tools` follows a three-stage progression:
 
 ```mermaid
 flowchart LR
@@ -57,7 +57,7 @@ flowchart LR
 
 - **What they do**: Take validated data models and push them to the [Nebula API](https://github.com/utdnebula/nebula-api) database (MongoDB).
 - **How they work**:
-  - Connect to MongoDB using the official Go Mongo driver (`go.mongodb.org/mongo-driver`).
+  - Connect to MongoDB using the official [Go Mongo driver](`go.mongodb.org/mongo-driver`).
   - Support both **merge** operations (updating existing records with new fields) and **replace** operations (overwriting outdated datasets).
   - Compute static aggregation metrics where required before saving.
 - **Key Principle**: Uploaders assume data passed to them has already been parsed and validated.
@@ -66,8 +66,8 @@ flowchart LR
 
 ## Automation
 
-It is important to note that api-tools is mostly automated.
-Most data sources run via Shell scripts (`.sh`) that coordinate automated end-to-end execution of the pipeline on a scheduled cron job in Google Cloud.
+It is important to note every scraper api-tools is automated except for `coursebook.go`.
+Most data sources are updated by Shell scripts (.sh) that run web scrapers automatically. A cron job schedules these scripts to run regularly in Google Cloud.
 Our Scripts are in `runners/`:
 
 - `daily.sh`: Daily scrape/parse/upload for volatile event data (Astra, Mazevo, Comet Calendar).

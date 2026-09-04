@@ -5,7 +5,6 @@ This document provides an overview of the `api-tools` directory layout, explaini
 ## Directory Overview
 
 ```text
-
 api-tools/
 ├── data/                       # Files from scrapers and parsers
 ├── docs/                       # Source of wiki pages
