@@ -11,11 +11,10 @@ The lifecycle of data moving through `api-tools` follows a three-stage progressi
 
 ```mermaid
 flowchart LR
-    A[UTD Data Sources\nUTD Websites] -->|Scraper| B[(Raw Data Files\ndata/)]
-    B -->|Parser| C{Validator\nvalidator.go}
-    D[(Static Data\nstatic-data/)] -->|Parser| C
-    C -->|Validated Models| E[Uploader]
-    E -->|MongoDB Insert/Merge| F[(Nebula API Database)]
+    A[UTD Data Sources<br/>Websites, APIs, PDFs] -->|Scrape| B[Scraper]
+    B -->|Parse| C[Parser]
+    C -->|Upload| D[Uploader]
+    D -->|Insert / Merge| E[(Nebula API Database)]
 ```
 
 ---
