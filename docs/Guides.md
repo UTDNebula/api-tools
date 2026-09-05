@@ -21,10 +21,10 @@ There's a lot of guides in here. You do **not** need to master everything before
 
 ## Web Basics & Scraping
 
-- [MDN Web Docs: HTML & DOM Basics](https://developer.mozilla.org/en-US/docs/Learn/HTML) — Learn how web pages are structured with elements, tags, and attributes.
-- [MDN Web Docs: CSS Selectors](https://developer.mozilla.org/en-US/docs/Learn/CSS/Building_blocks/Selectors) — Understand class, ID, and attribute selectors used to find page elements.
+- [MDN Web Docs: HTML & DOM Basics](https://developer.mozilla.org/en-US/docs/Learn/HTML) - Learn how web pages are structured with elements, tags, and attributes.
+- [MDN Web Docs: CSS Selectors](https://developer.mozilla.org/en-US/docs/Learn/CSS/Building_blocks/Selectors)- Understand class, ID, and attribute selectors used to find page elements.
 - [Headless Browser Tutorial](https://www.zenrows.com/blog/chromedp) - Good introduction to ChromeDP
-- [ChromeDP Documentation & Examples](https://github.com/chromedp/examples) — Examples for browser automation and scraping dynamic JavaScript pages in Go.
+- [ChromeDP Documentation & Examples](https://github.com/chromedp/examples) - Examples for browser automation and scraping dynamic JavaScript pages in Go.
 
 ## Command Line & Shell
 
