@@ -14,7 +14,6 @@ Running web scrapers requires several system-level dependencies:
 - **Google Cloud SDK (`gcloud`)**: Needed in production to access cloud secrets.
 
 Instead of requiring every contributor to manually install and configure these system packages, Docker packages everything into a standardized, lightweight Linux container.
-This ensures that scripts execute identically on developer laptops (Linux, macOS, Windows) and in production (Google Cloud Platform).
 
 > [!NOTE]
 > **New to Docker?** Check out the official [Docker 101 Tutorial](https://www.docker.com/101-tutorial/) or the [Docker Get Started Guide](https://docs.docker.com/get-started/) to learn the basics of images and containers.
