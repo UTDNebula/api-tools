@@ -7,15 +7,15 @@ Don't worry if you don't quite know what you're doing, we're here to help. We do
 
 Look at our current issues, or make your own on our [issues page](../issues).
 
-Once you find an issue, write a comment asking if you can work on a particular issue.
+Once you find an issue, write a comment asking if you can work on it.
+
+If you're unsure about something, **don't hesitate to ask for help**. We're happy to answer questions and help you work through issues. You can reach out on GitHub, Discord, or in person.
 
 Be sure to reference [[getting-started-with-api-tools|Getting Started.md]] to create the project.
 
 ## Create a branch
 
 Nebula recruits and members should make their changes on a branch, external contributors should work off of a fork as they do not have permission to make a branch.
-
-Our branch naming convention is `<issue-number>-<short-description-of-issue>` for example, `738-new-developer-docs`.
 
 ## Make Your Changes
 
@@ -51,7 +51,7 @@ We would appreciate if you make a draft Pull Request as your working on it, so w
 
 Open [our Pull Request Page](../pulls), and create a PR. If you're not finished, you can make your PR a draft.
 
-Maintainers will review your PR and provide suggestions or approval.
+Maintainers will review your PR and may provide suggestions or request changes before approval.
 
 ## Next Step
 
