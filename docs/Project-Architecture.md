@@ -27,16 +27,6 @@ flowchart LR
 
 ---
 
-## Component Comparison
-
-| Component    | Directory   | Input                    | Output                          | Side Effects         | Key Goal                                      |
-| ------------ | ----------- | ------------------------ | ------------------------------- | -------------------- | --------------------------------------------- |
-| **Scraper**  | `scrapers/` | UTD websites, APIs       | Raw `.html`, `.json` in `data/` | Writes files to disk | Capture raw data from UTD websites            |
-| **Parser**   | `parser/`   | `data/` + `static-data/` | Validated Go structs            | **None** (read-only) | Extract & validate structured data in `data/` |
-| **Uploader** | `uploader/` | Validated Go structs     | MongoDB documents               | DB inserts/updates   | Persist data to API database                  |
-
----
-
 ## The Three Core Components
 
 ### Scrapers (`scrapers/`)
@@ -73,14 +63,7 @@ flowchart LR
 
 ## Automation
 
-It is important to note every scraper api-tools is automated except for `coursebook.go`.
-Most data sources are updated by Shell scripts (.sh) that run web scrapers automatically. A cron job schedules these scripts to run regularly in Google Cloud.
-Our Scripts are in `runners/`:
-
-- `daily.sh`: Daily scrape/parse/upload for volatile event data (Astra, Mazevo, Comet Calendar).
-- `weekly.sh`: Weekly scrape/parse/upload for academic calendars, discount programs, and degree plans.
-- `monthly.sh`: Monthly updates for campus map locations and budget reports.
-- `setup.sh`: Docker entrypoint script that retrieves secrets from Google Cloud Secret Manager (in production) before launching a specified runner.
+Most data sources are updated automatically by web scrapers run through shell scripts (.sh). These scripts are scheduled to run regularly via cron jobs in Google Cloud. The scripts are located in `runners/`.
 
 ---
 
