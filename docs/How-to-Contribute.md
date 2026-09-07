@@ -47,6 +47,8 @@ or
 
 We would appreciate if you make a draft Pull Request as your working on it, so we can see your progress and help you out!
 
+If you use AI tools while contributing, please review our [AI Policy](https://nebula-labs.atlassian.net/wiki/spaces/NLG/pages/1135607810/AI+Policy).
+
 ## Making a Pull Request (PR)
 
 Open [our Pull Request Page](../pulls), and create a PR. If you're not finished, you can make your PR a draft.
