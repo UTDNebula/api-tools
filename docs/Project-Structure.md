@@ -10,25 +10,25 @@ api-tools/
 ├── docs/                       # Source of wiki pages
 ├── logs/                       # Timestamped log files from runtime executions
 ├── parser/                     # Parsing, data normalization, and schema validation
-│   ├── parser.go              # Central parsing orchestrator
-│   ├── <domain>Parser.go      # Domain-specific parsers (courses, sections, maps, ASTRA, etc.)
-│   ├── gradeLoader.go         # Loads historical grade distributions
-│   ├── requisiteParser.go     # Parses prerequisite/corequisite strings
-│   ├── validator.go           # Validates parsed structs before upload
-│   └── testdata/              # HTML fixtures and expected JSON for regression tests
+│   ├── parser.go               # Central parsing orchestrator
+│   ├── <domain>Parser.go       # Domain-specific parsers (courses, sections, maps, ASTRA, etc.)
+│   ├── gradeLoader.go          # Loads historical grade distributions
+│   ├── requisiteParser.go      # Parses prerequisite/corequisite strings
+│   ├── validator.go            # Validates parsed structs before upload
+│   └── testdata/               # HTML fixtures and expected JSON for regression tests
 ├── runners/                    # Shell automation scripts run on Google Cloud
 ├── scrapers/                   # Web scrapers for UTD websites, portals, and APIs
 ├── static-data/                # Static data that isn't scraped
-│   ├── grades/                # Historical grade-distribution CSVs by semester
-│   └── budgets/               # Historical budget PDFs
+│   ├── grades/                 # Historical grade-distribution CSVs by semester
+│   └── budgets/                # Historical budget PDFs
 ├── uploader/                   # Database ingestion modules for Nebula API / MongoDB
-│   ├── database.go            # Establishes MongoDB connections
-│   ├── uploader.go            # Coursebook uploads and merge/replace strategies
-│   └── <domain>Uploader.go    # Domain-specific uploaders
+│   ├── database.go             # Establishes MongoDB connections
+│   ├── uploader.go             # Coursebook uploads and merge/replace strategies
+│   └── <domain>Uploader.go     # Domain-specific uploaders
 ├── utils/                      # Shared utilities
-│   ├── methods.go             # ChromeDP, environment variables, headless mode, tokens
-│   ├── logger.go              # Runtime logging to stdout and timestamped files
-│   └── regexes.go             # Shared parsing and extraction regexes
+│   ├── methods.go              # ChromeDP, environment variables, headless mode, tokens
+│   ├── logger.go               # Runtime logging to stdout and timestamped files
+│   └── regexes.go              # Shared parsing and extraction regexes
 ├── .env.template               # Template for required environment variables
 ├── Dockerfile                  # Multi-stage container definition
 ├── Makefile                    # Build, check, and test tasks for Linux/macOS
