@@ -7,6 +7,9 @@ Don't worry if you don't quite know what you're doing, we're here to help. We do
 
 Look at our current issues, or make your own on our [issues page](../issues).
 
+For any issue, please write the code yourself rather than using AI to generate it.
+Please review our [AI Policy](https://nebula-labs.atlassian.net/wiki/spaces/NLG/pages/1135607810/AI+Policy) for more details on acceptable uses of AI.
+
 Once you find an issue, write a comment asking if you can work on it.
 
 If you're unsure about something, **don't hesitate to ask for help**. We're happy to answer questions and help you work through issues. You can reach out on GitHub, Discord, or in person.
@@ -46,8 +49,6 @@ or
 ```
 
 We would appreciate if you make a draft Pull Request as your working on it, so we can see your progress and help you out!
-
-If you use AI tools while contributing, please review our [AI Policy](https://nebula-labs.atlassian.net/wiki/spaces/NLG/pages/1135607810/AI+Policy).
 
 ## Making a Pull Request (PR)
 
