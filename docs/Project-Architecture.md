@@ -1,7 +1,7 @@
 # Pipeline Architecture & Core Concepts
 
-`api-tools` is built around a unidirectional, staged data pipeline. Each stage has a single, well-defined responsibility.
-Understanding this separation of concerns is essential before modifying or adding code.
+`api-tools` uses a simple, one-way data pipeline with several stages. Each stage has one clear job.
+Understanding how these stages work together is important before adding or changing code.
 
 ---
 
@@ -45,7 +45,7 @@ flowchart LR
 - **How they work**:
   - Parse HTML via Go tokenizers and CSS selectors (`golang.org/x/net/html`)
   - Cross-reference scraped data with static datasets (grade CSVs, budget PDFs)
-  - Validate structs against the Nebula API schema via [`parser/validator.go`](file:///var/home/justin/Documents/Projects/api-tools/parser/validator.go)
+  - Validate structs against the Nebula API schema via `parser/validator.go`
 - **Key Principle**: Input files in `data/` are strictly **immutable**. Parsers must treat input files as read-only and never modify raw scraped data.
 
 ---
