@@ -11,18 +11,14 @@ The lifecycle of data moving through `api-tools` follows a three-stage progressi
 
 ```mermaid
 flowchart LR
-    A[UTD Data Sources<br/>Websites, APIs] -->|Scrape| B
+    A[UTD Data Sources<br/>Websites, APIs] --> B
 
-    subgraph STAGE["Three-Stages"]
+    subgraph STAGE["Three Stages"]
         direction LR
-        B[Scraper]
-        C[Parser]
-        D[Uploader]
-        B -->|Parse| C
-        C -->|Upload| D
+        B[Scraper] --> C[Parser] --> D[Uploader]
     end
 
-    D -->|Insert / Merge| E[(Nebula API Database)]
+    D --> E[(Nebula API Database)]
 ```
 
 ---
