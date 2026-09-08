@@ -1,7 +1,9 @@
 # Pipeline Architecture
 
 `api-tools` is a collection of tools used by [nebula-api](https://github.com/UTDNebula/nebula-api) to collect, process, validate, and upload data from various UTD data sources into the Nebula API.
-`api-tools` uses a one-way data pipeline with several stages. Each stage has one clear job.
+Many of these tools are self-contained and can be run directly from the command line. See the [README.md](/README.md) for instructions on running them.
+
+`api-tools` follows a one-way data pipeline with several stages. Each stage has one clear job.
 Understanding how these stages work together is important before adding or changing code.
 
 ---
