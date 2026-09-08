@@ -2,7 +2,7 @@
 
 This document provides an overview of the `api-tools` directory layout, explaining what each folder contains and guiding you on where to make changes when adding features or fixing bugs.
 
-## Directory Overview
+## Project Structure
 
 ```text
 api-tools/

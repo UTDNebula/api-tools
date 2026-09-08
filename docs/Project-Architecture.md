@@ -1,13 +1,14 @@
-# Pipeline Architecture & Core Concepts
+# Pipeline Architecture
 
-`api-tools` uses a simple, one-way data pipeline with several stages. Each stage has one clear job.
+`api-tools` is a collection of tools used by [nebula-api](https://github.com/UTDNebula/nebula-api) to collect, process, validate, and upload data from various UTD data sources into the Nebula API.
+`api-tools` uses a one-way data pipeline with several stages. Each stage has one clear job.
 Understanding how these stages work together is important before adding or changing code.
 
 ---
 
 ## Project Pipeline
 
-The lifecycle of data moving through `api-tools` follows a three-stage progression:
+The lifecycle of data moving through `api-tools` follows a three-stage process:
 
 ```mermaid
 flowchart LR

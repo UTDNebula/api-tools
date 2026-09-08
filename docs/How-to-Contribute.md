@@ -7,14 +7,14 @@ Don't worry if you don't quite know what you're doing, we're here to help. We do
 
 Look at our current issues, or make your own on our [issues page](../issues).
 
-For any issue, please write the code yourself rather than using AI to generate it.
-Please review our [AI Policy](https://nebula-labs.atlassian.net/wiki/spaces/NLG/pages/1135607810/AI+Policy) for more details on acceptable uses of AI.
+For beginner issues, please write the code yourself rather than using AI to generate it. These issues are designed to help new members learn the codebase and build familiarity with the project.
+For all other issues, please review our [AI Policy](https://nebula-labs.atlassian.net/wiki/spaces/NLG/pages/1135607810/AI+Policy) for more information on acceptable uses of AI.
 
 Once you find an issue, write a comment asking if you can work on it.
 
 If you're unsure about something, **don't hesitate to ask for help**. We're happy to answer questions and help you work through issues. You can reach out on GitHub, Discord, or in person.
 
-Be sure to reference [[getting-started-with-api-tools|Getting Started.md]] to create the project.
+Be sure to reference [Getting Started.md](/docs/Getting-Started.md) to create the project.
 
 ## Create a branch
 
