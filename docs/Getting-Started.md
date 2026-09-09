@@ -6,13 +6,14 @@ This guide walks you through setting up your local development environment, conf
 
 Ensure you have the following installed:
 
-- Git
+- Git — For version control
   - If you've never used git, need a refresher, or need help setting it up, check out [Nebula's Git Workshop](https://github.com/UTDNebula/git-workshop).
-- Go
+- Go — For building and running
   - You can install from the [Go website](https://go.dev/dl/), or from [Homebrew](https://brew.sh/) or another package manager for automatic updates
-- **Make** _(Linux/macOS)_ - Pre-installed on macOS (via `xcode-select --install`) and most Linux distributions (`build-essential`)
-- **Google Chrome** or **Chromium** - Required for headless browser scraping
-- **Docker** _(Optional)_ - For running containerized runners locally
+- Make *(Linux/macOS)* — For build automation
+  - Pre-installed on macOS (via `xcode-select --install`) and most Linux distributions (`build-essential`)
+- Google Chrome or Chromium — For headless browser scraping
+- Docker *(Optional)* — For running containerized runners locally
 
 **Make** is a build automation tool. Feel free to check out [`Makefile`](../Makefile) to see exactly what's being run.
 
@@ -25,8 +26,19 @@ For example instead of `make setup`, you can run `.\build.bat setup`.
 
 Clone the repository with `git clone` and `cd` into the project directory or open it in your code editor
 
+**HTTPS:**
+
 ```bash
 git clone https://github.com/UTDNebula/api-tools.git
+cd api-tools
+```
+
+or
+
+**SSH:**
+
+```bash
+git clone git@github.com:UTDNebula/api-tools.git
 cd api-tools
 ```
 
