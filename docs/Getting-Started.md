@@ -17,7 +17,7 @@ Ensure you have the following installed:
 
 **Make** is a build automation tool. Feel free to check out [`Makefile`](../Makefile) to see exactly what's being run.
 
-If you're using Windows, instead of using `make`, you can also use our [`build.bat`](../build.bat) file.When you see any command starting with `make`, you can instead use `.\build.bat`.
+If you're using Windows, instead of using `make`, you can also use our [`build.bat`](../build.bat) file. When you see any command starting with `make`, you can instead use `.\build.bat`.
 For example instead of `make setup`, you can run `.\build.bat setup`.
 
 ## Local Setup

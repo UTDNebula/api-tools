@@ -33,7 +33,7 @@ For most scraping we use Go's built-in `net/http` library to directly make API r
 
 Parsers read raw files produced by scrapers, and non scraped data stored in (`static-data/`). They then convert this data into a more machine-readable format.
 
-For HTML documents like courses, sections, professors, degree requirements, and discounts, we use [goquery](https://github.com/PuerkitoBio/goquery). Goquery lets us navigate our `.html` files programmatically with selectors. For more unstructured documents like calendars and budgets, we use the Google Gemini [google.golang.org/genai](https://pkg.go.dev/google.golang.org/genai).
+For HTML documents like courses, sections, professors, degree requirements, and discounts, we use [goquery](https://github.com/PuerkitoBio/goquery). Goquery lets us navigate our `.html` files programmatically with selectors. For more unstructured documents like calendars and budgets, we use [Google Gemini](https://pkg.go.dev/google.golang.org/genai).
 
 Everything gets structured and validated against the data models in [nebula-api/api](https://github.com/UTDNebula/nebula-api) (`api/schema`) via `parser/validator.go`.
 
@@ -49,7 +49,7 @@ Most data sources are updated automatically through shell scripts in `runners/`.
 
 We use [Docker](https://www.docker.com/) to create a consistent environment to run `api-tools` in the cloud. We use [Google Cloud Build](https://cloud.google.com/build) to build our docker image, and [Google Cloud Scheduler](https://docs.cloud.google.com/scheduler/docs) to schedule our cloud pipeline runs.
 
-## Other Imporatnt tools
+## Other Important Tools
 
 We use several tools while developing the API.
 
@@ -59,7 +59,7 @@ We use [Sentry](https://github.com/getsentry/sentry-go) for error tracking.
 
 We use [GitHub Actions](https://github.com/features/actions) to check Go code for PRs, deploy our Docker image, and deploy this Wiki!
 
-## Supporting libraries
+## Supporting Libraries
 
 We use several supporting libraries for more minor things. Here is a list of most of them, and their purpose
 
