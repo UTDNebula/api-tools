@@ -57,7 +57,7 @@ Libraries used:
 
 ## Automation
 
-Most data sources are updated automatically through orchestration shell scripts that coordinate scraper, parser, and uploader execution. These scripts run in containerized environments scheduled by cron jobs in Google Cloud. The automation scripts are located in `runners/`.
+Most data sources are updated automatically through shell scripts that coordinate scraper, parser, and uploader execution. These scripts run in containerized environments scheduled by cron jobs in Google Cloud. The automation scripts are located in runners/.
 
 Tools and Libraries used:
 
