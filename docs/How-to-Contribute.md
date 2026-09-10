@@ -1,26 +1,29 @@
 # How to Contribute
 
-Thank you for your interest in contributing to `api-tools`! This guide covers our development workflow, coding standards, and more. Don't worry if you don't quite know what you're doing, we're here to help. We don't expect perfection and appreciate anything you can do to help!
+Thank you for your interest in contributing to `api-tools`! This guide covers our development workflow, coding standards, and more.
+Don't worry if you don't quite know what you're doing, we're here to help. We don't expect perfection and appreciate anything you can do to help!
 
 ## Find something to work on
 
 Look at our current issues, or make your own on our [issues page](../issues).
 
-Write a comment asking if you can work on a particular issue, or assign it to yourself. You can work collaboratively, or individually on an issue.
+For beginner issues, please write the code yourself rather than using AI to generate it. These issues are designed to help new members learn the codebase and build familiarity with the project. We allow AI in Nebula Labs, but review our [AI Policy](https://nebula-labs.atlassian.net/wiki/spaces/NLG/pages/1135607810/AI+Policy) for more information on acceptable uses of AI.
 
-Be sure to **discuss the issue frequently** especially if you don't quite understand. You can do this on GitHub, Discord, or in person.
+Once you find an issue, write a comment asking if you can work on it.
+
+If you're unsure about something, **don't hesitate to ask for help**. We're happy to answer questions and help you work through issues. You can reach out on GitHub, Discord, or in person.
 
 ## Create a branch
 
 Nebula recruits and members should make their changes on a branch, external contributors should work off of a fork as they do not have permission to make a branch.
-
-Our branch naming convention is `<issue-number>-<short-description-of-issue>` for example, `738-new-developer-docs`. GitHub can automatically create a branch for you following this convention if you select "Create a branch" on the right sidebar under "Development"
 
 ## Make Your Changes
 
 It's time to code!
 
 Don't forget to format and check your code. We have helper scripts with **Make** and **build.bat**:
+
+Check your code with
 
 ```bash
 make check
@@ -44,16 +47,14 @@ or
 .\build.bat test
 ```
 
-Discuss your progress frequently, and push your commits to GitHub! If you get stuck anywhere we're here to help! Avoid using AI to write code for your first contribution.
-
-We'd love to see you make a draft Pull Request, so we can see your progress and help you out!
+We would appreciate if you make a draft Pull Request as your working on it, so we can see your progress and help you out!
 
 ## Making a Pull Request (PR)
 
 Open [our Pull Request Page](../pulls), and create a PR. If you're not finished, you can make your PR a draft.
 
-Maintainers will review your PR and provide suggestions or approval. Don't take suggestions personally, we just want to help!
+Maintainers will review your PR and may provide suggestions or request changes before approval.
 
 ## Next Step
 
-See [Guides.md](Guides.md)
+You have everything you need to start, but feel free to check out other pages first.
