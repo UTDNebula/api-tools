@@ -2,8 +2,10 @@
 
 `api-tools` is a collection of tools used by [nebula-api](https://github.com/UTDNebula/nebula-api). Data is collected, processed, validated, and uploaded to the Nebula API. The data comes from various UTD data sources including coursebook, maps, events, and more. Many of these tools are self-contained and can be run directly from the command line. See the [README.md](/README.md) for instructions on running them.
 
-Tools are written in Go. ADD GO REFERENCE!
-<!-- TODO: ADD GO REFERNECES -->
+Tools are written in Go. If you're new to Go (or just rusty), here are two good places to start:
+
+- [A Tour of Go](https://go.dev/tour/list): Interactive, runs in your browser, no setup required. Covers syntax, concurrency, and interfaces.
+- [Effective Go](https://go.dev/doc/effective_go): How to write Go the idiomatic way. Worth skimming before diving into `scrapers/`, `parser/`, or `uploader/`.
 
 ## Project Pipeline
 
