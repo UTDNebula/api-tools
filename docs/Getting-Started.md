@@ -6,14 +6,14 @@ This guide walks you through setting up your local development environment, conf
 
 Ensure you have the following installed:
 
-- Git — For version control
+- Git - For version control
   - If you've never used git, need a refresher, or need help setting it up, check out [Nebula's Git Workshop](https://github.com/UTDNebula/git-workshop).
-- Go — For building and running
+- Go - For building and running
   - You can install from the [Go website](https://go.dev/dl/), or from [Homebrew](https://brew.sh/) or another package manager for automatic updates
-- Make *(Linux/macOS)* — For build automation
+- Make _(Linux/macOS)_ - For build automation
   - Pre-installed on macOS (via `xcode-select --install`) and most Linux distributions (`build-essential`)
-- Google Chrome or Chromium — For headless browser scraping
-- Docker *(Optional)* — For running containerized runners locally
+- Google Chrome or Chromium - For headless browser scraping
+- Docker _(Optional)_ - For running containerized runners locally
 
 **Make** is a build automation tool. Feel free to check out [`Makefile`](../Makefile) to see exactly what's being run.
 
