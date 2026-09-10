@@ -4,15 +4,7 @@ Welcome to the **API Tools Developer Documentation**!
 
 These docs are intended for developers of `api-tools` rather than users. For usage instructions, see [README.md](../README.md).
 
----
-
-If you are a new developer, we recommend checking out these pages in this order:
-
-1. [Getting-Started.md](Getting-Started.md)
-1. [Project-Architecture.md](Project-Architecture.md)
-1. [Project-Structure.md](Project-Structure.md)
-1. [How-to-Contribute.md](How-to-Contribute.md)
-1. [Guides.md](Guides.md)
+If you are a new developer, check out the pages under "Getting Started" in the Sidebar!
 
 ## Need Help?
 

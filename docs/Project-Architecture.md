@@ -71,4 +71,4 @@ We use several supporting libraries for more minor things. Here is a list of mos
 
 ## Next Step
 
-See [Project-Structure.md](/docs/Project-Structure.md)
+See [Project-Structure.md](Project-Structure.md)

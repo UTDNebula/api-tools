@@ -42,6 +42,8 @@ git clone git@github.com:UTDNebula/api-tools.git
 cd api-tools
 ```
 
+Now open the cloned project in your code editor!
+
 ### Install Development Tooling
 
 Install the Go static analysis and formatting tools (`staticcheck` and `goimports`):
