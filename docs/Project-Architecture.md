@@ -1,13 +1,13 @@
 # Project Architecture
 
-`api-tools` is a collection of tools used by [nebula-api](https://github.com/UTDNebula/nebula-api). Data is collected, processed, validated, and uploaded into the Nebula API. The data comes from various UTD data sources including coursebook, maps, events, and more. Many of these tools are self-contained and can be run directly from the command line. See the [README.md](/README.md) for instructions on running them.
+`api-tools` is a collection of tools used by [nebula-api](https://github.com/UTDNebula/nebula-api). Data is collected, processed, validated, and uploaded to the Nebula API. The data comes from various UTD data sources including coursebook, maps, events, and more. Many of these tools are self-contained and can be run directly from the command line. See the [README.md](/README.md) for instructions on running them.
 
 Tools are written in Go. ADD GO REFERENCE!
 <!-- TODO: ADD GO REFERNECES -->
 
 ## Project Pipeline
 
-The lifecycle of data moving through `api-tools` follows a three-stage process:
+Data moves through `api-tools` in three stages:
 
 ```mermaid
 flowchart LR
@@ -57,7 +57,7 @@ Libraries used:
 
 ## Automation
 
-Most data sources are updated automatically through shell scripts that coordinate scraper, parser, and uploader execution. These scripts run in containerized environments scheduled by cron jobs in Google Cloud. The automation scripts are located in runners/.
+Most data sources are updated automatically through shell scripts that coordinate scraper, parser, and uploader execution. These scripts run in containerized environments scheduled by cron jobs in Google Cloud. The automation scripts are located in `runners/`.
 
 Tools and Libraries used:
 
@@ -67,7 +67,7 @@ Tools and Libraries used:
 
 ## Lifecycle and workflow
 
-We use several tools to aid in the development lifecycle and workflow:
+We use several tools while developing the API:
 
 - `testing`: Go standard library testing package for unit tests across the project.
 - **GitHub Actions**: Runs automated CI workflows for PRs, and deploys API-Tools to Google Artifact Registry and Google Cloud Run jobs.
