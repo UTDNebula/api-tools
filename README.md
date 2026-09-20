@@ -75,6 +75,11 @@ Run the tool by changing directory using `cd` to the `api-tools` directory and r
 | `./api-tools -scrape -headless` | Runs ChromeDP in headless mode. |
 | `./api-tools -o [directory]` | Sets output directory (default: `./data`). |
 
+For profile scraping, you can optionally scope requests by school to reduce API load:
+- Set `PROFILE_SCHOOLS` to a comma/semicolon/space-separated list (example: `PROFILE_SCHOOLS=ECS;BBS;AHT`).
+- Then run `./api-tools -scrape -profiles` as usual.
+- If `PROFILE_SCHOOLS` is not set, the scraper defaults to batched `person` slug requests.
+
 ### Parsing Mode:
 
 | Command | Description |
