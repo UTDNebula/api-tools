@@ -91,7 +91,7 @@ func TestLoadGrades(t *testing.T) {
 	}
 
 	t.Run("Real_Data", func(t *testing.T) {
-		_, err := loadGrades("../grade-data/")
+		_, err := loadGrades("../static-data/grades/")
 		if err != nil {
 			t.Errorf("failed to load grades: %v", err)
 		}

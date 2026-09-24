@@ -321,3 +321,34 @@ func ConvertFromInterface[T string | float64](value any) *T {
 	}
 	return nil
 }
+
+type LinkResult struct {
+	Text string
+	Href string
+}
+
+func ExtractTextAndHref(nodes []*cdp.Node, chromedpCtx context.Context) []LinkResult {
+	output := []LinkResult{}
+	var err error
+
+	// Extract href and text
+	for _, n := range nodes {
+		var href, text string
+		// Get href attribute
+		for i := 0; i < len(n.Attributes); i += 2 {
+			if n.Attributes[i] == "href" {
+				href = n.Attributes[i+1]
+			}
+		}
+		// Get inner text
+		err = chromedp.Run(chromedpCtx,
+			chromedp.TextContent(fmt.Sprintf(`a[href="%s"]`, href), &text, chromedp.ByQuery),
+		)
+		if err != nil {
+			panic(err)
+		}
+		output = append(output, LinkResult{text, href})
+	}
+
+	return output
+}

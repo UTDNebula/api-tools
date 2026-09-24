@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"reflect"
 	"strings"
 
 	"time"
@@ -17,6 +18,7 @@ import (
 
 	"github.com/UTDNebula/api-tools/uploader/pipelines"
 	"github.com/UTDNebula/nebula-api/api/schema"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 //  It's important to note that all of the files must be updated/uploaded TOGETHER!
@@ -75,6 +77,36 @@ func Upload(inDir string, replace bool, staticOnly bool) {
 	log.Print("Done building static aggregations!")
 }
 
+// returns true if the definitions of the current and existing search indexes don't match up
+// if a field gets added to the current search index but is not present in the existing index in mongo,
+// then this function should return true
+func searchIndexNeedsUpdate(current interface{}, existing bson.M) (bool, error) {
+	currentBytes, err := bson.MarshalExtJSON(current, true, false)
+	if err != nil {
+		return false, err
+	}
+
+	existingDefinition, ok := existing["latestDefinition"].(bson.M)
+	if !ok {
+		return false, fmt.Errorf("failed to parse existing index definition")
+	}
+
+	existingBytes, err := bson.MarshalExtJSON(existingDefinition, true, false)
+	if err != nil {
+		return false, err
+	}
+
+	var currentMap, existingMap map[string]interface{}
+	if err = json.Unmarshal(currentBytes, &currentMap); err != nil {
+		return false, err
+	}
+	if err = json.Unmarshal(existingBytes, &existingMap); err != nil {
+		return false, err
+	}
+
+	return !reflect.DeepEqual(currentMap, existingMap), nil
+}
+
 // UploadData uploads parsed JSON documents to a MongoDB collection.
 // Make sure the file name matches the collection name (e.g., courses.json for the courses collection).
 func UploadData[T any](client *mongo.Client, ctx context.Context, fptr *os.File, replace bool) {
@@ -96,27 +128,61 @@ func UploadData[T any](client *mongo.Client, ctx context.Context, fptr *os.File,
 
 		// If we inserted discounts, text-index the collection so we can search for keywords
 		if fileName == "discounts" {
-			/*
-				// If the search indexes have been created, don't create again
-				// TODO: Find a way to dynamically avoid creating one when is has been created
-				_, err = collection.SearchIndexes().CreateOne(ctx, mongo.SearchIndexModel{
-					Definition: bson.D{
-						{Key: "mappings", Value: bson.D{
-							{Key: "dynamic", Value: true},
-							{Key: "fields", Value: bson.D{
-								{Key: "category", Value: bson.D{{Key: "type", Value: "string"}}},
-								{Key: "business", Value: bson.D{{Key: "type", Value: "string"}}},
-								{Key: "address", Value: bson.D{{Key: "type", Value: "string"}}},
-								{Key: "discount", Value: bson.D{{Key: "type", Value: "string"}}},
-							}},
+			indexName := "discount_searches"
+
+			currentSearchIndexModel := mongo.SearchIndexModel{
+				Definition: bson.D{
+					{Key: "mappings", Value: bson.D{
+						{Key: "dynamic", Value: true},
+						{Key: "fields", Value: bson.D{
+							{Key: "category", Value: bson.D{{Key: "type", Value: "string"}}},
+							{Key: "business", Value: bson.D{{Key: "type", Value: "string"}}},
+							{Key: "address", Value: bson.D{{Key: "type", Value: "string"}}},
+							{Key: "discount", Value: bson.D{{Key: "type", Value: "string"}}},
 						}},
-					},
-					Options: options.SearchIndexes().SetName("discount_searches"),
-				})
+					}},
+				},
+				Options: options.SearchIndexes().SetName("discount_searches"),
+			}
+
+			// look for `discount_searches` in mongo
+			cursor, err := collection.SearchIndexes().List(ctx, &options.SearchIndexesOptions{
+				Name: &indexName,
+			})
+			if err != nil {
+				log.Panic(err)
+			}
+
+			var results []bson.M
+			if err = cursor.All(ctx, &results); err != nil {
+				log.Panic(err)
+			}
+
+			// if empty, perform `CreateOne` with current search index model
+			if len(results) == 0 {
+				log.Println("No search index in mongo, creating one ...")
+				_, err = collection.SearchIndexes().CreateOne(ctx, currentSearchIndexModel)
 				if err != nil {
 					log.Panic(err)
 				}
-			*/
+
+			} else {
+				// `existing` represents the search index in mongo
+				existing := results[0]
+				needsUpdate, err := searchIndexNeedsUpdate(currentSearchIndexModel.Definition, existing)
+				if err != nil {
+					log.Panic(err)
+				}
+				if needsUpdate {
+					log.Println("Updating existing search index ...")
+					err = collection.SearchIndexes().UpdateOne(ctx, indexName, currentSearchIndexModel.Definition)
+					if err != nil {
+						log.Panic(err)
+					}
+				} else {
+					log.Println("Existing search index is fine")
+				}
+			}
 		}
 
 		// Delete all documents from collection
@@ -174,68 +240,71 @@ func UploadData[T any](client *mongo.Client, ctx context.Context, fptr *os.File,
 		}
 
 	} else {
-		log.Panicf("Uploading without the -replace flag is not currently supported.")
-		/*
-			// If a temp collection already exists, drop it
-			tempCollection := getCollection(client, "temp")
-			err = tempCollection.Drop(ctx)
-			if err != nil {
-				log.Panic(err)
-			}
+		if fileName != "budgets" {
+			log.Panicf("Uploading without the -replace flag is not currently supported for anything but budgets.")
+		}
 
-			// Create a temporary collection
-			err := client.Database("combinedDB").CreateCollection(ctx, "temp")
-			if err != nil {
-				log.Panic(err)
-			}
+		// If a temp collection already exists, drop it
+		tempCollection := getCollection(client, "temp")
+		err = tempCollection.Drop(ctx)
+		if err != nil {
+			log.Panic(err)
+		}
 
-			// Get the temporary collection
-			tempCollection = getCollection(client, "temp")
+		// Create a temporary collection
+		err := client.Database("combinedDB").CreateCollection(ctx, "temp")
+		if err != nil {
+			log.Panic(err)
+		}
 
-			// Convert your documents to []interface{}
-			docsInterface := make([]interface{}, len(docs))
-			for i := range docs {
-				docsInterface[i] = docs[i]
-			}
+		// Get the temporary collection
+		tempCollection = getCollection(client, "temp")
 
-			// Add all documents decoded from the file into the temporary collection
-			opts := options.InsertMany().SetOrdered(false)
-			_, err = tempCollection.InsertMany(ctx, docsInterface, opts)
-			if err != nil {
-				log.Panic(err)
-			}
+		// Convert your documents to []interface{}
+		docsInterface := make([]interface{}, len(docs))
+		for i := range docs {
+			docsInterface[i] = docs[i]
+		}
 
-			// Create a merge aggregate pipeline
-			// Matched documents from the temporary collection will replace matched documents from the Mongo collection
-			// Unmatched documents from the temporary collection will be inserted into the Mongo collection
-			var matchFilters []string
-			switch fileName {
-			case "courses":
-				matchFilters = []string{"catalog_year", "course_number", "subject_prefix"}
-			case "professors":
-				matchFilters = []string{"first_name", "last_name"}
-			case "sections":
-				matchFilters = []string{"section_number", "course_reference", "academic_session"}
-			default:
-				log.Panic("Unrecognizable filename: " + fileName)
-			}
+		// Add all documents decoded from the file into the temporary collection
+		opts := options.InsertMany().SetOrdered(false)
+		_, err = tempCollection.InsertMany(ctx, docsInterface, opts)
+		if err != nil {
+			log.Panic(err)
+		}
 
-			// The documents will be added/merged into the collection with the same name as the file
-			// The filters for the merge aggregate pipeline are based on the file name
-			mergeStage := bson.D{primitive.E{Key: "$merge", Value: bson.D{primitive.E{Key: "into", Value: fileName}, primitive.E{Key: "on", Value: matchFilters}, primitive.E{Key: "whenMatched", Value: "replace"}, primitive.E{Key: "whenNotMatched", Value: "insert"}}}}
+		// Create a merge aggregate pipeline
+		// Matched documents from the temporary collection will replace matched documents from the Mongo collection
+		// Unmatched documents from the temporary collection will be inserted into the Mongo collection
+		var matchFilters []string
+		switch fileName {
+		case "courses":
+			matchFilters = []string{"catalog_year", "course_number", "subject_prefix"}
+		case "professors":
+			matchFilters = []string{"first_name", "last_name"}
+		case "sections":
+			matchFilters = []string{"section_number", "course_reference", "academic_session"}
+		case "budgets":
+			matchFilters = []string{"_id"}
+		default:
+			log.Panic("Unrecognizable filename: " + fileName)
+		}
 
-			// Execute aggregate pipeline
-			_, err = tempCollection.Aggregate(ctx, mongo.Pipeline{mergeStage})
-			if err != nil {
-				log.Panic(err)
-			}
+		// The documents will be added/merged into the collection with the same name as the file
+		// The filters for the merge aggregate pipeline are based on the file name
+		mergeStage := bson.D{primitive.E{Key: "$merge", Value: bson.D{primitive.E{Key: "into", Value: fileName}, primitive.E{Key: "on", Value: matchFilters}, primitive.E{Key: "whenMatched", Value: "replace"}, primitive.E{Key: "whenNotMatched", Value: "insert"}}}}
 
-			// Drop the temporary collection
-			err = tempCollection.Drop(ctx)
-			if err != nil {
-				log.Panic(err)
-			}
-		*/
+		// Execute aggregate pipeline
+		_, err = tempCollection.Aggregate(ctx, mongo.Pipeline{mergeStage})
+		if err != nil {
+			log.Panic(err)
+		}
+
+		// Drop the temporary collection
+		err = tempCollection.Drop(ctx)
+		if err != nil {
+			log.Panic(err)
+		}
 	}
 
 	log.Println("Done uploading " + fileName + ".json!")
