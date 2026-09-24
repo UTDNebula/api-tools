@@ -9,6 +9,7 @@
 package utils
 
 import (
+	"fmt"
 	"io"
 	"log"
 )
@@ -66,7 +67,7 @@ func NewLogger(out io.Writer, prefix string, flag int) *Logger {
 func (logger *Logger) VPrintf(format string, vars ...any) {
 	flags := logger.Flags()
 	if flags&Lverbose != 0 {
-		logger.Printf(format, vars...)
+		logger.Output(2, fmt.Sprintf(format, vars...))
 	}
 }
 
@@ -74,7 +75,7 @@ func (logger *Logger) VPrintf(format string, vars ...any) {
 func (logger *Logger) VPrint(text string) {
 	flags := logger.Flags()
 	if flags&Lverbose != 0 {
-		logger.Print(text)
+		logger.Output(2, fmt.Sprint(text))
 	}
 }
 
@@ -82,15 +83,16 @@ func (logger *Logger) VPrint(text string) {
 func (logger *Logger) VPrintln(text string) {
 	flags := logger.Flags()
 	if flags&Lverbose != 0 {
-		logger.Println(text)
+		logger.Output(2, fmt.Sprintln(text))
 	}
 }
 
 // VPrintf prints through the package-level logger when the verbose flag is set.
 func VPrintf(format string, vars ...any) {
+	//runtime.Caller(0)
 	flags := log.Flags()
 	if flags&Lverbose != 0 {
-		log.Printf(format, vars...)
+		log.Output(2, fmt.Sprintf(format, vars...))
 	}
 }
 
@@ -98,7 +100,7 @@ func VPrintf(format string, vars ...any) {
 func VPrint(text string) {
 	flags := log.Flags()
 	if flags&Lverbose != 0 {
-		log.Print(text)
+		log.Output(2, fmt.Sprint(text))
 	}
 }
 
@@ -106,6 +108,6 @@ func VPrint(text string) {
 func VPrintln(text string) {
 	flags := log.Flags()
 	if flags&Lverbose != 0 {
-		log.Println(text)
+		log.Output(2, fmt.Sprintln(text))
 	}
 }

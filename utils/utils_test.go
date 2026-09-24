@@ -40,7 +40,10 @@ func TestRefreshToken(t *testing.T) {
 	ctx, cancel := InitChromeDp()
 	defer cancel()
 	// Try refreshing token
-	headers := RefreshToken(ctx)
+	headers, err := RefreshToken(ctx)
+	if err != nil {
+		t.Errorf("Failed to refresh token: %v", err)
+	}
 	// Make sure we successfully got a PTGSESSID cookie
 	for _, cookie := range headers["Cookie"] {
 		if strings.HasPrefix(cookie, "PTGSESSID") {
@@ -48,5 +51,5 @@ func TestRefreshToken(t *testing.T) {
 		}
 	}
 	// Fail if no PTGSESSID cookie found
-	t.Fatalf("Failed to get PTGSESSID cookie from RefreshToken!")
+	t.Errorf("Failed to get PTGSESSID cookie from RefreshToken!")
 }
