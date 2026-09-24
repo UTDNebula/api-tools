@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/UTDNebula/api-tools/utils"
@@ -23,60 +24,73 @@ type SourceData struct {
 
 // ParseMazevo reads Mazevo scrape output and emits normalized multi-building event JSON.
 func ParseMazevo(inDir string, outDir string) {
-
-	mazevoFile, err := os.ReadFile(inDir + "/mazevoScraped.json")
+	inDir = filepath.Join(inDir, "mazevo")
+	dir, err := os.ReadDir(inDir)
 	if err != nil {
-		panic(err)
-	}
-
-	var rawData SourceData
-	err = json.Unmarshal(mazevoFile, &rawData)
-	if err != nil {
-		panic(err)
+		return
 	}
 
 	multiBuildingMap := make(map[string]map[string]map[string][]schema.MazevoEvent)
 
-	for _, rawEvent := range rawData.Bookings {
-		datePtr := utils.ConvertFromInterface[string](rawEvent["dateTimeStart"])
-		if datePtr == nil {
+	for _, file := range dir {
+		// Skip subdirectories
+		if file.IsDir() {
 			continue
 		}
-		date := (*datePtr)[:10]
-		building := utils.ConvertFromInterface[string](rawEvent["buildingDescription"])
-		room := utils.ConvertFromInterface[string](rawEvent["roomDescription"])
-		event := schema.MazevoEvent{
-			EventName:         utils.ConvertFromInterface[string](rawEvent["eventName"]),
-			OrganizationName:  utils.ConvertFromInterface[string](rawEvent["organizationName"]),
-			ContactName:       utils.ConvertFromInterface[string](rawEvent["contactName"]),
-			SetupMinutes:      utils.ConvertFromInterface[float64](rawEvent["setupMinutes"]),
-			DateTimeStart:     utils.ConvertFromInterface[string](rawEvent["dateTimeStart"]),
-			DateTimeEnd:       utils.ConvertFromInterface[string](rawEvent["dateTimeEnd"]),
-			TeardownMinutes:   utils.ConvertFromInterface[float64](rawEvent["teardownMinutes"]),
-			StatusDescription: utils.ConvertFromInterface[string](rawEvent["statusDescription"]),
-			StatusColor:       utils.ConvertFromInterface[string](rawEvent["statusColor"]),
+
+		filePath := filepath.Join(inDir, file.Name())
+		fileBytes, err := os.ReadFile(filePath)
+		if err != nil {
+			panic(err)
 		}
 
-		if building == nil || room == nil || *(building) == "" || *(room) == "" {
-			continue
-		}
-		*building = strings.TrimSpace(*building)
-		for key, value := range buildingRenames {
-			if *building == key {
-				*building = value
-			}
-			if strings.HasPrefix(*room, value+" ") {
-				*room = strings.TrimPrefix(*room, value+" ")
-			}
+		var rawData SourceData
+		err = json.Unmarshal(fileBytes, &rawData)
+		if err != nil {
+			panic(err)
 		}
 
-		if _, exists := multiBuildingMap[date]; !exists {
-			multiBuildingMap[date] = make(map[string]map[string][]schema.MazevoEvent)
+		for _, rawEvent := range rawData.Bookings {
+			datePtr := utils.ConvertFromInterface[string](rawEvent["dateTimeStart"])
+			if datePtr == nil {
+				continue
+			}
+			date := (*datePtr)[:10]
+			building := utils.ConvertFromInterface[string](rawEvent["buildingDescription"])
+			room := utils.ConvertFromInterface[string](rawEvent["roomDescription"])
+			event := schema.MazevoEvent{
+				EventName:         utils.ConvertFromInterface[string](rawEvent["eventName"]),
+				OrganizationName:  utils.ConvertFromInterface[string](rawEvent["organizationName"]),
+				ContactName:       utils.ConvertFromInterface[string](rawEvent["contactName"]),
+				SetupMinutes:      utils.ConvertFromInterface[float64](rawEvent["setupMinutes"]),
+				DateTimeStart:     utils.ConvertFromInterface[string](rawEvent["dateTimeStart"]),
+				DateTimeEnd:       utils.ConvertFromInterface[string](rawEvent["dateTimeEnd"]),
+				TeardownMinutes:   utils.ConvertFromInterface[float64](rawEvent["teardownMinutes"]),
+				StatusDescription: utils.ConvertFromInterface[string](rawEvent["statusDescription"]),
+				StatusColor:       utils.ConvertFromInterface[string](rawEvent["statusColor"]),
+			}
+
+			if building == nil || room == nil || *(building) == "" || *(room) == "" {
+				continue
+			}
+			*building = strings.TrimSpace(*building)
+			for key, value := range buildingRenames {
+				if *building == key {
+					*building = value
+				}
+				if after, ok := strings.CutPrefix(*room, value+" "); ok {
+					*room = after
+				}
+			}
+
+			if _, exists := multiBuildingMap[date]; !exists {
+				multiBuildingMap[date] = make(map[string]map[string][]schema.MazevoEvent)
+			}
+			if _, exists := multiBuildingMap[date][*building]; !exists {
+				multiBuildingMap[date][*building] = make(map[string][]schema.MazevoEvent)
+			}
+			multiBuildingMap[date][*building][*room] = append(multiBuildingMap[date][*building][*room], event)
 		}
-		if _, exists := multiBuildingMap[date][*building]; !exists {
-			multiBuildingMap[date][*building] = make(map[string][]schema.MazevoEvent)
-		}
-		multiBuildingMap[date][*building][*room] = append(multiBuildingMap[date][*building][*room], event)
 	}
 
 	var result []schema.MultiBuildingEvents[schema.MazevoEvent]
@@ -104,5 +118,8 @@ func ParseMazevo(inDir string, outDir string) {
 
 	log.Print("Parsed Mazevo!")
 
-	utils.WriteJSON(fmt.Sprintf("%s/mazevo.json", outDir), result)
+	err = utils.WriteJSON(fmt.Sprintf("%s/mazevo.json", outDir), result)
+	if err != nil {
+		log.Panic(err)
+	}
 }

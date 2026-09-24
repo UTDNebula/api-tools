@@ -11,12 +11,27 @@ import (
 	"github.com/UTDNebula/api-tools/scrapers"
 	"github.com/UTDNebula/api-tools/uploader"
 	"github.com/UTDNebula/api-tools/utils"
+	"github.com/getsentry/sentry-go"
 	"github.com/joho/godotenv"
 )
 
 func main() {
 	// Load environment variables
 	godotenv.Load()
+
+	// Set up Sentry
+	sentryDsn, err := utils.GetEnv("SENTRY_DSN")
+	if err != nil {
+		sentryDsn = ""
+	}
+	if err := sentry.Init(sentry.ClientOptions{
+		Dsn:              sentryDsn,
+		TracesSampleRate: 1.0,
+		EnableTracing:    true,
+	}); err != nil {
+		log.Printf("Sentry initialization failed: %v\n", err)
+	}
+	defer sentry.Flush(2 * time.Second)
 
 	// Setup flags
 
