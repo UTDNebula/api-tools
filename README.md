@@ -6,10 +6,6 @@ Project maintained by [Nebula Labs](https://about.utdnebula.com).
 
 ### Design
 
-#### - The `grade-data` directory contains .csv files of UTD grade data. 
-  - Files are named by year and semester, with a suffix of `S`, `U`, or `F` denoting Spring, Summer, and Fall semesters, respectively.
-  - This means that, for example, `22F.csv` corresponds to the 2022 Fall semester, whereas `18U.csv` corresponds with the 2018 Summer semester.
-  - This grade data is collected independently from the scrapers, and is used during the parsing process.
 #### - The `scrapers` directory contains the scrapers for various UTD data sources. This is where the data pipeline begins.
   - The scrapers are concerned solely with data collection, not necessarily validation or processing of said data. Those responsibilities are left to the parsing stage.
 #### - The `parser` directory contains the files and methods that parse the scraped data. This is the 'middle man' of the data pipeline.
@@ -17,6 +13,13 @@ Project maintained by [Nebula Labs](https://about.utdnebula.com).
   - The input data is considered **immutable** by the parsing stage. This means the parsers should never modify the data being fed into them.
 #### - The `uploader` directory contains the uploader that sends the parsed data to the Nebula API MongoDB database. This is the final stage of the data pipeline.
   - The uploader(s) are concerned solely with pushing parsed data to the database. Data, at this point, is assumed to be valid and ready for use.
+#### - The `static-data/grades` directory contains .csv files of UTD grade data. 
+  - Files are named by year and semester, with a suffix of `S`, `U`, or `F` denoting Spring, Summer, and Fall semesters, respectively.
+  - This means that, for example, `22F.csv` corresponds to the 2022 Fall semester, whereas `18U.csv` corresponds with the 2018 Summer semester.
+  - This grade data is collected independently from the scrapers, and is used during the parsing process.
+#### - The `static-data/budgets` directory contains .pdf files of UTD budget data. 
+  - Files are named by fiscal year.
+  - This budget data is used as a backup of scraped data as some years have been removed from the website.
 
 ### Contributing
 
@@ -79,7 +82,7 @@ Run the tool by changing directory using `cd` to the `api-tools` directory and r
 | `./api-tools -parse -academicCalendars` | Parses academic calendar PDFs. |
 | `./api-tools -parse -astra` | Parses Astra data. |
 | `./api-tools -parse -cometCalendar` | Parses Comet Calendar data. |
-| `./api-tools -parse -csv [directory]` | Outputs grade data CSVs (default: `./grade-data`). |
+| `./api-tools -parse -csv [directory]` | Outputs grade data CSVs (default: `./static-data/grades`). |
 | `./api-tools -parse -discounts` | Parses discount programs HTML. |
 | `./api-tools -parse -degrees` | Parses degrees from HTML. |
 | `./api-tools -parse -map` | Parses UTD Map data. |
