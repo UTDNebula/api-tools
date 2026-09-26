@@ -7,6 +7,7 @@ require (
 	github.com/UTDNebula/nebula-api/api v0.0.0-20260525053158-3209b0868dcf
 	github.com/chromedp/cdproto v0.0.0-20260321001828-e3e3800016bc
 	github.com/chromedp/chromedp v0.15.1
+	github.com/cphaensch/go-packrat/v2 v2.1.1
 	github.com/dongri/phonenumber v0.1.12
 	github.com/getsentry/sentry-go v0.46.2
 	github.com/google/go-cmp v0.7.0

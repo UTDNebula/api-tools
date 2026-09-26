@@ -82,9 +82,6 @@ func Parse(inDir string, outDir string, csvPath string, skipValidation bool) {
 
 	log.Print("\nParsing course requisites...")
 
-	// Initialize matchers at runtime for requisite parsing; this is necessary to avoid circular reference errors with compile-time initialization
-	initMatchers()
-
 	for _, course := range Courses {
 		ReqParsers[course.Id]()
 	}

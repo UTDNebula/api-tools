@@ -1,3 +1,5 @@
+// Package parser provides functionality to parse academic requirement texts (prerequisites, corequisites, etc.)
+// into structured requirement objects using a packrat parser and regex-based matchers.
 package parser
 
 import (
@@ -8,18 +10,336 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-
 	"github.com/UTDNebula/api-tools/utils"
 	"github.com/UTDNebula/nebula-api/api/schema"
+	packrat "github.com/cphaensch/go-packrat/v2"
 )
 
-/*
-	Below is the code for the requisite parser. It is *by far* the most complicated code in this entire project.
-	In summary, it uses a bottom-up "stack"-based parsing technique, building requisites by taking small groups of text, parsing those groups,
-	storing them on the "stack", and then uses those previously parsed groups as dependencies for parsing the larger "higher level" groups.
+// Requisite is an empty interface that represents any parsed requirement type.
+// Concrete types include *schema.CourseRequirement, *schema.CollectionRequirement, etc.
+type Requisite interface{}
 
-	It's worth noting that I say stack in quotes above because it's not treated as strictly LIFO like a stack would normally be.
-*/
+// Definition describes a single parser rule: its name, regex patterns, how many capture groups to expect,
+// a matcher function that produces a Requisite, and flags for whitespace/case handling.
+type Definition struct {
+	Name           string
+	Patterns       []string
+	GroupCount     int
+	Matcher        func(group string, subgroups []string) interface{}
+	SkipWhitespace bool
+	CaseSensitive  bool
+}
+
+// registry holds all registered Definition instances. They are converted to packrat parsers in init().
+var registry []*Definition
+
+// ExprParser is the top‑level packrat parser that combines all registered leaf parsers.
+var ExprParser packrat.Parser[Requisite]
+
+// ParseRequirement is the main entry point for parsing requirement text.
+// It handles AND/OR at the top level by splitting the string, then uses
+// the packrat parser for the individual parts.
+func ParseRequirement(text string) *schema.CollectionRequirement {
+	fmt.Printf("Parsing input: %q\n", text) // Add this at function start
+	text = strings.TrimSpace(text)
+
+	flatText, groups := groupParens(text)
+	groupReqs := make([]interface{}, len(groups))
+	// Parse groups bottom‑up (they may contain nested @N references)
+	for i := len(groups) - 1; i >= 0; i-- {
+		req := ParseRequirement(groups[i]) // recursive call
+		if req != nil {
+			groupReqs[i] = req
+		}
+	}
+	text = flatText
+
+	// Handle AND chains
+	if strings.Contains(text, " and ") {
+		parts := strings.Split(text, " and ")
+		options := make([]interface{}, 0, len(parts))
+		for _, part := range parts {
+			var req interface{}
+			if placeholder := getPlaceholder(part, groupReqs); placeholder != nil {
+				req = placeholder
+			} else {
+				req = parseLeaf(part)
+			}
+			if req != nil && !reqIsThrowaway(req) {
+				options = append(options, req)
+			}
+		}
+		// AND means all options are required
+		return schema.NewCollectionRequirement("", len(options), options)
+	}
+
+	// Handle OR chains
+	if strings.Contains(text, " or ") {
+		parts := strings.Split(text, " or ")
+		options := make([]interface{}, 0, len(parts))
+		for _, part := range parts {
+			var req interface{}
+			if placeholder := getPlaceholder(part, groupReqs); placeholder != nil {
+				req = placeholder
+			} else {
+				req = parseLeaf(part)
+			}
+			if req != nil && !reqIsThrowaway(req) {
+				options = append(options, req)
+			}
+		}
+		// OR means at least one option is required
+		return schema.NewCollectionRequirement("", 1, options)
+	}
+
+	// No AND/OR – parse as a single leaf requirement
+	leaf := parseLeaf(text)
+	if leaf == nil || reqIsThrowaway(leaf) {
+		return nil
+	}
+	// Wrap as a collection with one option, required = 1
+	return schema.NewCollectionRequirement("", 1, []interface{}{leaf})
+}
+
+// getPlaceholder checks if a string is a group reference like "@3" and returns the corresponding parsed requirement.
+func getPlaceholder(part string, groupReqs []interface{}) interface{} {
+	if strings.HasPrefix(part, "@") && len(part) > 1 {
+		idx, err := strconv.Atoi(part[1:])
+		if err == nil && idx >= 0 && idx < len(groupReqs) {
+			return groupReqs[idx]
+		}
+	}
+	return nil
+}
+
+// parseLeaf uses the packrat parser (which now contains only leaf parsers) to parse a single atomic requirement.
+func parseLeaf(input string) interface{} {
+	scanner := packrat.NewScanner[Requisite](input, packrat.SkipWhitespaceRegex)
+	node, ok := ExprParser.Match(scanner)
+	if ok && node.Payload != nil {
+		return node.Payload
+	}
+	return nil
+}
+
+func Register(d *Definition) {
+	// Check if regex pattern is valid before appending
+	for _, pat := range d.Patterns {
+		_, err := regexp.Compile(pat)
+		if err != nil {
+			log.Printf("Invalid regex pattern '%s' %v", pat, err)
+		}
+	}
+	registry = append(registry, d)
+}
+
+// ToParser converts a Definition into a packrat.Parser that tries all its patterns in order.
+func (d *Definition) ToParser() packrat.Parser[Requisite] {
+	// Build an OrParser over each pattern
+	var subParsers []packrat.Parser[Requisite]
+	for _, pat := range d.Patterns {
+		p := packrat.NewRegexParser(
+			func(s string) Requisite {
+				utils.VPrintf("[ToParser] Converting %s to parser", d.Name)
+				re := regexp.MustCompile(pat)
+				sub := re.FindStringSubmatch(s)
+				if len(sub) >= d.GroupCount {
+					utils.VPrintf("[ToParser] Match success: input=%q groups=%v", s, sub)
+					return d.Matcher(s, sub)
+				}
+				utils.VPrintf("[ToParser] Match fail: input=%q (groups=%d, need %d)", s, len(sub), d.GroupCount)
+				return nil
+			},
+			pat, d.SkipWhitespace, d.CaseSensitive,
+		)
+		subParsers = append(subParsers, p)
+	}
+
+	return packrat.NewOrParser(subParsers...)
+}
+
+// init builds the global ExprParser by registering all known requirement patterns.
+func init() {
+	Register(&Definition{
+		Name:           "ThrowawayParser",
+		Patterns:       []string{`^(?i)(?:better|\d-\d|same as.+)$`},
+		GroupCount:     1,
+		Matcher:        ThrowawayMatcher,
+		SkipWhitespace: true,
+		CaseSensitive:  false,
+	})
+
+	Register(&Definition{
+		Name: "OtherParser",
+		Patterns: []string{
+			fmt.Sprintf(`(?i).+%s\s+only$`, utils.R_YEARS), // * <YEAR> Only
+			`(?i).+\s+in\s+any\s+combination\s+of\s+.+`,    // * in any combination of *
+		},
+		GroupCount:     1,
+		Matcher:        OtherMatcher,
+		SkipWhitespace: true,
+		CaseSensitive:  false,
+	})
+
+	Register(&Definition{
+		Name: "MajorMinorParser",
+		Patterns: []string{
+			// <SUBJECT> majors and minors only
+			fmt.Sprintf(`(?i)((%s)\s+majors\s+and\s+minors\s+only)`, utils.R_SUBJECT),
+		},
+		GroupCount:     3,
+		Matcher:        MajorMinorMatcher,
+		SkipWhitespace: true,
+		CaseSensitive:  false,
+	})
+
+	Register(&Definition{
+		Name: "CoreCompletionParser",
+		Patterns: []string{
+			// Completion of [a/an] <CORE CODE> core [course]
+			`(?i)(Completion\s+of\s+(?:an?\s+)?(\d{3}).+core(?:\s+course)?)`,
+		},
+		GroupCount:     3,
+		Matcher:        CoreCompletionMatcher,
+		SkipWhitespace: true,
+		CaseSensitive:  false,
+	})
+
+	Register(&Definition{
+		Name: "ChoiceParser",
+		Patterns: []string{
+			// Credit cannot be received for both [courses][,] <EXPRESSION>
+			`(?i)(Credit\s+cannot\s+be\s+received\s+for\s+both\s+(?:courses)?,?(.+))`,
+			// Credit cannot be received for both [courses][,] <EXPRESSION>
+			`(?i)(Credit\s+cannot\s+be\s+received\s+for\s+more\s+than\s+one\s+of.+:(.+))`,
+		},
+		GroupCount:     3,
+		Matcher:        ChoiceMatcher,
+		SkipWhitespace: true,
+		CaseSensitive:  false,
+	})
+
+	Register(&Definition{
+		Name: "SubstitionParser",
+		Patterns: []string{
+			fmt.Sprintf(`^(?i)(%s\s+with\s+a(?:\s+grade)?(?:\s+of)?\s+(%s)\s+or\s+better)`, utils.R_SUBJ_COURSE_CAP, utils.R_GRADE), // [name, number, min grade]
+		},
+		GroupCount:     4,
+		Matcher:        SubstitutionMatcher(CourseMinGradeMatcher),
+		SkipWhitespace: true,
+		CaseSensitive:  false,
+	})
+
+	Register(&Definition{
+		Name: "CourseMinGradeParser",
+		Patterns: []string{
+			//<COURSE> with a [minimum] grade of [at least] [a] <GRADE>
+			fmt.Sprintf(`^(?i)%s\s+with\s+a\s+(?:minimum\s+)?grade\s+of\s+(?:at least\s+)?(?:a\s+)?(%s)$`, utils.R_SUBJ_COURSE_CAP, utils.R_GRADE), // [name, number, min grade]
+			// A grade of [at least] [a] <GRADE> in <COURSE>
+			fmt.Sprintf(`^(?i)A\s+grade\s+of(?:\s+at\s+least)?(?:\s+a)?\s+(%s)\s+in\s+%s$`, utils.R_GRADE, utils.R_SUBJ_COURSE_CAP), // [min grade, name, number]
+		},
+		GroupCount:     3,
+		Matcher:        CourseMinGradeMatcher,
+		SkipWhitespace: true,
+		CaseSensitive:  false,
+	})
+
+	Register(&Definition{
+		Name:           "CourseParser",
+		Patterns:       []string{fmt.Sprintf(`^\s*%s\s*$`, utils.R_SUBJ_COURSE_CAP)},
+		GroupCount:     3,
+		Matcher:        CourseMatcher,
+		SkipWhitespace: true,
+		CaseSensitive:  false,
+	})
+
+	Register(&Definition{
+		Name:           "ConsentParser",
+		Patterns:       []string{`^(?i)(.+)\s+consent\s+required`},
+		GroupCount:     2,
+		Matcher:        ConsentMatcher,
+		SkipWhitespace: true,
+		CaseSensitive:  false,
+	})
+
+	Register(&Definition{
+		Name:           "LimitParser",
+		Patterns:       []string{`^(?i)(\d+)\s+semester\s+credit\s+hours\s+maximum$`},
+		GroupCount:     2,
+		Matcher:        LimitMatcher,
+		SkipWhitespace: true,
+		CaseSensitive:  false,
+	})
+
+	// <SUBJECT> majors only
+	Register(&Definition{
+		Name:           "MajorParser",
+		Patterns:       []string{`^(?i)(.+)\s+major(?:s\s+only)?$`},
+		GroupCount:     2,
+		Matcher:        MajorMatcher,
+		SkipWhitespace: true,
+		CaseSensitive:  false,
+	})
+
+	// <SUBJECT> minors only
+	Register(&Definition{
+		Name:           "MinorParser",
+		Patterns:       []string{`^(?i)(.+)\s+minor(?:s\s+only)?$`},
+		GroupCount:     2,
+		Matcher:        MinorMatcher,
+		SkipWhitespace: true,
+		CaseSensitive:  false,
+	})
+
+	Register(&Definition{
+		Name: "CoreParser",
+		Patterns: []string{
+			// Any <HOURS> semester credit hour <CORE> course
+			`^(?i)any\s+(\d+)\s+semester\s+credit\s+hour\s+(\d{3})(?:\s+@\d+)?\s+core(?:\s+course)?$`,
+		},
+		GroupCount:     3,
+		Matcher:        CoreMatcher,
+		SkipWhitespace: true,
+		CaseSensitive:  false,
+	})
+
+	Register(&Definition{
+		Name: "GPAParser",
+		Patterns: []string{
+			// Minimum GPA of <GPA>
+			`^(?i)([0-9\.]+) GPA$`, // [GPA]
+			// Minimum GPA of <GPA>
+			`^(?i)(?:minimum\s+)?GPA\s+of\s+([0-9\.]+)$`,
+			// A university grade point average of at least <GPA>
+			`^(?i)a(?:\s+university)?\s+grade\s+point\s+average\s+of(?:\s+at\s+least)?\s+([0-9\.]+)$`,
+		},
+		GroupCount:     2,
+		Matcher:        GPAMatcher,
+		SkipWhitespace: true,
+		CaseSensitive:  false,
+	})
+
+	Register(&Definition{
+		Name:           "GroupParser",
+		Patterns:       []string{`@(\d+)`},
+		GroupCount:     2,
+		Matcher:        GroupTagMatcher,
+		SkipWhitespace: true,
+		CaseSensitive:  false,
+	})
+
+	var parsers []packrat.Parser[Requisite]
+	for _, p := range registry {
+		parsers = append(parsers, p.ToParser())
+	}
+
+	// Combine them (note order matters)
+	ExprParser = packrat.NewOrParser(
+		parsers...,
+	)
+}
+
+/* --- Matchers and other functions --- */
 
 // Matcher defines a regex-driven handler used during requisite group parsing.
 type Matcher struct {
@@ -27,31 +347,9 @@ type Matcher struct {
 	Handler func(string, []string) interface{}
 }
 
-////////////////////// BEGIN MATCHER FUNCS //////////////////////
-
-var ANDRegex = regexp.MustCompile(`(?i)\s+and\s+`)
-
-// ANDMatcher parses conjunction-separated requisites into an AND collection requirement.
-func ANDMatcher(group string, subgroups []string) interface{} {
-	// Split text along " and " boundaries, then parse subexpressions as groups into an "AND" CollectionRequirement
-	subExpressions := ANDRegex.Split(group, -1)
-	parsedSubExps := make([]interface{}, 0, len(subExpressions))
-	for _, exp := range subExpressions {
-		parsedExp := parseGroup(utils.TrimWhitespace(exp))
-		// Don't include throwaways
-		if !reqIsThrowaway(parsedExp) {
-			parsedSubExps = append(parsedSubExps, parsedExp)
-		}
-	}
-
-	parsedSubExps = joinAdjacentOthers(parsedSubExps, " and ")
-
-	if len(parsedSubExps) > 1 {
-		return schema.NewCollectionRequirement("AND", len(parsedSubExps), parsedSubExps)
-	} else {
-		return parsedSubExps[0]
-	}
-}
+// Matchers contains the ordered collection of matcher rules applied during requisite parsing.
+// NOTE: PARENTHESES ARE OF HIGHEST PRECEDENCE! (This is due to groupParens() handling grouping of parenthesized text before parsing begins)
+var Matchers []Matcher
 
 // SubstitutionMatcher returns a matcher that replaces a subgroup with parseFnc's result before parsing the outer group.
 // For example, "(OPRE 3360 or STAT 3360 or STAT 4351), and JSOM majors and minors only" becomes "... and @N".
@@ -64,30 +362,6 @@ func SubstitutionMatcher(parseFnc func(string, []string) interface{}) func(strin
 		}
 		// Otherwise, substitute subgroups[1] and parse it with parseFnc
 		return parseGroup(makeSubgroup(group, subgroups[1], parseFnc(group, subgroups)))
-	}
-}
-
-var ORRegex = regexp.MustCompile(`(?i)\s+or\s+`)
-
-// ORMatcher parses disjunction-separated requisites into an OR collection requirement.
-func ORMatcher(group string, subgroups []string) interface{} {
-	// Split text along " or " boundaries, then parse subexpressions as groups into an "OR" CollectionRequirement
-	subExpressions := ORRegex.Split(group, -1)
-	parsedSubExps := make([]interface{}, 0, len(subExpressions))
-	for _, exp := range subExpressions {
-		parsedExp := parseGroup(utils.TrimWhitespace(exp))
-		// Don't include throwaways
-		if !reqIsThrowaway(parsedExp) {
-			parsedSubExps = append(parsedSubExps, parsedExp)
-		}
-	}
-
-	parsedSubExps = joinAdjacentOthers(parsedSubExps, " or ")
-
-	if len(parsedSubExps) > 1 {
-		return schema.NewCollectionRequirement("OR", 1, parsedSubExps)
-	} else {
-		return parsedSubExps[0]
 	}
 }
 
@@ -178,9 +452,6 @@ func ThrowawayMatcher(group string, subgroups []string) interface{} {
 	return schema.Requirement{Type: "throwaway"}
 }
 
-// Regex for group tags
-var groupTagRegex = regexp.MustCompile(`@(\d+)`)
-
 // GroupTagMatcher resolves stack-referenced groups by index.
 func GroupTagMatcher(group string, subgroups []string) interface{} {
 	groupIndex, err := strconv.Atoi(subgroups[1])
@@ -201,246 +472,70 @@ func OtherMatcher(group string, subgroups []string) interface{} {
 	return schema.NewOtherRequirement(ungroupText(group), "")
 }
 
-/////////////////////// END MATCHER FUNCS ///////////////////////
-
-// Matchers contains the ordered collection of matcher rules applied during requisite parsing.
-// NOTE: PARENTHESES ARE OF HIGHEST PRECEDENCE! (This is due to groupParens() handling grouping of parenthesized text before parsing begins)
-var Matchers []Matcher
-
-// Must init matchers via function at runtime to avoid compile-time circular definition error
-func initMatchers() {
-	Matchers = []Matcher{
-
-		// Throwaways
-		{
-			regexp.MustCompile(`^(?i)(?:better|\d-\d|same as.+)$`),
-			ThrowawayMatcher,
-		},
-
-		/* TO IMPLEMENT:
-
-		X or Y or ... Z Major/Minor
-
-		SUBJECT NUMBER, SUBJECT NUMBER, ..., or SUBJECT NUMBER
-
-		... probably many more
-
-		*/
-
-		// * <YEAR> only
-		{
-			utils.Regexpf(`(?i).+%s\s+only$`, utils.R_YEARS),
-			OtherMatcher,
-		},
-
-		// * in any combination of *
-		{
-			regexp.MustCompile(`(?i).+\s+in\s+any\s+combination\s+of\s+.+`),
-			OtherMatcher,
-		},
-
-		// <SUBJECT> majors and minors only
-		{
-			utils.Regexpf(`(?i)((%s)\s+majors\s+and\s+minors\s+only)`, utils.R_SUBJECT),
-			SubstitutionMatcher(func(group string, subgroups []string) interface{} {
-				return MajorMinorMatcher(subgroups[1], subgroups[1:3])
-			}),
-		},
-
-		// Completion of [a/an] <CORE CODE> core [course]
-		{
-			regexp.MustCompile(`(?i)(Completion\s+of\s+(?:an?\s+)?(\d{3}).+core(?:\s+course)?)`),
-			SubstitutionMatcher(func(group string, subgroups []string) interface{} {
-				return CoreCompletionMatcher(subgroups[1], subgroups[1:3])
-			}),
-		},
-
-		// Credit cannot be received for both [courses][,] <EXPRESSION>
-		{
-			regexp.MustCompile(`(?i)(Credit\s+cannot\s+be\s+received\s+for\s+both\s+(?:courses)?,?(.+))`),
-			SubstitutionMatcher(func(group string, subgroups []string) interface{} {
-				return ChoiceMatcher(subgroups[1], subgroups[1:3])
-			}),
-		},
-
-		// Credit cannot be received for more than one of *: <EXPRESSION>
-		{
-			regexp.MustCompile(`(?i)(Credit\s+cannot\s+be\s+received\s+for\s+more\s+than\s+one\s+of.+:(.+))`),
-			SubstitutionMatcher(func(group string, subgroups []string) interface{} {
-				return ChoiceMatcher(subgroups[1], subgroups[1:3])
-			}),
-		},
-
-		// Logical &
-		{
-			ANDRegex,
-			ANDMatcher,
-		},
-
-		// "<COURSE> with a [grade] [of] <GRADE> or better"
-		{
-			utils.Regexpf(`^(?i)(%s\s+with\s+a(?:\s+grade)?(?:\s+of)?\s+(%s)\s+or\s+better)`, utils.R_SUBJ_COURSE_CAP, utils.R_GRADE), // [name, number, min grade]
-			SubstitutionMatcher(func(group string, subgroups []string) interface{} {
-				return CourseMinGradeMatcher(subgroups[1], subgroups[1:5])
-			}),
-		},
-
-		// Logical |
-		{
-			ORRegex,
-			ORMatcher,
-		},
-
-		// <COURSE> with a [minimum] grade of [at least] [a] <GRADE>
-		{
-			utils.Regexpf(`^(?i)%s\s+with\s+a\s+(?:minimum\s+)?grade\s+of\s+(?:at least\s+)?(?:a\s+)?(%s)$`, utils.R_SUBJ_COURSE_CAP, utils.R_GRADE), // [name, number, min grade]
-			CourseMinGradeMatcher,
-		},
-
-		// A grade of [at least] [a] <GRADE> in <COURSE>
-		{
-			utils.Regexpf(`^(?i)A\s+grade\s+of(?:\s+at\s+least)?(?:\s+a)?\s+(%s)\s+in\s+%s$`, utils.R_GRADE, utils.R_SUBJ_COURSE_CAP), // [min grade, name, number]
-			func(group string, subgroups []string) interface{} {
-				return CourseMinGradeMatcher(group, []string{subgroups[0], subgroups[2], subgroups[3], subgroups[1]})
-			},
-		},
-
-		// <COURSE>
-		{
-			utils.Regexpf(`^\s*%s\s*$`, utils.R_SUBJ_COURSE_CAP), // [name, number]
-			CourseMatcher,
-		},
-
-		// <GRANTER> consent required
-		{
-			regexp.MustCompile(`^(?i)(.+)\s+consent\s+required`), // [granter]
-			ConsentMatcher,
-		},
-
-		// <HOURS> semester credit hours maximum
-		{
-			regexp.MustCompile(`^(?i)(\d+)\s+semester\s+credit\s+hours\s+maximum$`),
-			LimitMatcher,
-		},
-
-		// This course may only be repeated for <HOURS> credit hours
-		{
-			utils.Regexpf(`^(?:%s\s+)?Repeat\s+Limit\s+-\s+(?:%s|This\s+course)\s+may\s+only\s+be\s+repeated\s+for(?:\s+a\s+maximum\s+of)?\s+(\d+)\s+semester\s+cre?dit\s+hours(?:\s+maximum)?$`, utils.R_SUBJ_COURSE, utils.R_SUBJ_COURSE),
-			LimitMatcher,
-		},
-
-		// <SUBJECT> majors only
-		{
-			regexp.MustCompile(`^(?i)(.+)\s+major(?:s\s+only)?$`),
-			MajorMatcher,
-		},
-
-		// <SUBJECT> minors only
-		{
-			regexp.MustCompile(`^(?i)(.+)\s+minor(?:s\s+only)?$`),
-			MinorMatcher,
-		},
-
-		// Any <HOURS> semester credit hour <CORE> course
-		{
-			regexp.MustCompile(`^(?i)any\s+(\d+)\s+semester\s+credit\s+hour\s+(\d{3})(?:\s+@\d+)?\s+core(?:\s+course)?$`),
-			CoreMatcher,
-		},
-
-		// Minimum GPA of <GPA>
-		{
-			regexp.MustCompile(`^(?i)(?:minimum\s+)?GPA\s+of\s+([0-9\.]+)$`), // [GPA]
-			GPAMatcher,
-		},
-
-		// <GPA> GPA
-		{
-			regexp.MustCompile(`^(?i)([0-9\.]+) GPA$`), // [GPA]
-			GPAMatcher,
-		},
-
-		// A university grade point average of at least <GPA>
-		{
-			regexp.MustCompile(`^(?i)a(?:\s+university)?\s+grade\s+point\s+average\s+of(?:\s+at\s+least)?\s+([0-9\.]+)$`), // [GPA]
-			GPAMatcher,
-		},
-
-		// Group tags (i.e. @1)
-		{
-			groupTagRegex, // [group #]
-			GroupTagMatcher,
-		},
-	}
-}
-
+// preOrCoreqRegexp matches lines like "Prerequisites or Corequisites: ..." or "Corequisites or Prerequisites: ..."
 var preOrCoreqRegexp *regexp.Regexp = regexp.MustCompile(`(?i)((?:Prerequisites?\s+or\s+corequisites?|Corequisites?\s+or\s+prerequisites?):(.*))`)
+
+// prereqRegexp matches a standard "Prerequisites: ..." line.
 var prereqRegexp *regexp.Regexp = regexp.MustCompile(`(?i)(Prerequisites?:(.*))`)
+
+// coreqRegexp matches a standard "Corequisites: ..." line.
 var coreqRegexp *regexp.Regexp = regexp.MustCompile(`(?i)(Corequisites?:(.*))`)
 
-// It is very important that these remain in the same order -- this keeps proper precedence in the below function!
-var reqRegexes [3]*regexp.Regexp = [3]*regexp.Regexp{preOrCoreqRegexp, prereqRegexp, coreqRegexp}
-
-// Returns a closure that parses the course's requisites
+// getReqParser returns a closure that parses the course's requisites from its description or enrollment requirements.
 func getReqParser(course *schema.Course, hasEnrollmentReqs bool, enrollmentReqs *goquery.Selection) func() {
 	return func() {
-		// Pointer array to course requisite properties must be in same order as reqRegexes above
-		courseReqs := [3]**schema.CollectionRequirement{&course.Co_or_pre_requisites, &course.Prerequisites, &course.Corequisites}
-		// The actual text to check for requisites
-		var checkText string
-		// Extract req text from the enrollment req info if it exists, otherwise try using the description
+		text := course.Description
 		if hasEnrollmentReqs {
 			course.Enrollment_reqs = utils.TrimWhitespace(enrollmentReqs.Text())
-			checkText = utils.TrimWhitespace(enrollmentReqs.Text())
-		} else {
-			checkText = course.Description
+			text = course.Enrollment_reqs
 		}
-		// Iterate over and parse each type of requisite, populating the course's relevant requisite property
-		for index, reqPtr := range courseReqs {
-			reqMatches := reqRegexes[index].FindStringSubmatch(checkText)
-			if reqMatches != nil {
-				// Actual useful text is the inner match, index 2
-				reqText := reqMatches[2]
-				// Erase any sub-matches for other requisite types by matching outer text, index 1
-				for _, regex := range reqRegexes {
-					matches := regex.FindStringSubmatch(reqText)
-					if matches != nil {
-						reqText = strings.Replace(reqText, matches[1], "", -1)
-					}
+
+		// Process each section in order, removing matched headers as we go
+		sections := []struct {
+			regex *regexp.Regexp
+			dest  **schema.CollectionRequirement
+		}{
+			{preOrCoreqRegexp, &course.Co_or_pre_requisites},
+			{prereqRegexp, &course.Prerequisites},
+			{coreqRegexp, &course.Corequisites},
+		}
+
+		for _, sec := range sections {
+			match := sec.regex.FindStringSubmatch(text)
+			if match == nil {
+				continue
+			}
+			// match[1] is "Prerequisites: ...", match[2] is the inner text
+			header, content := match[1], match[2]
+			text = strings.Replace(text, header, "", 1) // remove this section from further scanning
+
+			// Remove any other requisite headers nested inside the content
+			for _, other := range sections {
+				if inner := other.regex.FindStringSubmatch(content); inner != nil {
+					content = strings.Replace(content, inner[1], "", -1)
 				}
-				// Erase current match from checkText to prevent erroneous duplicated Reqs
-				checkText = strings.Replace(checkText, reqMatches[1], "", -1)
-				// Split reqText into chunks based on period-space delimiters
-				textChunks := strings.Split(utils.TrimWhitespace(reqText), ". ")
-				parsedChunks := make([]interface{}, 0, len(textChunks))
-				// Parse each chunk, then add non-throwaway chunks to parsedChunks
-				for _, chunk := range textChunks {
-					// Trim any remaining rightmost periods
-					chunk = utils.TrimWhitespace(strings.TrimRight(chunk, "."))
-					parsedChunk := parseChunk(chunk)
-					if !reqIsThrowaway(parsedChunk) {
-						parsedChunks = append(parsedChunks, parsedChunk)
-					}
+			}
+
+			// Split by ". " and parse each sentence
+			var reqs []interface{}
+			for _, sentence := range strings.Split(content, ". ") {
+				sentence = strings.TrimRight(sentence, ".")
+				if req := ParseRequirement(sentence); req != nil && !reqIsThrowaway(req) {
+					reqs = append(reqs, req)
 				}
-				// Build CollectionRequirement from parsed chunks and apply to the course property
-				if len(parsedChunks) > 0 {
-					*reqPtr = schema.NewCollectionRequirement("REQUISITES", len(parsedChunks), parsedChunks)
-				}
+			}
+			if len(reqs) > 0 {
+				*sec.dest = schema.NewCollectionRequirement("REQUISITES", len(reqs), reqs)
 			}
 		}
 	}
 }
 
-// Function for pulling all requisite references (reqs referenced via group tags) from text
-/*
-func getReqRefs(text string) []interface{} {
-	matches := groupTagRegex.FindAllStringSubmatch(text, -1)
-	refs := make([]interface{}, len(matches))
-	for i, submatches := range matches {
-		refs[i] = GroupTagMatcher(submatches[0], submatches)
-	}
-	return refs
-}
-*/
+// This is the list of produced requisites. Indices coincide with group indices -- aka group @0 will also be the 0th index of the list since it will be processed first.
+var requisiteList []interface{}
+
+// This is the list of groups that are to be parsed. They are the raw text chunks associated with the reqs above.
+var groupList []string
 
 // Function for creating a new group by replacing subtext in an existing group, and pushing the new group's info to the req and group list
 func makeSubgroup(group string, subtext string, requisite interface{}) string {
@@ -448,41 +543,6 @@ func makeSubgroup(group string, subtext string, requisite interface{}) string {
 	requisiteList = append(requisiteList, requisite)
 	groupList = append(groupList, newGroup)
 	return newGroup
-}
-
-// Function for joining adjacent OtherRequirements into one OtherRequirement by joining their descriptions with a string
-func joinAdjacentOthers(reqs []interface{}, joinString string) []interface{} {
-	joinedReqs := make([]interface{}, 0, len(reqs))
-	// Temp is a blank OtherRequirement
-	temp := *schema.NewOtherRequirement("", "")
-	// Iterate over each existing req
-	for _, req := range reqs {
-		// Determine whether req is an OtherRequirement
-		otherReq, isOtherReq := req.(schema.OtherRequirement)
-		if !isOtherReq {
-			// If temp contains data, append its final result to the joinedReqs
-			if temp.Description != "" {
-				joinedReqs = append(joinedReqs, temp)
-			}
-			// Append the non-OtherRequirement to the joinedReqs
-			joinedReqs = append(joinedReqs, req)
-			// Reset temp's description
-			temp.Description = ""
-			continue
-		}
-		// If temp is blank, and req is an otherReq, use otherReq as the initial value of temp
-		// Otherwise, join temp's existing description with otherReq's description
-		if temp.Description == "" {
-			temp = otherReq
-		} else {
-			temp.Description = strings.Join([]string{temp.Description, otherReq.Description}, joinString)
-		}
-	}
-	// If temp contains data, append its final result to the joinedReqs
-	if temp.Description != "" {
-		joinedReqs = append(joinedReqs, temp)
-	}
-	return joinedReqs
 }
 
 // Function for finding the Internal Course Number associated with the course with the specified subject and course number
@@ -494,12 +554,6 @@ func findICN(subject string, number string) (string, error) {
 	}
 	return "ERROR", fmt.Errorf("couldn't find an ICN for %s %s", subject, number)
 }
-
-// This is the list of produced requisites. Indices coincide with group indices -- aka group @0 will also be the 0th index of the list since it will be processed first.
-var requisiteList []interface{}
-
-// This is the list of groups that are to be parsed. They are the raw text chunks associated with the reqs above.
-var groupList []string
 
 // Innermost function for parsing individual text groups (used recursively by some Matchers)
 func parseGroup(grp string) interface{} {
@@ -518,26 +572,6 @@ func parseGroup(grp string) interface{} {
 	// If the group couldn't be parsed, give up and make it an OtherRequirement
 	utils.VPrintf("'%s' -> parser.OtherRequirement", grp)
 	return *schema.NewOtherRequirement(ungroupText(grp), "")
-}
-
-// Outermost function for parsing a chunk of requisite text (potentially containing multiple nested text groups)
-func parseChunk(chunk string) interface{} {
-	utils.VPrintf("\nPARSING CHUNK: '%s'", chunk)
-	// Extract parenthesized groups from chunk text
-	parseText, parseGroups := groupParens(chunk)
-	// Initialize the requisite list and group list
-	requisiteList = make([]interface{}, 0, len(parseGroups))
-	groupList = parseGroups
-	// Begin recursive group parsing -- order is bottom-up
-	for _, grp := range parseGroups {
-		parsedReq := parseGroup(grp)
-		// Only append requisite to stack if it isn't marked as throwaway
-		if !reqIsThrowaway(parsedReq) {
-			requisiteList = append(requisiteList, parsedReq)
-		}
-	}
-	finalGroup := parseGroup(parseText)
-	return finalGroup
 }
 
 // Check whether a requisite is a throwaway or not by trying a type assertion to Requirement
