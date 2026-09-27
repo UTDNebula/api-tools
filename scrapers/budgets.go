@@ -24,9 +24,10 @@ type Budget struct {
 	Href  string
 }
 
-func ScrapeBudgets(outDir string) {
+func ScrapeBudgets(outDir string) error {
 	// Start chromedp
 	chromedpCtx, cancel := utils.InitChromeDp()
+	defer cancel()
 
 	// Get sub folder from output folder
 	outSubDir := filepath.Join(outDir, "budgets")
@@ -35,7 +36,7 @@ func ScrapeBudgets(outDir string) {
 	os.RemoveAll(outSubDir)
 	err := os.MkdirAll(outSubDir, 0777)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("error creating output folder: %w", err)
 	}
 
 	// Go to listings page
@@ -43,7 +44,7 @@ func ScrapeBudgets(outDir string) {
 		chromedp.Navigate(`https://finance.utdallas.edu/for-others/public-reports/`),
 	)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("error navigating to listings page: %w", err)
 	}
 
 	// Selector for the scraping the budget nodes
@@ -59,9 +60,12 @@ func ScrapeBudgets(outDir string) {
 		chromedp.Nodes(financialReportSel, &financialReportNodes, chromedp.BySearch),
 	)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("error retrieving financial report nodes: %w", err)
 	}
-	links := utils.ExtractTextAndHref(financialReportNodes, chromedpCtx)
+	links, err := utils.ExtractTextAndHref(financialReportNodes, chromedpCtx)
+	if err != nil {
+		return err
+	}
 	for _, link := range links {
 		budgets = append(budgets, Budget{
 			Title: link.Text,
@@ -75,9 +79,12 @@ func ScrapeBudgets(outDir string) {
 		chromedp.Nodes(budgetReportSel, &budgetReportNodes, chromedp.BySearch),
 	)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("error retrieving budget report nodes: %w", err)
 	}
-	links = utils.ExtractTextAndHref(budgetReportNodes, chromedpCtx)
+	links, err = utils.ExtractTextAndHref(budgetReportNodes, chromedpCtx)
+	if err != nil {
+		return err
+	}
 	for _, link := range links {
 		budgets = append(budgets, Budget{
 			Title: link.Text,
@@ -90,22 +97,26 @@ func ScrapeBudgets(outDir string) {
 
 	// Download all PDFs
 	for _, budget := range budgets {
-		downloadPdf(
+		if err := downloadPdf(
 			budget.Href,
 			budget.Title,
 			outSubDir,
-		)
+		); err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
 
-func downloadPdf(href string, filename string, outDir string) {
+func downloadPdf(href string, filename string, outDir string) error {
 	client := &http.Client{
 		Timeout: 30 * time.Second,
 	}
 
 	req, err := http.NewRequest("GET", href, nil)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("error creating request: %w", err)
 	}
 
 	// Use a user agent and referer to avoid 599 errors
@@ -114,13 +125,13 @@ func downloadPdf(href string, filename string, outDir string) {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("error sending request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	// Check response
 	if resp.StatusCode != http.StatusOK {
-		panic(fmt.Errorf("failed to download \"%s\": status code %d", filename, resp.StatusCode))
+		return fmt.Errorf("failed to download \"%s\": status code %d", filename, resp.StatusCode)
 	}
 
 	// Get sub folder from output folder
@@ -131,24 +142,25 @@ func downloadPdf(href string, filename string, outDir string) {
 	// Make output folder
 	err = os.MkdirAll(outYearDir, 0777)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("error creating output folder: %w", err)
 	}
 
 	// Create blank file
 	out, err := os.Create(filepath.Join(outYearDir, fmt.Sprintf("%s.pdf", filename)))
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("error creating blank file: %w", err)
 	}
 	defer out.Close()
 
 	// Output response to blank file
 	_, err = io.Copy(out, resp.Body)
 	if err != nil {
-		log.Printf("Error saving %s: %v", filename, err)
-		return
+		return fmt.Errorf("error saving %s: %w", filename, err)
 	}
 
 	log.Printf("Scraped budget %s!", filename)
 
 	time.Sleep(1 * time.Second)
+
+	return nil
 }
