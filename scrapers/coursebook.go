@@ -96,10 +96,10 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string, resume boo
 		for _, sectionId := range sectionIds {
 			content, err := scraper.getSectionContent(sectionId)
 			if err != nil {
-				return fmt.Errorf("Error getting section content for section %s: %w", sectionId, err)
+				return fmt.Errorf("error getting section content for section %s: %w", sectionId, err)
 			}
 			if err := scraper.writeSection(prefix, sectionId, content); err != nil {
-				return fmt.Errorf("Error writing section %s: %w", sectionId, err)
+				return fmt.Errorf("error writing section %s: %w", sectionId, err)
 			}
 			time.Sleep(reqThrottle)
 		}
@@ -186,7 +186,7 @@ func (s *coursebookScraper) lastCompletePrefix() (string, error) {
 	for _, prefix := range foundPrefixes {
 		missing, err := s.getMissingIdsForPrefix(prefix)
 		if err != nil {
-			return "", fmt.Errorf("Failed to get ids: %w", err)
+			return "", fmt.Errorf("failed to get ids: %w", err)
 		}
 		if len(missing) == 0 {
 			return prefix, nil
@@ -306,7 +306,7 @@ func (s *coursebookScraper) req(queryStr string, retries int, reqName string) (s
 		}
 		req, err := http.NewRequest("POST", "https://coursebook.utdallas.edu/clips/clip-cb11-hat.zog", strings.NewReader(queryStr))
 		if err != nil {
-			return fmt.Errorf("Http request failed: %w", err)
+			return fmt.Errorf("http request failed: %w", err)
 		}
 		req.Header = s.coursebookHeaders
 

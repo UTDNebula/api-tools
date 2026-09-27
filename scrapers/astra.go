@@ -73,7 +73,7 @@ func ScrapeAstra(outDir string) error {
 		}
 		if res.StatusCode != 200 {
 			res.Body.Close()
-			return fmt.Errorf("ERROR: Status was: %s\nIf the status is 404, you've likely been IP ratelimited!", res.Status)
+			return fmt.Errorf("status was: %s (if 404, you've likely been IP ratelimited)", res.Status)
 		}
 		body, err := io.ReadAll(res.Body)
 		res.Body.Close()
@@ -85,7 +85,7 @@ func ScrapeAstra(outDir string) error {
 		// Check for no events
 		numEvents := fastjson.GetInt(body, "totalRecords")
 		if numEvents >= MAX_EVENTS_PER_DAY {
-			return fmt.Errorf("ERROR: Max events per day exceeded!")
+			return fmt.Errorf("max events per day exceeded")
 		}
 
 		// Add to record
