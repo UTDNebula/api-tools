@@ -12,11 +12,11 @@ import (
 
 const degreesUrl = "https://academics.utdallas.edu/degrees/"
 
-func ScrapeDegrees(outDir string) {
+func ScrapeDegrees(outDir string) error {
 	// Ensure output directory exists
 	err := os.MkdirAll(outDir, 0777)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	chromedpCtx, cancel := utils.InitChromeDp()
@@ -28,7 +28,7 @@ func ScrapeDegrees(outDir string) {
 		chromedp.WaitVisible("article .col-sm-12", chromedp.ByQuery),
 	)
 	if err != nil {
-		log.Panicf("failed to scrape: %v", err)
+		return fmt.Errorf("failed to scrape: %v", err)
 	}
 
 	// Wait for the article content to load
@@ -37,15 +37,16 @@ func ScrapeDegrees(outDir string) {
 	var html string
 	err = chromedp.Run(chromedpCtx, chromedp.OuterHTML("article .col-sm-12", &html))
 	if err != nil {
-		log.Panicf("failed to scrape: %v", err)
+		return fmt.Errorf("failed to scrape: %v", err)
 	}
 
 	// Write raw HTML to file
 	outPath := fmt.Sprintf("%s/degreesScraped.html", outDir)
 	err = os.WriteFile(outPath, []byte(html), 0644)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	log.Printf("Scraped degrees successfully!\n")
+	return nil
 }

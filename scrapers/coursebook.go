@@ -37,15 +37,17 @@ const (
 
 // ScrapeCoursebook scrapes utd coursebook for the provided term (semester)
 func ScrapeCoursebook(term string, startPrefix string, outDir string, resume bool) error {
-	inputError := errors.New("InvalidInputError")
 	if startPrefix != "" && !prefixRegex.MatchString(startPrefix) {
-		return fmt.Errorf("Invalid starting prefix %s, must match format cp_{abcde}: %w", startPrefix, inputError)
+		return fmt.Errorf("invalid starting prefix %s, must match format cp_{abcde}", startPrefix)
 	}
 	if !termRegex.MatchString(term) {
-		return fmt.Errorf("Invalid term %s, must match format {00-99}{s/f/u}: %w", term, inputError)
+		return fmt.Errorf("invalid term %s, must match format {00-99}{s/f/u}", term)
 	}
 
-	scraper := newCoursebookScraper(term, outDir)
+	scraper, err := newCoursebookScraper(term, outDir)
+	if err != nil {
+		return err
+	}
 	defer scraper.chromedpCancel()
 
 	if resume && startPrefix == "" {
@@ -53,7 +55,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string, resume boo
 		var err error
 		startPrefix, err = scraper.lastCompletePrefix()
 		if err != nil {
-			return fmt.Errorf("Error getting last complete prefix: %w", err)
+			return fmt.Errorf("error getting last complete prefix: %w", err)
 		}
 	}
 
@@ -67,7 +69,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string, resume boo
 
 		start := time.Now()
 		if err := scraper.ensurePrefixFolder(prefix); err != nil {
-			return fmt.Errorf("Error ensuring prefix folder: %w", err)
+			return fmt.Errorf("error ensuring prefix folder: %w", err)
 		}
 
 		var sectionIds []string
@@ -81,7 +83,7 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string, resume boo
 		}
 
 		if err != nil {
-			return fmt.Errorf("Error getting section ids for %s: %w", prefix, err)
+			return fmt.Errorf("error getting section ids for %s: %w", prefix, err)
 		}
 
 		if len(sectionIds) == 0 {
@@ -109,9 +111,8 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string, resume boo
 	log.Printf("[Scrape Complete] Finished scraping term %s in %v. Total sections %d: Total retries %d", term, time.Since(totalTime), scraper.totalScrapedSections, scraper.reqRetries)
 
 	if err := scraper.validate(); err != nil {
-		return fmt.Errorf("Validating failed: %w", err)
+		return fmt.Errorf("validating failed: %w", err)
 	}
-
 	return nil
 }
 
@@ -131,25 +132,34 @@ type coursebookScraper struct {
 	totalScrapedSections int
 }
 
-func newCoursebookScraper(term string, outDir string) *coursebookScraper {
+func newCoursebookScraper(term string, outDir string) (*coursebookScraper, error) {
 	ctx, cancel := utils.InitChromeDp()
 	httpClient := &http.Client{
 		Timeout: httpTimeout,
 	}
 
 	//prefixes in alphabetical order for skip prefix flag
-	prefixes := utils.GetCoursePrefixes(ctx)
+	prefixes, err := utils.GetCoursePrefixes(ctx)
+	if err != nil {
+		cancel()
+		return nil, err
+	}
 	sort.Strings(prefixes)
+	headers, err := utils.RefreshToken(ctx)
+	if err != nil {
+		cancel()
+		return nil, err
+	}
 	return &coursebookScraper{
 		chromedpCtx:       ctx,
 		chromedpCancel:    cancel,
 		httpClient:        httpClient,
 		prefixes:          prefixes,
-		coursebookHeaders: utils.RefreshToken(ctx),
+		coursebookHeaders: headers,
 		term:              term,
 		outDir:            outDir,
 		prefixIdsCache:    make(map[string][]string),
-	}
+	}, nil
 }
 
 // lastCompletePrefix returns the last prefix (alphabetical order) that contains
@@ -157,12 +167,12 @@ func newCoursebookScraper(term string, outDir string) *coursebookScraper {
 // complete prefixes
 func (s *coursebookScraper) lastCompletePrefix() (string, error) {
 	if err := s.ensureOutputFolder(); err != nil {
-		return "", fmt.Errorf("Error ensuring output folder: %w", err)
+		return "", fmt.Errorf("error ensuring output folder: %w", err)
 	}
 
 	dir, err := os.ReadDir(filepath.Join(s.outDir, s.term))
 	if err != nil {
-		return "", fmt.Errorf("Error reading output directory: %w", err)
+		return "", fmt.Errorf("failed to read output directory: %w", err)
 	}
 
 	foundPrefixes := make([]string, 0, len(s.prefixes))
@@ -242,7 +252,7 @@ func (s *coursebookScraper) getMissingIdsForPrefix(prefix string) ([]string, err
 
 	dir, err := os.ReadDir(path)
 	if err != nil {
-		return sectionIds, fmt.Errorf("Failed to access folder %s: %w", path, err)
+		return nil, fmt.Errorf("failed to access folder %s: %w", path, err)
 	}
 
 	foundIds := make(map[string]bool)
@@ -289,7 +299,11 @@ func (s *coursebookScraper) getSectionIdsForPrefix(prefix string) ([]string, err
 // req utility function for making calling the coursebook api
 func (s *coursebookScraper) req(queryStr string, retries int, reqName string) (string, error) {
 	var res *http.Response
+	var refreshErr error
 	err := utils.Retry(func() error {
+		if refreshErr != nil {
+			return refreshErr
+		}
 		req, err := http.NewRequest("POST", "https://coursebook.utdallas.edu/clips/clip-cb11-hat.zog", strings.NewReader(queryStr))
 		if err != nil {
 			return fmt.Errorf("Http request failed: %w", err)
@@ -317,7 +331,13 @@ func (s *coursebookScraper) req(queryStr string, retries int, reqName string) (s
 		return err
 	}, retries, func(numRetries int) {
 		utils.VPrintf("[Request Retry] Attempt %d of %d for request %s", numRetries, retries, reqName)
-		s.coursebookHeaders = utils.RefreshToken(s.chromedpCtx)
+		if refreshErr != nil {
+			return
+		}
+		s.coursebookHeaders, refreshErr = utils.RefreshToken(s.chromedpCtx)
+		if refreshErr != nil {
+			return
+		}
 		s.reqRetries++
 
 		//back off exponentially
@@ -352,16 +372,16 @@ func (s *coursebookScraper) validate() error {
 		log.Printf("[Validation] Missing %d sections for %s", len(ids), prefix)
 
 		if err := s.ensurePrefixFolder(prefix); err != nil {
-			return fmt.Errorf("Error ensuring prefix folder: %w", err)
+			return fmt.Errorf("error ensuring prefix folder: %w", err)
 		}
 
 		for _, id := range ids {
 			content, err := s.getSectionContent(id)
 			if err != nil {
-				return fmt.Errorf("error getting section content for section %s: %v", id, err)
+				return fmt.Errorf("error getting section content for section %s: %w", id, err)
 			}
 			if err := s.writeSection(prefix, id, content); err != nil {
-				return fmt.Errorf("error writing section %s: %v", id, err)
+				return fmt.Errorf("error writing section %s: %w", id, err)
 			}
 			time.Sleep(reqThrottle)
 		}

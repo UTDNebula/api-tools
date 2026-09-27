@@ -72,7 +72,7 @@ type APICalendarResponse struct {
 func ScrapeCometCalendar(outDir string) error {
 	err := os.MkdirAll(outDir, 0777)
 	if err != nil {
-		return fmt.Errorf("Error creating output folder: %w", err)
+		return fmt.Errorf("error creating output folder: %w", err)
 	}
 	client := http.Client{
 		Timeout: 15 * time.Second,
@@ -83,7 +83,7 @@ func ScrapeCometCalendar(outDir string) error {
 	log.Printf("Getting the number of pages...")
 
 	if err := callAndUnmarshal(&client, 0, &calendarData); err != nil {
-		return fmt.Errorf("Error fetching/decoding page %d: %w", 0, err)
+		return fmt.Errorf("error fetching/decoding page %d: %w", 0, err)
 	}
 	numPages := calendarData.Page["total"]
 	log.Printf("The number of pages is %d!\n\n", numPages)
@@ -92,13 +92,13 @@ func ScrapeCometCalendar(outDir string) error {
 	for page := range numPages {
 		log.Printf("Scraping events of page %d...", page+1)
 		if err := callAndUnmarshal(&client, page+1, &calendarData); err != nil {
-			return fmt.Errorf("Error fetching/decoding page %d: %w", page+1, err)
+			return fmt.Errorf("error fetching/decoding page %d: %w", page+1, err)
 		}
 		for _, event := range calendarData.Events {
 			// Parse all necessary info
 			startTime, endTime, err := getTime(event.Event)
 			if err != nil {
-				return fmt.Errorf("Error parsing start & end times: %w", err)
+				return fmt.Errorf("error parsing start & end times: %w", err)
 			}
 			if startTime.After(endTime) {
 				fmt.Printf("start: %s, end: %s\n", startTime, endTime)
@@ -132,11 +132,10 @@ func ScrapeCometCalendar(outDir string) error {
 
 	writePath := fmt.Sprintf("%s/cometCalendarScraped.json", outDir)
 	if err := utils.WriteJSON(writePath, calendarEvents); err != nil {
-		return fmt.Errorf("Error writing JSON to path: %w", err)
+		return fmt.Errorf("error writing JSON to path: %w", err)
 	}
 
 	log.Printf("Finished scraping %d events successfully!\n\n", len(calendarEvents))
-
 	return nil
 }
 

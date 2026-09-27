@@ -54,14 +54,14 @@ func InitChromeDp() (chromedpCtx context.Context, cancelFnc context.CancelFunc) 
 }
 
 // RefreshToken logs into CourseBook and returns headers containing a fresh session token.
-func RefreshToken(chromedpCtx context.Context) map[string][]string {
+func RefreshToken(chromedpCtx context.Context) (map[string][]string, error) {
 	netID, err := GetEnv("LOGIN_NETID")
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	password, err := GetEnv("LOGIN_PASSWORD")
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	delayedRetryCallback := func(numRetries int) {
@@ -87,7 +87,7 @@ func RefreshToken(chromedpCtx context.Context) map[string][]string {
 	}, 3, delayedRetryCallback)
 
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	time.Sleep(250 * time.Millisecond)
@@ -124,7 +124,7 @@ func RefreshToken(chromedpCtx context.Context) map[string][]string {
 	}, 3, delayedRetryCallback)
 
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	return map[string][]string{
@@ -135,19 +135,19 @@ func RefreshToken(chromedpCtx context.Context) map[string][]string {
 		"Content-Type":    {"application/x-www-form-urlencoded"},
 		"Cookie":          cookieStrs,
 		"Connection":      {"keep-alive"},
-	}
+	}, nil
 }
 
 // RefreshAstraToken signs into Astra and returns headers containing authentication cookies.
-func RefreshAstraToken(chromedpCtx context.Context) map[string][]string {
+func RefreshAstraToken(chromedpCtx context.Context) (map[string][]string, error) {
 	// Get username and password
 	username, err := GetEnv("LOGIN_ASTRA_USERNAME")
 	if err != nil {
-		log.Panic("LOGIN_ASTRA_USERNAME is missing from .env!")
+		return nil, err
 	}
 	password, err := GetEnv("LOGIN_ASTRA_PASSWORD")
 	if err != nil {
-		log.Panic("LOGIN_ASTRA_PASSWORD is missing from .env!")
+		return nil, err
 	}
 
 	// Sign in
@@ -166,7 +166,7 @@ func RefreshAstraToken(chromedpCtx context.Context) map[string][]string {
 		chromedp.WaitVisible(`body`, chromedp.ByQuery),
 	)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	time.Sleep(250 * time.Millisecond)
@@ -194,7 +194,7 @@ func RefreshAstraToken(chromedpCtx context.Context) map[string][]string {
 		}),
 	)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	// Return headers, copied from a request the actual site made
@@ -212,7 +212,7 @@ func RefreshAstraToken(chromedpCtx context.Context) map[string][]string {
 		"Sec-Fetch-Site":            {"none"},
 		"Sec-Fetch-User":            {"?1"},
 		"Priority":                  {"u=0, i"},
-	}
+	}, nil
 }
 
 // WriteJSON encodes data as indented JSON and writes it to filepath.
@@ -288,7 +288,7 @@ func Retry(action func() error, maxRetries int, retryCallback func(numRetries in
 }
 
 // GetCoursePrefixes retrieves all course prefix values from CourseBook.
-func GetCoursePrefixes(chromedpCtx context.Context) []string {
+func GetCoursePrefixes(chromedpCtx context.Context) ([]string, error) {
 	// Might need to refresh the token every time we get new course prefixes in the future
 	// refreshToken(chromedpCtx)
 
@@ -308,10 +308,10 @@ func GetCoursePrefixes(chromedpCtx context.Context) []string {
 		),
 	)
 	if err != nil {
-		log.Panic(err)
+		return nil, err
 	}
 	log.Printf("Found the %d course prefixes!", len(coursePrefixes))
-	return coursePrefixes
+	return coursePrefixes, nil
 }
 
 // ConvertFromInterface attempts to convert a value into the requested type and returns a pointer when successful.
@@ -327,7 +327,7 @@ type LinkResult struct {
 	Href string
 }
 
-func ExtractTextAndHref(nodes []*cdp.Node, chromedpCtx context.Context) []LinkResult {
+func ExtractTextAndHref(nodes []*cdp.Node, chromedpCtx context.Context) ([]LinkResult, error) {
 	output := []LinkResult{}
 	var err error
 
@@ -345,10 +345,10 @@ func ExtractTextAndHref(nodes []*cdp.Node, chromedpCtx context.Context) []LinkRe
 			chromedp.TextContent(fmt.Sprintf(`a[href="%s"]`, href), &text, chromedp.ByQuery),
 		)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 		output = append(output, LinkResult{text, href})
 	}
 
-	return output
+	return output, nil
 }

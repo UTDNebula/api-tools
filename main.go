@@ -16,6 +16,10 @@ import (
 )
 
 func main() {
+	os.Exit(run())
+}
+
+func run() int {
 	// Load environment variables
 	godotenv.Load()
 
@@ -121,30 +125,34 @@ func main() {
 	case *scrape:
 		switch {
 		case *scrapeProfiles:
-			scrapers.ScrapeProfiles(*outDir)
+			err = scrapers.ScrapeProfiles(*outDir)
 		case *scrapeCoursebook:
 			if *term == "" {
 				log.Panic("No term specified for coursebook scraping! Use -term to specify.")
 			}
-			scrapers.ScrapeCoursebook(*term, *startPrefix, *outDir, *resume)
+			err = scrapers.ScrapeCoursebook(*term, *startPrefix, *outDir, *resume)
 		case *scrapeDiscounts:
-			scrapers.ScrapeDiscounts(*outDir)
+			err = scrapers.ScrapeDiscounts(*outDir)
 		case *cometCalendar:
-			scrapers.ScrapeCometCalendar(*outDir)
+			err = scrapers.ScrapeCometCalendar(*outDir)
 		case *astra:
-			scrapers.ScrapeAstra(*outDir)
+			err = scrapers.ScrapeAstra(*outDir)
 		case *mazevo:
-			scrapers.ScrapeMazevo(*outDir)
+			err = scrapers.ScrapeMazevo(*outDir)
 		case *mapFlag:
-			scrapers.ScrapeMapLocations(*outDir)
+			err = scrapers.ScrapeMapLocations(*outDir)
 		case *academicCalendars:
-			scrapers.ScrapeAcademicCalendars(*outDir)
+			err = scrapers.ScrapeAcademicCalendars(*outDir)
 		case *degrees:
-			scrapers.ScrapeDegrees(*outDir)
+			err = scrapers.ScrapeDegrees(*outDir)
 		case *budgets:
-			scrapers.ScrapeBudgets(*outDir)
+			err = scrapers.ScrapeBudgets(*outDir)
 		default:
 			log.Panic("You must specify which type of scraping you would like to perform with one of the scraping flags!")
+		}
+		if err != nil {
+			log.Printf("Scraping failed: %v", err)
+			return 1
 		}
 	case *parse:
 		switch {
@@ -186,6 +194,7 @@ func main() {
 		}
 	default:
 		flag.PrintDefaults()
-		return
+		return 0
 	}
+	return 0
 }
