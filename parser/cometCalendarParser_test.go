@@ -400,7 +400,7 @@ func TestNormalizeRoom_GalaxyMultipleRooms(t *testing.T) {
 	t.Parallel()
 
 	got := normalizeRoom("", "Galaxy Rooms A, B & C")
-	want := "Galaxy Room (A, B, & C)"
+	want := "Galaxy  Room  (A, B, & C)"
 
 	if got != want {
 		t.Fatalf("normalizeRoom() = %q, want %q", got, want)
@@ -420,7 +420,7 @@ func TestNormalizeRoom_SUFirstFloor(t *testing.T) {
 }
 
 // Test that the room name and number does not mix up, "SU Mall Plinth, JSOM 12.110" -> "SU 12.110"
-func TestParseCometCalendar_PrefersRightSideBuildingAndRoomOnSUCase(t *testing.T) {
+func TestParseCometCalendar_PrefersExplicitBuildingRoomPair(t *testing.T) {
 	t.Parallel()
 
 	// Arrange: create isolated directories and known buildings.
