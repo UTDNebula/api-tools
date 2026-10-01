@@ -22,8 +22,9 @@ import (
 
 // Regexp to match building abbreviations and room numbers
 var (
-	buildingRegexp = regexp.MustCompile(`[A-Z]{2,4}`)
-	roomRegexp     = regexp.MustCompile(`([0-9]{1,2}\.[0-9]{3})([A-Z])?`)
+	buildingRegexp     = regexp.MustCompile(`[A-Z]{2,4}`)
+	roomRegexp         = regexp.MustCompile(`([0-9]{1,2}\.[0-9]{3})([A-Z])?`)
+	buildingRoomRegexp = regexp.MustCompile(`\b([A-Z]{2,4})\s+([0-9]{1,2}\.[0-9]{3}[A-Z]?)\b`)
 )
 
 // ParseCometCalendar reformats the comet calendar data into uploadable json in Mongo
@@ -60,6 +61,16 @@ func ParseCometCalendar(inDir string, outDir string) {
 
 		building := buildingRegexp.FindString(*location)
 		room := roomRegexp.FindString(*location)
+
+		// prefer an explicity building-room pair if it exists, e.g., "SU Mall Plinth, JSOM 12.110" -> "JSOM 12.110"
+		matches := buildingRoomRegexp.FindAllStringSubmatch(*location, -1)
+		for _, match := range matches {
+			if slices.Contains(validAbbreviations, match[1]) {
+				building = match[1]
+				room = match[2]
+				break
+			}
+		}
 
 		// buildingRegexp might capture something that isn't a valid building abbreviation (e.g., UTD)
 		isValidBuilding := slices.Contains(validAbbreviations, building)
@@ -192,7 +203,10 @@ func normalizeRoom(building string, room string) string {
 	}
 
 	// Non-number room
-	room = strings.ToLower(strings.Split(room, ", ")[0])
+	room = strings.ToLower(room)
+	if !strings.Contains(room, "galaxy") {
+		room = strings.Split(room, ", ")[0]
+	}
 	tokens := strings.Split(room, " ")
 	normalizedTokens := []string{}
 	for _, token := range tokens {
