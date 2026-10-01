@@ -394,3 +394,79 @@ func TestParseCometCalendar_UsesOtherForEmptyLocation(t *testing.T) {
 		t.Fatalf("expected 1 event in Other/Other, got %d", len(roomEntry.Events))
 	}
 }
+
+// Test multiple Galaxy rooms
+func TestNormalizeRoom_GalaxyMultipleRooms(t *testing.T) {
+	t.Parallel()
+
+	got := normalizeRoom("", "Galaxy Rooms A, B & C")
+	want := "Galaxy Room (A, B, & C)"
+
+	if got != want {
+		t.Fatalf("normalizeRoom() = %q, want %q", got, want)
+	}
+}
+
+// Test the Student Union First Floor
+func TestNormalizeRoom_SUFirstFloor(t *testing.T) {
+	t.Parallel()
+
+	got := normalizeRoom("Student Union (SU)", "SU First Floor, Chess Plaza")
+	want := "First Floor"
+
+	if got != want {
+		t.Fatalf("normalizeRoom() = %q, want %q", got, want)
+	}
+}
+
+// Test that the room name and number does not mix up, "SU Mall Plinth, JSOM 12.110" -> "SU 12.110"
+func TestParseCometCalendar_PrefersRightSideBuildingAndRoomOnSUCase(t *testing.T) {
+	t.Parallel()
+
+	// Arrange: create isolated directories and known buildings.
+	inDir := t.TempDir()
+	outDir := t.TempDir()
+
+	locations := []schema.MapBuilding{
+		{
+			Name:    strPtr("Student Union (SU)"),
+			Acronym: strPtr("SU"),
+		},
+		{
+			Name:    strPtr("Naveen Jindal School of Management (JSOM)"),
+			Acronym: strPtr("JSOM"),
+		},
+	}
+	writeJSONFile(t, filepath.Join(inDir, "mapLocations.json"), locations)
+
+	start := time.Date(2026, 3, 14, 9, 0, 0, 0, time.UTC)
+	events := []schema.Event{
+		makeEvent("Right Side Location Event", "SU Mall Plinth, JSOM 12.110", start),
+	}
+	writeJSONFile(t, filepath.Join(inDir, "cometCalendarScraped.json"), events)
+
+	// Act: parse the input files.
+	ParseCometCalendar(inDir, outDir)
+
+	// Assert: the event should be grouped under JSOM / 12.110.
+	result := readJSONFile[[]schema.MultiBuildingEvents[schema.Event]](
+		t,
+		filepath.Join(outDir, "cometCalendar.json"),
+	)
+
+	dateEntry := findDate(t, result, "2026-03-14")
+	if len(dateEntry.Buildings) != 1 {
+		t.Fatalf("expected 1 building, got %d", len(dateEntry.Buildings))
+	}
+
+	buildingEntry := findBuilding(t, dateEntry, "JSOM")
+	roomEntry := findRoom(t, buildingEntry, "12.110")
+
+	if len(roomEntry.Events) != 1 {
+		t.Fatalf("expected 1 event in JSOM/12.110, got %d", len(roomEntry.Events))
+	}
+
+	if diff := cmp.Diff(events[0].Summary, roomEntry.Events[0].Summary); diff != "" {
+		t.Fatalf("unexpected event stored in room (-want +got);\n%s", diff)
+	}
+}
