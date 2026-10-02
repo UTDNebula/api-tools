@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/UTDNebula/nebula-api/api/schema"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 func TestInitMatchers(t *testing.T) {
@@ -144,7 +144,7 @@ func TestUngroupText(t *testing.T) {
 }
 
 func TestJoinAdjacentOthers(t *testing.T) {
-	testSectionID := primitive.NewObjectID()
+	testSectionID := bson.NewObjectID()
 
 	tests := []struct {
 		name       string

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/UTDNebula/api-tools/utils"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/v2/bson"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/UTDNebula/nebula-api/api/schema"
@@ -16,7 +16,7 @@ import (
 
 var (
 	// Sections maps section IDs to the associated section records.
-	Sections = make(map[primitive.ObjectID]*schema.Section)
+	Sections = make(map[bson.ObjectID]*schema.Section)
 
 	// Courses maps catalog identifiers to course definitions.
 	Courses = make(map[string]*schema.Course)
@@ -25,13 +25,13 @@ var (
 	Professors = make(map[string]*schema.Professor)
 
 	// CourseIDMap maps course IDs to their catalog keys.
-	CourseIDMap = make(map[primitive.ObjectID]string)
+	CourseIDMap = make(map[bson.ObjectID]string)
 
 	// ProfessorIDMap maps professor IDs to their lookup keys.
-	ProfessorIDMap = make(map[primitive.ObjectID]string)
+	ProfessorIDMap = make(map[bson.ObjectID]string)
 
 	// ReqParsers maps course IDs to requisite parser functions.
-	ReqParsers = make(map[primitive.ObjectID]func())
+	ReqParsers = make(map[bson.ObjectID]func())
 
 	// GradeMap stores grade distributions keyed by semester and section identifier.
 	GradeMap map[string]map[string][]int

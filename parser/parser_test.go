@@ -18,7 +18,7 @@ import (
 	"github.com/UTDNebula/nebula-api/api/schema"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 // TestData bundles a parser test input with its expected artifacts.
@@ -282,12 +282,12 @@ func updateTestData() error {
 }
 
 func clearGlobals() {
-	Sections = make(map[primitive.ObjectID]*schema.Section)
+	Sections = make(map[bson.ObjectID]*schema.Section)
 	Courses = make(map[string]*schema.Course)
 	Professors = make(map[string]*schema.Professor)
-	CourseIDMap = make(map[primitive.ObjectID]string)
-	ProfessorIDMap = make(map[primitive.ObjectID]string)
-	ReqParsers = make(map[primitive.ObjectID]func())
+	CourseIDMap = make(map[bson.ObjectID]string)
+	ProfessorIDMap = make(map[bson.ObjectID]string)
+	ReqParsers = make(map[bson.ObjectID]func())
 }
 
 // TestParse verifies that parsing input fixtures generates the expected JSON exports.
@@ -327,7 +327,7 @@ func TestParse(t *testing.T) {
 	}
 
 	//Build the ValueByID maps, this is used to for comparing because we cant directly compare ids
-	CoursesById := make(map[primitive.ObjectID]schema.Course)
+	CoursesById := make(map[bson.ObjectID]schema.Course)
 	for _, course := range OutputCourses {
 		CoursesById[course.Id] = course
 	}
@@ -335,7 +335,7 @@ func TestParse(t *testing.T) {
 		CoursesById[course.Id] = course
 	}
 
-	ProfessorsByID := make(map[primitive.ObjectID]schema.Professor)
+	ProfessorsByID := make(map[bson.ObjectID]schema.Professor)
 	for _, prof := range OutputProfessors {
 		ProfessorsByID[prof.Id] = prof
 	}
@@ -343,7 +343,7 @@ func TestParse(t *testing.T) {
 		ProfessorsByID[prof.Id] = prof
 	}
 
-	SectionsByID := make(map[primitive.ObjectID]schema.Section)
+	SectionsByID := make(map[bson.ObjectID]schema.Section)
 	for _, section := range OutputSections {
 		SectionsByID[section.Id] = section
 	}
@@ -366,7 +366,7 @@ func TestParse(t *testing.T) {
 			if outputCourse, ok := CoursesByKey[key]; ok {
 				diff := cmp.Diff(expectedCourse, outputCourse,
 					cmpopts.IgnoreFields(schema.Course{}, "Id"),
-					cmp.Transformer("Sections", func(sections []primitive.ObjectID) []string {
+					cmp.Transformer("Sections", func(sections []bson.ObjectID) []string {
 						result := make([]string, 0, len(sections))
 						for _, id := range sections {
 							if section, ok := SectionsByID[id]; ok {
@@ -423,7 +423,7 @@ func TestParse(t *testing.T) {
 
 				diff := cmp.Diff(expectedProfessor, outputProfessor,
 					cmpopts.IgnoreFields(schema.Professor{}, "Id"),
-					cmp.Transformer("Sections", func(sections []primitive.ObjectID) []string {
+					cmp.Transformer("Sections", func(sections []bson.ObjectID) []string {
 						result := make([]string, 0, len(sections))
 						for _, id := range sections {
 							if section, ok := SectionsByID[id]; ok {
@@ -480,13 +480,13 @@ func TestParse(t *testing.T) {
 
 				diff := cmp.Diff(expectedSection, outputSection,
 					cmpopts.IgnoreFields(schema.Section{}, "Id"),
-					cmp.Transformer("Course_reference", func(id primitive.ObjectID) string {
+					cmp.Transformer("Course_reference", func(id bson.ObjectID) string {
 						if c, ok := CoursesById[id]; ok {
 							return c.Course_number + c.Catalog_year
 						}
 						return ""
 					}),
-					cmp.Transformer("Professors", func(profIds []primitive.ObjectID) []string {
+					cmp.Transformer("Professors", func(profIds []bson.ObjectID) []string {
 						result := make([]string, 0, len(profIds))
 						for _, id := range profIds {
 							if professor, ok := ProfessorsByID[id]; ok {

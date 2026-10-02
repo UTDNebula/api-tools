@@ -12,13 +12,12 @@ import (
 
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 
 	"github.com/UTDNebula/api-tools/uploader/pipelines"
 	"github.com/UTDNebula/nebula-api/api/schema"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 //  It's important to note that all of the files must be updated/uploaded TOGETHER!
@@ -292,7 +291,7 @@ func UploadData[T any](client *mongo.Client, ctx context.Context, fptr *os.File,
 
 		// The documents will be added/merged into the collection with the same name as the file
 		// The filters for the merge aggregate pipeline are based on the file name
-		mergeStage := bson.D{primitive.E{Key: "$merge", Value: bson.D{primitive.E{Key: "into", Value: fileName}, primitive.E{Key: "on", Value: matchFilters}, primitive.E{Key: "whenMatched", Value: "replace"}, primitive.E{Key: "whenNotMatched", Value: "insert"}}}}
+		mergeStage := bson.D{bson.E{Key: "$merge", Value: bson.D{bson.E{Key: "into", Value: fileName}, bson.E{Key: "on", Value: matchFilters}, bson.E{Key: "whenMatched", Value: "replace"}, bson.E{Key: "whenNotMatched", Value: "insert"}}}}
 
 		// Execute aggregate pipeline
 		_, err = tempCollection.Aggregate(ctx, mongo.Pipeline{mergeStage})

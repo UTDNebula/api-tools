@@ -8,7 +8,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/UTDNebula/api-tools/utils"
 	"github.com/UTDNebula/nebula-api/api/schema"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/v2/bson"
 	"golang.org/x/net/html/atom"
 )
 
@@ -45,7 +45,7 @@ func parseSection(rowInfo map[string]*goquery.Selection, classInfo map[string]st
 
 	sectionNumber := getSectionNumber(classInfo)
 
-	id := primitive.NewObjectID()
+	id := bson.NewObjectID()
 
 	section := schema.Section{
 		Id:                    id,

@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/UTDNebula/nebula-api/api/schema"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 // Globals for testing these validation units
@@ -52,7 +52,7 @@ func init() {
 		panic(err)
 	}
 
-	courseIndex := make(map[primitive.ObjectID]int)
+	courseIndex := make(map[bson.ObjectID]int)
 	for i, course := range testCourses {
 		courseIndex[course.Id] = i
 	}
@@ -155,7 +155,7 @@ func TestDuplicateProfPass(t *testing.T) {
 // TestCourseReferencePass ensures section references to courses succeed.
 // Test if course references to anything nonexistent. Designed for pass case
 func TestCourseReferencePass(t *testing.T) {
-	sectionMap := make(map[primitive.ObjectID]*schema.Section)
+	sectionMap := make(map[bson.ObjectID]*schema.Section)
 	for _, section := range testSections {
 		sectionMap[section.Id] = section
 	}
@@ -216,7 +216,7 @@ func TestCourseReferenceFail2(t *testing.T) {
 // Test section reference to professor, designed for pass case
 func TestSectionReferenceProfPass(t *testing.T) {
 	// Build profIDMap & profs
-	profIDMap := make(map[primitive.ObjectID]string)
+	profIDMap := make(map[bson.ObjectID]string)
 	profs := make(map[string]*schema.Professor)
 
 	for _, professor := range testProfessors {
@@ -247,7 +247,7 @@ func TestSectionReferenceProfPass(t *testing.T) {
 // Test section reference to professors, designed for fail case
 func TestSectionReferenceProfFail(t *testing.T) {
 
-	profIDMap := make(map[primitive.ObjectID]string)
+	profIDMap := make(map[bson.ObjectID]string)
 	profs := make(map[string]*schema.Professor)
 
 	for i, professor := range testProfessors {
@@ -289,7 +289,7 @@ func TestSectionReferenceProfFail(t *testing.T) {
 // TestSectionReferenceCourse verifies section-course reference validation.
 // Test section reference to course
 func TestSectionReferenceCourse(t *testing.T) {
-	courseIDMap := make(map[primitive.ObjectID]string)
+	courseIDMap := make(map[bson.ObjectID]string)
 	for _, course := range testCourses {
 		courseIDMap[course.Id] = course.Internal_course_number + course.Catalog_year
 	}
@@ -421,9 +421,9 @@ func testDuplicatePass(objType string, ix1 int, ix2 int, t *testing.T) {
 // fail = "missing" means it lacks one sections
 // fail = "modified" means one section's course reference has been modified
 func testCourseReferenceFail(fail string, courseIx int, sectionIx int, t *testing.T) {
-	sectionMap := make(map[primitive.ObjectID]*schema.Section)
+	sectionMap := make(map[bson.ObjectID]*schema.Section)
 
-	var sectionID, originalID primitive.ObjectID // used to store IDs of modified sections
+	var sectionID, originalID bson.ObjectID // used to store IDs of modified sections
 
 	// Build the failed section map based on fail type
 	switch fail {
@@ -446,7 +446,7 @@ func testCourseReferenceFail(fail string, courseIx int, sectionIx int, t *testin
 				originalID = section.Course_reference
 
 				// Modified part
-				sectionMap[section.Id].Course_reference = primitive.NewObjectID()
+				sectionMap[section.Id].Course_reference = bson.NewObjectID()
 			}
 		}
 	}
