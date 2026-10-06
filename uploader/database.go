@@ -30,7 +30,7 @@ func connectDB() *mongo.Client {
 
 		opts := options.Client().ApplyURI(getEnvMongoURI())
 
-		client, err := mongo.Connect(ctx, opts)
+		client, err := mongo.Connect(opts)
 		if err != nil {
 			log.Panic("Unable to create MongoDB client and connect to database")
 			os.Exit(1)
