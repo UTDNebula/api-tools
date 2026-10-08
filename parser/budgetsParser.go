@@ -404,8 +404,11 @@ func parseBudgetPdfs(paths []string) (schema.Budget, error) {
 		if err != nil {
 			return schema.Budget{}, err
 		}
-		contentBuilder.WriteString("# " + filepath.Base(path) + "\n\n")
-		contentBuilder.WriteString(content + "\n\n\n")
+		contentBuilder.WriteString("# ")
+		contentBuilder.WriteString(filepath.Base(path))
+		contentBuilder.WriteString("\n\n")
+		contentBuilder.WriteString(content)
+		contentBuilder.WriteString("\n\n\n")
 	}
 	content := contentBuilder.String()
 
