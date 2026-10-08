@@ -15,7 +15,7 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/UTDNebula/api-tools/utils"
-	"github.com/UTDNebula/nebula-api/api/schema"
+	"github.com/UTDNebula/nebula-api/rest/schema"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"go.mongodb.org/mongo-driver/v2/bson"

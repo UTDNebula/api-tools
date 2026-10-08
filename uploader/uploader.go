@@ -17,7 +17,7 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 
 	"github.com/UTDNebula/api-tools/uploader/pipelines"
-	"github.com/UTDNebula/nebula-api/api/schema"
+	"github.com/UTDNebula/nebula-api/rest/schema"
 )
 
 //  It's important to note that all of the files must be updated/uploaded TOGETHER!
