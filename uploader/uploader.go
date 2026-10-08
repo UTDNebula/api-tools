@@ -145,9 +145,8 @@ func UploadData[T any](client *mongo.Client, ctx context.Context, fptr *os.File,
 			}
 
 			// look for `discount_searches` in mongo
-			cursor, err := collection.SearchIndexes().List(ctx, &options.SearchIndexesOptions{
-				Name: &indexName,
-			})
+			opts := options.SearchIndexes().SetName(indexName)
+			cursor, err := collection.SearchIndexes().List(ctx, opts)
 			if err != nil {
 				log.Panic(err)
 			}
