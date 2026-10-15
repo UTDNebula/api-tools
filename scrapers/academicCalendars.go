@@ -37,7 +37,7 @@ func ScrapeAcademicCalendars(outDir string) error {
 	os.RemoveAll(outSubDir)
 	err := os.MkdirAll(outSubDir, 0777)
 	if err != nil {
-		return fmt.Errorf("create academic calendar output directory: %w", err)
+		return fmt.Errorf("error creating output folder: %w", err)
 	}
 
 	// Go to listings page
@@ -45,7 +45,7 @@ func ScrapeAcademicCalendars(outDir string) error {
 		chromedp.Navigate(`https://www.utdallas.edu/academics/calendar/`),
 	)
 	if err != nil {
-		return fmt.Errorf("navigate to academic calendars: %w", err)
+		return fmt.Errorf("error navigating to \"https://www.utdallas.edu/academics/calendar/\": %w", err)
 	}
 
 	// Selector for the scraping the calendar nodes
@@ -60,14 +60,14 @@ func ScrapeAcademicCalendars(outDir string) error {
 		chromedp.TextContent("h2.wp-block-heading", &academicCalendars[0].Title, chromedp.ByQuery),
 	)
 	if err != nil {
-		return fmt.Errorf("read current calendar title: %w", err)
+		return fmt.Errorf("error extracting calendar heading: %w", err)
 	}
 	var currentNode []*cdp.Node
 	err = chromedp.Run(chromedpCtx,
 		chromedp.Nodes(currentSel, &currentNode, chromedp.ByQuery),
 	)
 	if err != nil {
-		return fmt.Errorf("read current calendar link: %w", err)
+		return fmt.Errorf("error retrieving the full calendar link: %w", err)
 	}
 	for i := 0; i < len(currentNode[0].Attributes); i += 2 {
 		if currentNode[0].Attributes[i] == "href" {
@@ -81,7 +81,7 @@ func ScrapeAcademicCalendars(outDir string) error {
 		chromedp.Nodes(futureSel, &futureNodes, chromedp.BySearch),
 	)
 	if err != nil {
-		return fmt.Errorf("read future calendar links: %w", err)
+		return fmt.Errorf("error retrieving future term links: %w", err)
 	}
 	links, err := utils.ExtractTextAndHref(futureNodes, chromedpCtx)
 	if err != nil {
@@ -101,7 +101,7 @@ func ScrapeAcademicCalendars(outDir string) error {
 		chromedp.Nodes(pastSel, &pastNodes, chromedp.BySearch),
 	)
 	if err != nil {
-		return fmt.Errorf("read past calendar links: %w", err)
+		return fmt.Errorf("error retrieving past term links: %w", err)
 	}
 	links, err = utils.ExtractTextAndHref(pastNodes, chromedpCtx)
 	if err != nil {
@@ -135,28 +135,28 @@ func downloadPdfFromBox(href string, filename string, outDir string) error {
 	// Create blank file
 	out, err := os.Create(filepath.Join(outDir, fmt.Sprintf("%s.pdf", filename)))
 	if err != nil {
-		return fmt.Errorf("create calendar PDF: %w", err)
+		return fmt.Errorf("error creating blank file: %w", err)
 	}
 	defer out.Close()
 
 	// Pull ID from link
 	parsedLink, err := url.Parse(href)
 	if err != nil {
-		return fmt.Errorf("parse calendar URL: %w", err)
+		return fmt.Errorf("error parsing calendar link: %w", err)
 	}
 	fileId := path.Base(parsedLink.Path)
 
 	// Use box download link with ID
 	resp, err := http.Get(fmt.Sprintf("https://utdallas.box.com/shared/static/%s.pdf", fileId))
 	if err != nil {
-		return fmt.Errorf("download calendar PDF: %w", err)
+		return fmt.Errorf("error downloading from box link: %w", err)
 	}
 	defer resp.Body.Close()
 
 	// Output response to blank file
 	_, err = io.Copy(out, resp.Body)
 	if err != nil {
-		return fmt.Errorf("save calendar PDF: %w", err)
+		return fmt.Errorf("error outputing to blank file: %w", err)
 	}
 
 	log.Printf("Scraped academic calendar %s!", filename)

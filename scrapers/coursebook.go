@@ -172,7 +172,7 @@ func (s *coursebookScraper) lastCompletePrefix() (string, error) {
 
 	dir, err := os.ReadDir(filepath.Join(s.outDir, s.term))
 	if err != nil {
-		return "", fmt.Errorf("failed to read output directory: %w", err)
+		return "", fmt.Errorf("error reading output directory: %w", err)
 	}
 
 	foundPrefixes := make([]string, 0, len(s.prefixes))

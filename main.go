@@ -16,10 +16,7 @@ import (
 )
 
 func main() {
-	os.Exit(run())
-}
 
-func run() int {
 	// Load environment variables
 	godotenv.Load()
 
@@ -106,7 +103,7 @@ func run() int {
 	logFile, err := os.Create(fmt.Sprintf("./logs/%d-%d-%dT%d-%d-%d.log", month, day, year, hour, min, sec))
 
 	if err != nil {
-		log.Fatal(err)
+		log.Panicf("Error creating log file: %v", err)
 	}
 
 	defer logFile.Close()
@@ -151,8 +148,7 @@ func run() int {
 			log.Panic("You must specify which type of scraping you would like to perform with one of the scraping flags!")
 		}
 		if err != nil {
-			log.Printf("Scraping failed: %v", err)
-			return 1
+			log.Panicf("Scraping failed: %v", err)
 		}
 	case *parse:
 		switch {
@@ -194,7 +190,5 @@ func run() int {
 		}
 	default:
 		flag.PrintDefaults()
-		return 0
 	}
-	return 0
 }

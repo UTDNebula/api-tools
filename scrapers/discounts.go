@@ -21,7 +21,7 @@ func ScrapeDiscounts(outDir string) error {
 	// Ensure output directory exists
 	err := os.MkdirAll(outDir, 0777)
 	if err != nil {
-		return err
+		return fmt.Errorf("error creating output folder: %w", err)
 	}
 
 	chromedpCtx, cancel := utils.InitChromeDp()
@@ -33,7 +33,7 @@ func ScrapeDiscounts(outDir string) error {
 		chromedp.Navigate(discountUrl),
 		chromedp.WaitReady("body", chromedp.ByQuery),
 	); err != nil {
-		return err
+		return fmt.Errorf("error navigating to the discount page: %w", err)
 	}
 
 	// Wait for the content to load
@@ -42,13 +42,13 @@ func ScrapeDiscounts(outDir string) error {
 	// Get the HTML content
 	var html string
 	if err := chromedp.Run(chromedpCtx, chromedp.InnerHTML("body", &html)); err != nil {
-		return err
+		return fmt.Errorf("error getting the html content of the discount page; %w", err)
 	}
 
 	// Write raw HTML to file
 	outPath := fmt.Sprintf("%s/discountsScraped.html", outDir)
 	if err := os.WriteFile(outPath, []byte(html), 0644); err != nil {
-		return err
+		return fmt.Errorf("error writing html to file: %w", err)
 	}
 
 	log.Printf("Scraped discounts successfully!\n")

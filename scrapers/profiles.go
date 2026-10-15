@@ -109,12 +109,12 @@ func scrapeProfessorLinks(chromedpCtx context.Context) ([]string, error) {
 		),
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error getting page links: %w", err)
 	}
 
 	numPages, err := strconv.Atoi(getNodeText(pageLinks[len(pageLinks)-2]))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error getting number of pages: %w", err)
 	}
 
 	professorLinks := make([]string, 0, numPages)
@@ -135,7 +135,7 @@ func scrapeProfessorLinks(chromedpCtx context.Context) ([]string, error) {
 			),
 		)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error scraping page %d: %w", curPage, err)
 		}
 	}
 
@@ -150,7 +150,7 @@ func ScrapeProfiles(outDir string) error {
 
 	err := os.MkdirAll(outDir, 0777)
 	if err != nil {
-		return err
+		return fmt.Errorf("error creating output folder: %w", err)
 	}
 
 	var professors []schema.Professor
@@ -179,7 +179,7 @@ func ScrapeProfiles(outDir string) error {
 			}),
 		)
 		if err != nil {
-			return err
+			return fmt.Errorf("error scraping professor name: %w", err)
 		}
 
 		// Get the image uri
@@ -218,7 +218,7 @@ func ScrapeProfiles(outDir string) error {
 				}),
 			)
 			if err != nil {
-				return err
+				return fmt.Errorf("error scraping imageUri: %w", err)
 			}
 		}
 
@@ -272,7 +272,7 @@ func ScrapeProfiles(outDir string) error {
 			),
 		)
 		if err != nil {
-			return err
+			return fmt.Errorf("error scraping professor phone number and office location: %w", err)
 		}
 
 		utils.VPrint("Parsing list...")
@@ -299,13 +299,13 @@ func ScrapeProfiles(outDir string) error {
 	// Write professor data to output file
 	fptr, err := os.Create(fmt.Sprintf("%s/profiles.json", outDir))
 	if err != nil {
-		return err
+		return fmt.Errorf("error creating output file: %w", err)
 	}
 	defer fptr.Close()
 	encoder := json.NewEncoder(fptr)
 	encoder.SetIndent("", "\t")
 	if err := encoder.Encode(professors); err != nil {
-		return err
+		return fmt.Errorf("error encoding professor profile to JSON: %w", err)
 	}
 	return nil
 }

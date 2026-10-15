@@ -44,7 +44,7 @@ func ScrapeBudgets(outDir string) error {
 		chromedp.Navigate(`https://finance.utdallas.edu/for-others/public-reports/`),
 	)
 	if err != nil {
-		return fmt.Errorf("error navigating to listings page: %w", err)
+		return fmt.Errorf("error navigating to budget listings page: %w", err)
 	}
 
 	// Selector for the scraping the budget nodes
@@ -116,7 +116,7 @@ func downloadPdf(href string, filename string, outDir string) error {
 
 	req, err := http.NewRequest("GET", href, nil)
 	if err != nil {
-		return fmt.Errorf("error creating request: %w", err)
+		return fmt.Errorf("error creating http request: %w", err)
 	}
 
 	// Use a user agent and referer to avoid 599 errors

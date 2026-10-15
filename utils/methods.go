@@ -57,11 +57,11 @@ func InitChromeDp() (chromedpCtx context.Context, cancelFnc context.CancelFunc) 
 func RefreshToken(chromedpCtx context.Context) (map[string][]string, error) {
 	netID, err := GetEnv("LOGIN_NETID")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error getting env variable LOGIN_NETID: %w", err)
 	}
 	password, err := GetEnv("LOGIN_PASSWORD")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error getting env variable LOGIN_PASSWORD: %w", err)
 	}
 
 	delayedRetryCallback := func(numRetries int) {
@@ -87,7 +87,7 @@ func RefreshToken(chromedpCtx context.Context) (map[string][]string, error) {
 	}, 3, delayedRetryCallback)
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error logging into coursebook: %w", err)
 	}
 
 	time.Sleep(250 * time.Millisecond)
@@ -143,11 +143,11 @@ func RefreshAstraToken(chromedpCtx context.Context) (map[string][]string, error)
 	// Get username and password
 	username, err := GetEnv("LOGIN_ASTRA_USERNAME")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error getting env variable LOGIN_ASTRA_USERNAME: %w", err)
 	}
 	password, err := GetEnv("LOGIN_ASTRA_PASSWORD")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error getting env variable LOGIN_ASTRA_PASSWORD: %w", err)
 	}
 
 	// Sign in
@@ -166,7 +166,7 @@ func RefreshAstraToken(chromedpCtx context.Context) (map[string][]string, error)
 		chromedp.WaitVisible(`body`, chromedp.ByQuery),
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error signing into Astra: %w", err)
 	}
 
 	time.Sleep(250 * time.Millisecond)
@@ -308,7 +308,7 @@ func GetCoursePrefixes(chromedpCtx context.Context) ([]string, error) {
 		),
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error getting course prefixes: %w", err)
 	}
 	log.Printf("Found the %d course prefixes!", len(coursePrefixes))
 	return coursePrefixes, nil
@@ -345,7 +345,7 @@ func ExtractTextAndHref(nodes []*cdp.Node, chromedpCtx context.Context) ([]LinkR
 			chromedp.TextContent(fmt.Sprintf(`a[href="%s"]`, href), &text, chromedp.ByQuery),
 		)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error getting inner text: %w", err)
 		}
 		output = append(output, LinkResult{text, href})
 	}

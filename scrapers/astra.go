@@ -28,7 +28,7 @@ func ScrapeAstra(outDir string) error {
 	// Make output folder
 	err := os.MkdirAll(outDir, 0777)
 	if err != nil {
-		return err
+		return fmt.Errorf("error creating output folder: %w", err)
 	}
 
 	days := "{"       // String JSON for storing results by day
@@ -45,7 +45,7 @@ func ScrapeAstra(outDir string) error {
 	// Get cookies for auth
 	astraHeaders, err := utils.RefreshAstraToken(chromedpCtx)
 	if err != nil {
-		return err
+		return fmt.Errorf("error getting cookies for auth: %w", err)
 	}
 	time.Sleep(500 * time.Millisecond)
 	cancel() // Don't need chromedp anymore
@@ -64,28 +64,28 @@ func ScrapeAstra(outDir string) error {
 		url := fmt.Sprintf("https://www.aaiscloud.com/UTXDallas/~api/calendar/CalendarWeekGrid?_dc=%d&action=GET&start=0&limit=%d&isForWeekView=false&fields=ActivityId,ActivityPk,ActivityName,ParentActivityId,ParentActivityName,MeetingType,Description,StartDate,EndDate,DayOfWeek,StartMinute,EndMinute,ActivityTypeCode,ResourceId,CampusName,BuildingCode,RoomNumber,RoomName,LocationName,InstitutionId,SectionId,SectionPk,IsExam,IsCrosslist,IsAllDay,IsPrivate,EventId,EventPk,CurrentState,NotAllowedUsageMask,UsageColor,UsageColorIsPrimary,EventTypeColor,MaxAttendance,ActualAttendance,Capacity&filter=(StartDate%%3C%%3D%%22%sT23%%3A00%%3A00%%22)%%26%%26(EndDate%%3E%%3D%%22%sT00%%3A00%%3A00%%22)&page=1&sortOrder=%%2BStartDate,%%2BStartMinute", time.Now().UnixMilli(), MAX_EVENTS_PER_DAY, formattedDate, formattedDate)
 		req, err := http.NewRequest("GET", url, nil)
 		if err != nil {
-			return err
+			return fmt.Errorf("error creating http request: %w", err)
 		}
 		req.Header = astraHeaders
 		res, err := cli.Do(req)
 		if err != nil {
-			return err
+			return fmt.Errorf("error sending request: %w", err)
 		}
 		if res.StatusCode != 200 {
 			res.Body.Close()
-			return fmt.Errorf("status was: %s (if 404, you've likely been IP ratelimited)", res.Status)
+			return fmt.Errorf("error: status was: %s\nIf the status is 404, you've likely been IP ratelimited", res.Status)
 		}
 		body, err := io.ReadAll(res.Body)
 		res.Body.Close()
 		if err != nil {
-			return err
+			return fmt.Errorf("error reading http response body: %w", err)
 		}
 		stringBody := string(body)
 
 		// Check for no events
 		numEvents := fastjson.GetInt(body, "totalRecords")
 		if numEvents >= MAX_EVENTS_PER_DAY {
-			return fmt.Errorf("max events per day exceeded")
+			return fmt.Errorf("error: Max events per day exceeded")
 		}
 
 		// Add to record
@@ -103,12 +103,12 @@ func ScrapeAstra(outDir string) error {
 	days = fmt.Sprintf("%s}", days)
 	fptr, err := os.Create(fmt.Sprintf("%s/astraScraped.json", outDir))
 	if err != nil {
-		return err
+		return fmt.Errorf("error creating output file: %w", err)
 	}
 	defer fptr.Close()
 	_, err = fptr.Write([]byte(days))
 	if err != nil {
-		return err
+		return fmt.Errorf("error writing event data to output file: %w", err)
 	}
 	return nil
 }

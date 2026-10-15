@@ -26,7 +26,7 @@ func ScrapeMazevo(outDir string) error {
 	outDir = filepath.Join(outDir, "Mazevo")
 	err := os.MkdirAll(outDir, 0777)
 	if err != nil {
-		return err
+		return fmt.Errorf("error creating output folder: %w", err)
 	}
 
 	ctx, cancel := utils.InitChromeDp()
@@ -37,6 +37,8 @@ func ScrapeMazevo(outDir string) error {
 
 	isPending := false
 	receivedChan := make(chan struct{})
+
+	// Non-blocking error reporting
 	listenerErrors := make(chan error, 1)
 	reportListenerError := func(err error) {
 		select {
@@ -53,24 +55,24 @@ func ScrapeMazevo(outDir string) error {
 				rawPostData := ev.Request.PostDataEntries[0].Bytes
 				decodedPostData, err := base64.StdEncoding.DecodeString(rawPostData)
 				if err != nil {
-					reportListenerError(err)
+					reportListenerError(fmt.Errorf("error decoding string: %w", err))
 					return
 				}
 				var data map[string]any
 
 				err = json.Unmarshal(decodedPostData, &data)
 				if err != nil {
-					reportListenerError(err)
+					reportListenerError(fmt.Errorf("error unmarshalling decoded data: %w", err))
 					return
 				}
 				eventsStart, err = time.Parse(time.RFC3339, data["start"].(string))
 				if err != nil {
-					reportListenerError(err)
+					reportListenerError(fmt.Errorf("error getting event start time: %w", err))
 					return
 				}
 				eventsEnd, err = time.Parse(time.RFC3339, data["end"].(string))
 				if err != nil {
-					reportListenerError(err)
+					reportListenerError(fmt.Errorf("error getting event end time: %w", err))
 					return
 				}
 
@@ -117,18 +119,18 @@ func ScrapeMazevo(outDir string) error {
 		// Write event data to output file
 		fptr, err := os.Create(fmt.Sprintf("%s/%s.json", outDir, eventsStart.Format("2006-01")))
 		if err != nil {
-			return err
+			return fmt.Errorf("error creating output file: %w", err)
 		}
 		defer fptr.Close()
 		_, err = fptr.Write(bodyBytes)
 		if err != nil {
-			return err
+			return fmt.Errorf("error writing to output file: %w", err)
 		}
 
 		// Click next month
 		err = chromedp.Click("[aria-label=\"Move to Next Month\"]", chromedp.NodeVisible).Do(ctx)
 		if err != nil {
-			return err
+			return fmt.Errorf("error clicking next month button: %w", err)
 		}
 		return nil
 	}
@@ -148,7 +150,7 @@ func ScrapeMazevo(outDir string) error {
 		}),
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("error scraping mazevo: %w", err)
 	}
 
 	return nil

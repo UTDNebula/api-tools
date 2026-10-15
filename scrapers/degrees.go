@@ -16,7 +16,7 @@ func ScrapeDegrees(outDir string) error {
 	// Ensure output directory exists
 	err := os.MkdirAll(outDir, 0777)
 	if err != nil {
-		return err
+		return fmt.Errorf("error creating output folder: %w", err)
 	}
 
 	chromedpCtx, cancel := utils.InitChromeDp()
@@ -28,7 +28,7 @@ func ScrapeDegrees(outDir string) error {
 		chromedp.WaitVisible("article .col-sm-12", chromedp.ByQuery),
 	)
 	if err != nil {
-		return fmt.Errorf("failed to scrape: %v", err)
+		return fmt.Errorf("failed to scrape degrees: %v", err)
 	}
 
 	// Wait for the article content to load
@@ -44,7 +44,8 @@ func ScrapeDegrees(outDir string) error {
 	outPath := fmt.Sprintf("%s/degreesScraped.html", outDir)
 	err = os.WriteFile(outPath, []byte(html), 0644)
 	if err != nil {
-		return err
+
+		return fmt.Errorf("error writing html to file: %w", err)
 	}
 
 	log.Printf("Scraped degrees successfully!\n")

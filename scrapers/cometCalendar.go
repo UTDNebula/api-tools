@@ -157,7 +157,7 @@ func callAndUnmarshal(client *http.Client, page int, data *APICalendarResponse) 
 		return err
 	}
 	if response != nil && response.StatusCode != 200 {
-		return fmt.Errorf("ERROR: Non-200 status is returned, %s", response.Status)
+		return fmt.Errorf("error: Non-200 status is returned, %s", response.Status)
 	}
 	defer response.Body.Close()
 
