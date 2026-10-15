@@ -16,6 +16,7 @@ import (
 )
 
 func main() {
+
 	// Load environment variables
 	godotenv.Load()
 
@@ -102,7 +103,7 @@ func main() {
 	logFile, err := os.Create(fmt.Sprintf("./logs/%d-%d-%dT%d-%d-%d.log", month, day, year, hour, min, sec))
 
 	if err != nil {
-		log.Fatal(err)
+		log.Panicf("Error creating log file: %v", err)
 	}
 
 	defer logFile.Close()
@@ -121,30 +122,33 @@ func main() {
 	case *scrape:
 		switch {
 		case *scrapeProfiles:
-			scrapers.ScrapeProfiles(*outDir)
+			err = scrapers.ScrapeProfiles(*outDir)
 		case *scrapeCoursebook:
 			if *term == "" {
 				log.Panic("No term specified for coursebook scraping! Use -term to specify.")
 			}
-			scrapers.ScrapeCoursebook(*term, *startPrefix, *outDir, *resume)
+			err = scrapers.ScrapeCoursebook(*term, *startPrefix, *outDir, *resume)
 		case *scrapeDiscounts:
-			scrapers.ScrapeDiscounts(*outDir)
+			err = scrapers.ScrapeDiscounts(*outDir)
 		case *cometCalendar:
-			scrapers.ScrapeCometCalendar(*outDir)
+			err = scrapers.ScrapeCometCalendar(*outDir)
 		case *astra:
-			scrapers.ScrapeAstra(*outDir)
+			err = scrapers.ScrapeAstra(*outDir)
 		case *mazevo:
-			scrapers.ScrapeMazevo(*outDir)
+			err = scrapers.ScrapeMazevo(*outDir)
 		case *mapFlag:
-			scrapers.ScrapeMapLocations(*outDir)
+			err = scrapers.ScrapeMapLocations(*outDir)
 		case *academicCalendars:
-			scrapers.ScrapeAcademicCalendars(*outDir)
+			err = scrapers.ScrapeAcademicCalendars(*outDir)
 		case *degrees:
-			scrapers.ScrapeDegrees(*outDir)
+			err = scrapers.ScrapeDegrees(*outDir)
 		case *budgets:
-			scrapers.ScrapeBudgets(*outDir)
+			err = scrapers.ScrapeBudgets(*outDir)
 		default:
 			log.Panic("You must specify which type of scraping you would like to perform with one of the scraping flags!")
+		}
+		if err != nil {
+			log.Panicf("Scraping failed: %v", err)
 		}
 	case *parse:
 		switch {
@@ -186,6 +190,5 @@ func main() {
 		}
 	default:
 		flag.PrintDefaults()
-		return
 	}
 }
