@@ -15,7 +15,7 @@ import (
 
 	"github.com/UTDNebula/api-tools/scrapers"
 	"github.com/UTDNebula/api-tools/utils"
-	"github.com/UTDNebula/nebula-api/api/schema"
+	"github.com/UTDNebula/nebula-api/rest/schema"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )

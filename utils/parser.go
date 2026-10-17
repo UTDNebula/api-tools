@@ -16,7 +16,7 @@ import (
 
 	"strings"
 
-	"github.com/UTDNebula/nebula-api/api/schema"
+	"github.com/UTDNebula/nebula-api/rest/schema"
 	"google.golang.org/genai"
 )
 
