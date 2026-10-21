@@ -5,7 +5,7 @@ import (
 	"slices"
 
 	"github.com/UTDNebula/api-tools/utils"
-	"github.com/UTDNebula/nebula-api/api/schema"
+	"github.com/UTDNebula/nebula-api/rest/schema"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
