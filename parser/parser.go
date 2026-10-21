@@ -11,7 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/UTDNebula/nebula-api/api/schema"
+	"github.com/UTDNebula/nebula-api/rest/schema"
 )
 
 var (

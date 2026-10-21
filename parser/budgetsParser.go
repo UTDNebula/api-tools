@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/UTDNebula/api-tools/utils"
-	"github.com/UTDNebula/nebula-api/api/schema"
+	"github.com/UTDNebula/nebula-api/rest/schema"
 	"google.golang.org/genai"
 )
 

@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/UTDNebula/api-tools/utils"
-	"github.com/UTDNebula/nebula-api/api/schema"
+	"github.com/UTDNebula/nebula-api/rest/schema"
 )
 
 // InputData describes the raw Astra export payload containing fields metadata and row values.
