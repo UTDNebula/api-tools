@@ -194,7 +194,7 @@ func parseAcademicCalendarPdf(path string) (schema.AcademicCalendar, error) {
 
 		// Send request with default config
 		response, err := geminiClient.Models.GenerateContent(context.Background(),
-			"gemini-2.5-pro",
+			"gemini-3.1-flash-lite",
 			genai.Text(promptFilled),
 			// Enforce response schema
 			&genai.GenerateContentConfig{
