@@ -15,8 +15,8 @@ import (
 	"time"
 
 	"github.com/UTDNebula/api-tools/utils"
-	"github.com/UTDNebula/nebula-api/api/schema"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"github.com/UTDNebula/nebula-api/rest/schema"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 const COMET_CALENDAR_URL string = "https://calendar.utdallas.edu/api/2/events"
@@ -109,7 +109,7 @@ func ScrapeCometCalendar(outDir string) {
 			departments := getDepartments(event.Event)
 
 			calendarEvents = append(calendarEvents, schema.Event{
-				Id:                 primitive.NewObjectID(),
+				Id:                 bson.NewObjectID(),
 				Summary:            event.Event.Title,
 				Location:           getEventLocation(event.Event),
 				StartTime:          startTime,
