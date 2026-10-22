@@ -5,301 +5,367 @@
 package scrapers
 
 import (
-	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
+	"net/http"
+	"net/url"
 	"os"
-	"regexp"
-	"strconv"
+	"path/filepath"
 	"strings"
-
-	"github.com/UTDNebula/api-tools/utils"
-	"github.com/UTDNebula/nebula-api/api/schema"
-	"github.com/chromedp/cdproto/cdp"
-	"github.com/chromedp/cdproto/runtime"
-	"github.com/chromedp/chromedp"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"time"
 )
 
-// BASE_URL is the root listing endpoint for UTD professor profiles.
-const BASE_URL string = "https://profiles.utdallas.edu/browse?page="
+const profileBaseURL string = "https://profiles.utdallas.edu/api/v1"
 
-var primaryLocationRegex *regexp.Regexp = regexp.MustCompile(`^(\w+)\s+(\d+\.\d{3}[A-z]?)$`)
-var fallbackLocationRegex *regexp.Regexp = regexp.MustCompile(`^([A-z]+)(\d+)\.?(\d{3}[A-z]?)$`)
+const (
+	profilesRawFileName      = "profiles_raw.json"
+	profilesIndexRawFileName = "profiles_index_raw.json"
+	profileSchoolsEnvVar     = "PROFILE_SCHOOLS"
+)
 
-func parseLocation(text string) schema.Location {
-	var building string
-	var room string
+const (
+	profileBatchSize      = 25
+	profileRequestTimeout = 30 * time.Second
+	profileRequestDelay   = 200 * time.Millisecond
+)
 
-	submatches := primaryLocationRegex.FindStringSubmatch(text)
-	if submatches == nil {
-		submatches = fallbackLocationRegex.FindStringSubmatch(text)
-		if submatches == nil {
-			return schema.Location{}
-		} else {
-			building = submatches[1]
-			room = fmt.Sprintf("%s.%s", submatches[2], submatches[3])
-		}
-	} else {
-		building = submatches[1]
-		room = submatches[2]
-	}
-
-	return schema.Location{
-		Building: building,
-		Room:     room,
-		Map_uri:  fmt.Sprintf("https://locator.utdallas.edu/%s_%s", building, room),
-	}
+type profileIndexResponse struct {
+	Count   int                  `json:"count"`
+	Profile []profileIndexRecord `json:"profile"`
 }
 
-func parseList(list []string) (string, schema.Location) {
-	var phoneNumber string
-	var office schema.Location
-
-	for _, element := range list {
-		element = strings.TrimSpace(element)
-		utils.VPrintf("Element is: %s", element)
-		if strings.Contains(element, "-") {
-			phoneNumber = element
-		} else if primaryLocationRegex.MatchString(element) || fallbackLocationRegex.MatchString(element) {
-			utils.VPrintf("Element match is: %s", element)
-			office = parseLocation(element)
-			break
-		}
-	}
-
-	return phoneNumber, office
+type profileIndexRecord struct {
+	ID        int              `json:"id"`
+	FullName  string           `json:"full_name"`
+	FirstName string           `json:"first_name"`
+	LastName  string           `json:"last_name"`
+	Slug      string           `json:"slug"`
+	Public    bool             `json:"public"`
+	URL       string           `json:"url"`
+	Name      string           `json:"name"`
+	ImageURL  string           `json:"image_url"`
+	APIURL    string           `json:"api_url"`
+	Media     []map[string]any `json:"media"`
 }
 
-func parseName(fullName string) (string, string) {
-	commaIndex := strings.Index(fullName, ",")
-	if commaIndex != -1 {
-		fullName = fullName[:commaIndex]
-	}
-	names := strings.Split(fullName, " ")
-	ultimateName := strings.ToLower(names[len(names)-1])
-	if len(names) > 2 && (ultimateName == "jr" ||
-		ultimateName == "sr" ||
-		ultimateName == "I" ||
-		ultimateName == "II" ||
-		ultimateName == "III") {
-		names = names[:len(names)-1]
-	}
-	return names[0], names[len(names)-1]
+type profileRawRecord struct {
+	ID        int                `json:"id"`
+	FullName  string             `json:"full_name"`
+	FirstName string             `json:"first_name"`
+	LastName  string             `json:"last_name"`
+	Slug      string             `json:"slug"`
+	Public    bool               `json:"public"`
+	URL       string             `json:"url"`
+	Name      string             `json:"name"`
+	ImageURL  string             `json:"image_url"`
+	APIURL    string             `json:"api_url"`
+	Media     []map[string]any   `json:"media"`
+	Info      []profileInfoBlock `json:"information,omitempty"`
+	Areas     []profileAreaBlock `json:"areas,omitempty"`
 }
 
-func getNodeText(node *cdp.Node) string {
-	if len(node.Children) == 0 {
-		return ""
-	}
-	return node.Children[0].NodeValue
+type profileInfoBlock struct {
+	Data map[string]any `json:"data"`
 }
 
-func scrapeProfessorLinks(chromedpCtx context.Context) []string {
-	var pageLinks []*cdp.Node
-	_, err := chromedp.RunResponse(chromedpCtx,
-		chromedp.Navigate(BASE_URL+"1"),
-		chromedp.QueryAfter(".page-link",
-			func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
-				pageLinks = nodes
-				return nil
-			},
-		),
-	)
-	if err != nil {
-		panic(err)
-	}
-
-	numPages, err := strconv.Atoi(getNodeText(pageLinks[len(pageLinks)-2]))
-	if err != nil {
-		panic(err)
-	}
-
-	professorLinks := make([]string, 0, numPages)
-	for curPage := 1; curPage <= numPages; curPage++ {
-		_, err := chromedp.RunResponse(chromedpCtx,
-			chromedp.Navigate(BASE_URL+strconv.Itoa(curPage)),
-			chromedp.QueryAfter("//h5[@class='card-title profile-name']//a",
-				func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
-					for _, node := range nodes {
-						href, hasHref := node.Attribute("href")
-						if !hasHref {
-							return errors.New("professor card was missing an href")
-						}
-						professorLinks = append(professorLinks, href)
-					}
-					return nil
-				},
-			),
-		)
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	return professorLinks
+type profileAreaBlock struct {
+	Data map[string]any `json:"data"`
 }
 
-// ScrapeProfiles navigates UTD profile listings and writes professor metadata to JSON.
+type profileDetailsResponse struct {
+	Count   int                `json:"count"`
+	Profile []profileRawRecord `json:"profile"`
+}
+
+type profileScrapeOutput struct {
+	Count   int                `json:"count"`
+	Profile []profileRawRecord `json:"profile"`
+}
+
+// ScrapeProfiles fetches the raw profile API response and writes it to disk.
 func ScrapeProfiles(outDir string) {
+	log.Print("Beginning profile scrape.")
 
-	chromedpCtx, cancel := utils.InitChromeDp()
-	defer cancel()
+	client := &http.Client{Timeout: profileRequestTimeout}
 
-	err := os.MkdirAll(outDir, 0777)
+	indexResponse, err := fetchProfileIndex(client)
 	if err != nil {
-		panic(err)
+		log.Printf("Failed to retrieve profile index: %v", err)
+		return
 	}
 
-	var professors []schema.Professor
+	if len(indexResponse.Profile) == 0 {
+		log.Print("Profile API returned no profiles.")
+		return
+	}
 
-	log.Print("Scraping professor links...")
-	professorLinks := scrapeProfessorLinks(chromedpCtx)
-	log.Print("Scraped professor links!")
+	schools := parseProfileSchoolsFromEnv()
 
-	for _, link := range professorLinks {
-
-		// Navigate to the link and get the names
-		var firstName, lastName string
-
-		utils.VPrint("Scraping name...")
-
-		_, err := chromedp.RunResponse(chromedpCtx,
-			chromedp.Navigate(link),
-			chromedp.ActionFunc(func(ctx context.Context) error {
-				var text string
-				err := chromedp.Text("div.contact_info>h1", &text).Do(ctx)
-				firstName, lastName = parseName(text)
-				return err
-			}),
-		)
-		if err != nil {
-			panic(err)
+	slugs := make([]string, 0, len(indexResponse.Profile))
+	for _, row := range indexResponse.Profile {
+		slug := strings.TrimSpace(row.Slug)
+		if slug == "" {
+			continue
 		}
+		slugs = append(slugs, slug)
+	}
+	slugs = dedupeStrings(slugs)
 
-		// Get the image uri
-		var imageUri string
+	if len(slugs) == 0 {
+		log.Print("Profile API index contained no valid slugs.")
+		return
+	}
 
-		utils.VPrint("Scraping imageUri...")
+	log.Printf("Retrieved %d profile slugs.", len(slugs))
 
-		err = chromedp.Run(chromedpCtx,
-			chromedp.ActionFunc(func(ctx context.Context) error {
-				var attributes map[string]string
-				err := chromedp.Attributes("//img[@class='profile_photo']", &attributes, chromedp.AtLeast(0)).Do(ctx)
-				if err == nil {
-					var hasSrc bool
-					imageUri, hasSrc = attributes["src"]
-					if !hasSrc {
-						return errors.New("no src found for imageUri")
-					}
-				}
-				return err
-			}),
-		)
-		if err != nil {
-			err = chromedp.Run(chromedpCtx,
-				chromedp.ActionFunc(func(ctx context.Context) error {
-					var attributes map[string]string
-					err := chromedp.Attributes("//div[@class='profile-header  fancy_header ']", &attributes, chromedp.AtLeast(0)).Do(ctx)
-					if err == nil {
-						var hasStyle bool
-						imageUri, hasStyle = attributes["style"]
-						if !hasStyle {
-							return errors.New("no style found for imageUri")
-						}
-						imageUri = imageUri[23 : len(imageUri)-3]
-					}
-					return err
-				}),
-			)
-			if err != nil {
-				panic(err)
+	detailedProfiles := make([]profileRawRecord, 0, len(slugs))
+	if len(schools) > 0 {
+		log.Printf("PROFILE_SCHOOLS configured with %d school codes. Pulling profile details by school.", len(schools))
+		for i, school := range schools {
+			schoolProfiles, fetchErr := fetchProfileDetailsForSchool(client, school)
+			if fetchErr != nil {
+				log.Printf("Failed to retrieve profile detail for school %s: %v", school, fetchErr)
+				continue
+			}
+
+			detailedProfiles = append(detailedProfiles, schoolProfiles...)
+			log.Printf("Fetched %d profile records for school %s.", len(schoolProfiles), school)
+
+			if i < len(schools)-1 {
+				time.Sleep(profileRequestDelay)
 			}
 		}
+	} else {
+		log.Printf("Pulling profile details by person slug in batches of %d.", profileBatchSize)
+		for i := 0; i < len(slugs); i += profileBatchSize {
+			end := i + profileBatchSize
+			if end > len(slugs) {
+				end = len(slugs)
+			}
 
-		// Get the titles
-		titles := make([]string, 0, 3)
+			batch := slugs[i:end]
+			batchProfiles, fetchErr := fetchProfileDetails(client, batch)
+			if fetchErr != nil {
+				log.Printf("Failed to retrieve profile detail batch %d-%d: %v", i+1, end, fetchErr)
+				continue
+			}
 
-		utils.VPrint("Scraping titles...")
+			detailedProfiles = append(detailedProfiles, batchProfiles...)
+			log.Printf("Fetched profile detail batch %d-%d (%d records).", i+1, end, len(batchProfiles))
 
-		err = chromedp.Run(chromedpCtx,
-			chromedp.QueryAfter("div.profile-title",
-				func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
-					for _, node := range nodes {
-						tempText := getNodeText(node)
-						if !strings.Contains(tempText, "$") {
-							titles = append(titles, tempText)
-						}
-					}
-					return nil
-				}, chromedp.AtLeast(0),
-			),
-		)
-		if err != nil {
-			continue
+			if end < len(slugs) {
+				time.Sleep(profileRequestDelay)
+			}
 		}
-
-		// Get the email
-		var email string
-
-		utils.VPrint("Scraping email...")
-
-		err = chromedp.Run(chromedpCtx,
-			chromedp.Text("//a[contains(@id,'☄️')]", &email, chromedp.AtLeast(0)),
-		)
-		if err != nil {
-			continue
-		}
-
-		// Get the phone number and office location
-		var texts []string
-
-		utils.VPrint("Scraping list text...")
-
-		err = chromedp.Run(chromedpCtx,
-			chromedp.QueryAfter("div.contact_info>div ~ div",
-				func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
-					var tempText string
-					err := chromedp.Text("div.contact_info>div ~ div", &tempText).Do(ctx)
-					texts = strings.Split(tempText, "\n")
-					return err
-				},
-			),
-		)
-		if err != nil {
-			panic(err)
-		}
-
-		utils.VPrint("Parsing list...")
-		phoneNumber, office := parseList(texts)
-		utils.VPrintf("Parsed list! #: %s, Office: %v", phoneNumber, office)
-
-		professors = append(professors, schema.Professor{
-			Id:           primitive.NewObjectID(),
-			First_name:   firstName,
-			Last_name:    lastName,
-			Titles:       titles,
-			Email:        email,
-			Phone_number: phoneNumber,
-			Office:       office,
-			Profile_uri:  link,
-			Image_uri:    imageUri,
-			Office_hours: []schema.Meeting{},
-			Sections:     []primitive.ObjectID{},
-		})
-
-		utils.VPrintf("Scraped profile for %s %s!", firstName, lastName)
 	}
 
-	// Write professor data to output file
-	fptr, err := os.Create(fmt.Sprintf("%s/profiles.json", outDir))
+	detailedProfiles = dedupeProfiles(detailedProfiles)
+
+	output := profileScrapeOutput{
+		Count:   len(detailedProfiles),
+		Profile: detailedProfiles,
+	}
+
+	if err := os.MkdirAll(outDir, 0777); err != nil {
+		log.Printf("Failed to create output directory: %v", err)
+		return
+	}
+
+	indexOutPath := filepath.Join(outDir, profilesIndexRawFileName)
+	if err := writePrettyJSON(indexOutPath, indexResponse); err != nil {
+		log.Printf("Failed to write profile index output file: %v", err)
+		return
+	}
+
+	outPath := filepath.Join(outDir, profilesRawFileName)
+	if err := writePrettyJSON(outPath, output); err != nil {
+		log.Printf("Failed to write profile detail output file: %v", err)
+		return
+	}
+
+	log.Printf("Wrote profile index to %s", indexOutPath)
+	log.Printf("Wrote %d raw profiles to %s", output.Count, outPath)
+}
+
+func fetchProfileIndex(client *http.Client) (*profileIndexResponse, error) {
+	req, err := http.NewRequest(http.MethodGet, profileBaseURL, nil)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code %d", resp.StatusCode)
+	}
+
+	var decoded profileIndexResponse
+	if err := json.NewDecoder(resp.Body).Decode(&decoded); err != nil {
+		return nil, err
+	}
+
+	return &decoded, nil
+}
+
+func writePrettyJSON(path string, data any) error {
+	fptr, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer fptr.Close()
+
 	encoder := json.NewEncoder(fptr)
-	encoder.SetIndent("", "\t")
-	encoder.Encode(professors)
-	fptr.Close()
+	encoder.SetEscapeHTML(false)
+	encoder.SetIndent("", "  ")
+	if err := encoder.Encode(data); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func fetchProfileDetails(client *http.Client, slugs []string) ([]profileRawRecord, error) {
+	if len(slugs) == 0 {
+		return []profileRawRecord{}, nil
+	}
+
+	requestURL := buildProfileDetailsRequestURL(slugs)
+	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code %d", resp.StatusCode)
+	}
+
+	var decoded profileDetailsResponse
+	if err := json.NewDecoder(resp.Body).Decode(&decoded); err != nil {
+		return nil, err
+	}
+
+	return decoded.Profile, nil
+}
+
+func fetchProfileDetailsForSchool(client *http.Client, school string) ([]profileRawRecord, error) {
+	requestURL := buildProfileSchoolRequestURL(school)
+	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code %d", resp.StatusCode)
+	}
+
+	var decoded profileDetailsResponse
+	if err := json.NewDecoder(resp.Body).Decode(&decoded); err != nil {
+		return nil, err
+	}
+
+	return decoded.Profile, nil
+}
+
+func parseProfileSchoolsFromEnv() []string {
+	return parseDelimitedValues(os.Getenv(profileSchoolsEnvVar))
+}
+
+func parseDelimitedValues(values string) []string {
+	values = strings.TrimSpace(values)
+	if values == "" {
+		return []string{}
+	}
+
+	fields := strings.FieldsFunc(values, func(r rune) bool {
+		switch r {
+		case ';', ',', ' ', '\n', '\r', '\t':
+			return true
+		default:
+			return false
+		}
+	})
+
+	result := make([]string, 0, len(fields))
+	for _, field := range fields {
+		trimmed := strings.ToUpper(strings.TrimSpace(field))
+		if trimmed == "" {
+			continue
+		}
+		result = append(result, trimmed)
+	}
+
+	return dedupeStrings(result)
+}
+
+func dedupeStrings(values []string) []string {
+	if len(values) < 2 {
+		return values
+	}
+
+	seen := make(map[string]struct{}, len(values))
+	result := make([]string, 0, len(values))
+	for _, value := range values {
+		if _, exists := seen[value]; exists {
+			continue
+		}
+		seen[value] = struct{}{}
+		result = append(result, value)
+	}
+
+	return result
+}
+
+func buildProfileDetailsRequestURL(slugs []string) string {
+	params := url.Values{}
+	params.Set("person", strings.Join(slugs, ";"))
+	params.Set("with_data", "1")
+	params.Set("data_type", "information;areas")
+	return fmt.Sprintf("%s?%s", profileBaseURL, params.Encode())
+}
+
+func buildProfileSchoolRequestURL(school string) string {
+	params := url.Values{}
+	params.Set("from_school", strings.TrimSpace(strings.ToUpper(school)))
+	params.Set("with_data", "1")
+	params.Set("data_type", "information;areas")
+	return fmt.Sprintf("%s?%s", profileBaseURL, params.Encode())
+}
+
+func dedupeProfiles(values []profileRawRecord) []profileRawRecord {
+	if len(values) < 2 {
+		return values
+	}
+
+	seen := make(map[string]struct{}, len(values))
+	result := make([]profileRawRecord, 0, len(values))
+	for _, value := range values {
+		key := strings.TrimSpace(strings.ToLower(value.Slug))
+		if key == "" {
+			key = fmt.Sprintf("id:%d", value.ID)
+		}
+		if _, exists := seen[key]; exists {
+			continue
+		}
+		seen[key] = struct{}{}
+		result = append(result, value)
+	}
+
+	return result
 }
