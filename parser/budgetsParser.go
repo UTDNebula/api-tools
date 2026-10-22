@@ -20,6 +20,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode"
 
 	"github.com/UTDNebula/api-tools/utils"
 	"github.com/UTDNebula/nebula-api/api/schema"
@@ -398,12 +399,15 @@ func parseBudgetPdfs(paths []string) (schema.Budget, error) {
 	year := filepath.Base(filepath.Dir(paths[0]))
 
 	// Read PDFs
+	// WARNING: Changes to nameBuilder will invalidate all cached AI responses, only change if necessary
+	var nameBuilder strings.Builder
 	var contentBuilder strings.Builder
 	for _, path := range paths {
 		content, err := utils.ReadPdf(path, -1)
 		if err != nil {
 			return schema.Budget{}, err
 		}
+		nameBuilder.WriteString(strings.ReplaceAll(strings.ToLower(removeAllWhitespace(filepath.Base(path))), ".pdf", ""))
 		contentBuilder.WriteString("# " + filepath.Base(path) + "\n\n")
 		contentBuilder.WriteString(content + "\n\n\n")
 	}
@@ -413,7 +417,7 @@ func parseBudgetPdfs(paths []string) (schema.Budget, error) {
 	promptFilled := fmt.Sprintf(budgetPrompt, year, year, content)
 
 	// Check cache
-	cacheName := year + ".json"
+	cacheName := year + "-" + strings.TrimSpace(nameBuilder.String()) + ".json"
 	result, err := utils.CheckCache(cacheName, apiBucket)
 	if err != nil {
 		return schema.Budget{}, err
@@ -464,6 +468,18 @@ func parseBudgetPdfs(paths []string) (schema.Budget, error) {
 	}
 
 	return budget, nil
+}
+
+// Remove whitespace including non-ASCII
+// Because the 2018, 2018, and 2022 budgets have non-unicode spaces in their file names
+func removeAllWhitespace(s string) string {
+	result := make([]rune, 0, len(s))
+	for _, r := range s {
+		if !unicode.IsSpace(r) {
+			result = append(result, r)
+		}
+	}
+	return string(result)
 }
 
 // Get the storage bucket for the budget cache
