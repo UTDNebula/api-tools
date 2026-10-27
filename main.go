@@ -67,6 +67,8 @@ func main() {
 	degrees := flag.Bool("degrees", false, "Alongside -scrape, -parse, or -upload. Signifies that the degrees should be scraped/parsed/uploaded.")
 	// Flag for budget scraping
 	budgets := flag.Bool("budgets", false, "Alongside -scrape, -parse, or -upload, signifies that the budgets should be scraped/parsed/uploaded.")
+	// Flag for study abroad scraping
+	studyAbroad := flag.Bool("studyAbroad", false, "Alongside -scrape or -parse, signifies that study abroad programs should be scraped/parsed.")
 
 	// Flags for parsing
 	parse := flag.Bool("parse", false, "Puts the tool into parsing mode.")
@@ -143,6 +145,8 @@ func main() {
 			scrapers.ScrapeDegrees(*outDir)
 		case *budgets:
 			scrapers.ScrapeBudgets(*outDir)
+		case *studyAbroad:
+			scrapers.ScrapeStudyAbroad(*outDir)
 		default:
 			log.Panic("You must specify which type of scraping you would like to perform with one of the scraping flags!")
 		}
@@ -164,6 +168,8 @@ func main() {
 			parser.ParseDegrees(*inDir, *outDir)
 		case *budgets:
 			parser.ParseBudgets(*inDir, *outDir, *budgetsDir, *useBackupBudgets)
+		case *studyAbroad:
+			parser.ParseStudyAbroad(*inDir, *outDir)
 		default:
 			parser.Parse(*inDir, *outDir, *gradesDir, *skipValidation)
 		}
