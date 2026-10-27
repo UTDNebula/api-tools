@@ -115,15 +115,136 @@ func loadDiscoveryRecords(path string) (map[int]discoveryRecord, error) {
 	return records, nil
 }
 
+// rawBrochure is the part of a Terradotta brochure that the parser keeps.
+type rawBrochure struct {
+	ProgramID int `json:"programId"`
+	Current   struct {
+		Sections []rawSection `json:"sections"`
+	} `json:"current"`
+	NextCost *rawCost `json:"nextAppCycleCostSheet"`
+}
+
+type rawSection struct {
+	DisplayName string      `json:"sectionDisplayName"`
+	Widgets     []rawWidget `json:"sectionWidgets"`
+}
+
+type rawWidget struct {
+	ContentType string `json:"contentType"`
+	ContentHTML string `json:"contentHTML"`
+	// "" for most widgets, an object holding the parameters for "information sheet" widgets
+	InformationSheet json.RawMessage `json:"contentInformationSheet"`
+}
+
+type rawCost struct {
+	Term        string        `json:"term"`
+	Year        int           `json:"year"`
+	Billable    []rawCostItem `json:"billableCostSheetItems"`
+	NonBillable []rawCostItem `json:"nonBillableCostSheetItems"`
+	Credits     []rawCostItem `json:"creditCostSheetItems"`
+}
+
+type rawCostItem struct {
+	Name  string `json:"costSheetItemName"`
+	Type  string `json:"costSheetItemType"`
+	Costs []struct {
+		Key   string  `json:"costKey"`
+		Value float64 `json:"costValue"`
+	} `json:"costs"`
+}
+
 func parseBrochure(path string) (schema.Program, error) {
 	content, err := os.ReadFile(path)
 	if err != nil {
 		return schema.Program{}, err
 	}
 
-	var program schema.Program
-	if err := json.Unmarshal(content, &program); err != nil {
+	var brochure rawBrochure
+	if err := json.Unmarshal(content, &brochure); err != nil {
 		return schema.Program{}, err
 	}
+
+	program := schema.Program{
+		ID:       brochure.ProgramID,
+		Sections: make([]schema.ProgramSection, 0, len(brochure.Current.Sections)),
+	}
+	for _, rawSection := range brochure.Current.Sections {
+		section := schema.ProgramSection{
+			DisplayName: rawSection.DisplayName,
+			Widgets:     make([]schema.ProgramWidget, 0, len(rawSection.Widgets)),
+		}
+		for _, rawWidget := range rawSection.Widgets {
+			parameters, err := parseInformationSheet(rawWidget.InformationSheet)
+			if err != nil {
+				return schema.Program{}, fmt.Errorf("section %q: %w", rawSection.DisplayName, err)
+			}
+			section.Widgets = append(section.Widgets, schema.ProgramWidget{
+				ContentType: rawWidget.ContentType,
+				ContentHTML: rawWidget.ContentHTML,
+				Parameters:  parameters,
+			})
+		}
+		program.Sections = append(program.Sections, section)
+	}
+
+	if brochure.NextCost != nil {
+		program.NextCost = &schema.Cost{
+			Term:        brochure.NextCost.Term,
+			Year:        brochure.NextCost.Year,
+			Billable:    convertCostItems(brochure.NextCost.Billable),
+			NonBillable: convertCostItems(brochure.NextCost.NonBillable),
+			Credits:     convertCostItems(brochure.NextCost.Credits),
+		}
+	}
 	return program, nil
+}
+
+// parseInformationSheet returns the parameters of an information sheet, or nil when the widget has none.
+func parseInformationSheet(raw json.RawMessage) ([]schema.Parameter, error) {
+	if len(raw) == 0 || raw[0] != '{' {
+		return nil, nil
+	}
+	var sheet struct {
+		Parameters []struct {
+			Name           string `json:"parameterName"`
+			AssignedValues []any  `json:"assignedValues"` // strings, except YESNO parameters which hold bools
+		} `json:"parameters"`
+	}
+	if err := json.Unmarshal(raw, &sheet); err != nil {
+		return nil, fmt.Errorf("parse information sheet: %w", err)
+	}
+
+	parameters := make([]schema.Parameter, 0, len(sheet.Parameters))
+	for _, rawParameter := range sheet.Parameters {
+		values := make([]string, 0, len(rawParameter.AssignedValues))
+		for _, value := range rawParameter.AssignedValues {
+			switch value := value.(type) {
+			case string:
+				values = append(values, value)
+			case bool:
+				if value {
+					values = append(values, "Yes")
+				} else {
+					values = append(values, "No")
+				}
+			default:
+				return nil, fmt.Errorf("parameter %q: unexpected value %v", rawParameter.Name, value)
+			}
+		}
+		parameters = append(parameters, schema.Parameter{Name: rawParameter.Name, AssignedValues: values})
+	}
+	return parameters, nil
+}
+
+// convertCostItems turns each item's list of {costKey, costValue} pairs into a map from key to value.
+func convertCostItems(rawItems []rawCostItem) []schema.CostItem {
+	items := make([]schema.CostItem, 0, len(rawItems))
+	for _, rawItem := range rawItems {
+		costs := make(map[string]float64, len(rawItem.Costs))
+		for _, cost := range rawItem.Costs {
+			costs[cost.Key] = cost.Value
+		}
+		items = append(items, schema.CostItem{Name: rawItem.Name, Type: rawItem.Type, Costs: costs})
+	}
+	return items
 }
