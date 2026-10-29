@@ -5,8 +5,8 @@ import (
 	"slices"
 
 	"github.com/UTDNebula/api-tools/utils"
-	"github.com/UTDNebula/nebula-api/api/schema"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"github.com/UTDNebula/nebula-api/rest/schema"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 // Main validation, putting everything together
@@ -71,7 +71,7 @@ func valDuplicateCourses(course1 *schema.Course, course2 *schema.Course) {
 }
 
 // Validate course reference to sections
-func valCourseReference(course *schema.Course, sections map[primitive.ObjectID]*schema.Section) {
+func valCourseReference(course *schema.Course, sections map[bson.ObjectID]*schema.Section) {
 	for _, sectionID := range course.Sections {
 		section, exists := sections[sectionID]
 		// validate if course references to some section not in the parsed sections
@@ -112,7 +112,7 @@ func valDuplicateSections(section1 *schema.Section, section2 *schema.Section) {
 
 // Validate section reference to professor
 func valSectionReferenceProf(
-	section *schema.Section, profs map[string]*schema.Professor, profIDMap map[primitive.ObjectID]string,
+	section *schema.Section, profs map[string]*schema.Professor, profIDMap map[bson.ObjectID]string,
 ) {
 	for _, profID := range section.Professors {
 		professorKey, exists := profIDMap[profID]
@@ -136,7 +136,7 @@ func valSectionReferenceProf(
 }
 
 // Validate section reference to course
-func valSectionReferenceCourse(section *schema.Section, courseIDMap map[primitive.ObjectID]string) {
+func valSectionReferenceCourse(section *schema.Section, courseIDMap map[bson.ObjectID]string) {
 	_, exists := courseIDMap[section.Course_reference]
 	// validate if section reference some course not in parsed courses
 	if !exists {
