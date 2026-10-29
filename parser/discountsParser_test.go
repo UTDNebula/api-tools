@@ -272,7 +272,7 @@ func TestExtractEmail(t *testing.T) {
 		},
 		"no_email": {
 			input:    "No email here",
-			expected: "No email here",
+			expected: "",
 		},
 	}
 

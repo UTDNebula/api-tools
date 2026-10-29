@@ -224,7 +224,7 @@ func extractEmail(text string) string {
 	email := emailRegex.FindString(text)
 
 	if email == "" {
-		return "No email here"
+		return ""
 	}
 
 	return email
