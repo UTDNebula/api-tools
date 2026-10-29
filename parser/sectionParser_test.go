@@ -31,16 +31,16 @@ func TestGetInternalClassAndCourseNum(t *testing.T) {
 		})
 	}
 
-	fails := []map[string]string{
-		{
-			"Class Section:": "ENTP33S",
-		},
-		{
-			"Class Section:": "",
-		},
-		{
-			"Class Section:": "Garbage In, Garbage out",
-		},
+
+	// fails holds inputs that must cause a panic.
+	// Uses a slice (not a map) so test order is deterministic.
+	fails := []struct{
+		Name string
+		ClassSection string
+	}{
+		{Name: "empty_string01", ClassSection: "ENTP33S"},
+		{Name: "empty_string02", ClassSection: ""},
+		{Name: "garbage_in_garbage_out", ClassSection: "Garbage In, Garbage out"},
 	}
 
 	for i, fail := range fails {
