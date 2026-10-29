@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/UTDNebula/api-tools/utils"
-	"github.com/UTDNebula/nebula-api/api/schema"
+	"github.com/UTDNebula/nebula-api/rest/schema"
 	"google.golang.org/genai"
 )
 
@@ -194,7 +194,7 @@ func parseAcademicCalendarPdf(path string) (schema.AcademicCalendar, error) {
 
 		// Send request with default config
 		response, err := geminiClient.Models.GenerateContent(context.Background(),
-			"gemini-2.5-pro",
+			"gemini-3.1-flash-lite",
 			genai.Text(promptFilled),
 			// Enforce response schema
 			&genai.GenerateContentConfig{

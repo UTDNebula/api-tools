@@ -23,7 +23,7 @@ import (
 	"unicode"
 
 	"github.com/UTDNebula/api-tools/utils"
-	"github.com/UTDNebula/nebula-api/api/schema"
+	"github.com/UTDNebula/nebula-api/rest/schema"
 	"google.golang.org/genai"
 )
 
@@ -408,8 +408,11 @@ func parseBudgetPdfs(paths []string) (schema.Budget, error) {
 			return schema.Budget{}, err
 		}
 		nameBuilder.WriteString(strings.ReplaceAll(strings.ToLower(removeAllWhitespace(filepath.Base(path))), ".pdf", ""))
-		contentBuilder.WriteString("# " + filepath.Base(path) + "\n\n")
-		contentBuilder.WriteString(content + "\n\n\n")
+		contentBuilder.WriteString("# ")
+		contentBuilder.WriteString(filepath.Base(path))
+		contentBuilder.WriteString("\n\n")
+		contentBuilder.WriteString(content)
+		contentBuilder.WriteString("\n\n\n")
 	}
 	content := contentBuilder.String()
 
@@ -438,7 +441,7 @@ func parseBudgetPdfs(paths []string) (schema.Budget, error) {
 
 		// Send request with default config
 		response, err := geminiClient.Models.GenerateContent(context.Background(),
-			"gemini-2.5-pro",
+			"gemini-3.1-flash-lite",
 			genai.Text(promptFilled),
 			// Enforce response schema
 			&genai.GenerateContentConfig{
