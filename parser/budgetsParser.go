@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/UTDNebula/api-tools/utils"
-	"github.com/UTDNebula/nebula-api/api/schema"
+	"github.com/UTDNebula/nebula-api/rest/schema"
 	"google.golang.org/genai"
 )
 
@@ -404,8 +404,11 @@ func parseBudgetPdfs(paths []string) (schema.Budget, error) {
 		if err != nil {
 			return schema.Budget{}, err
 		}
-		contentBuilder.WriteString("# " + filepath.Base(path) + "\n\n")
-		contentBuilder.WriteString(content + "\n\n\n")
+		contentBuilder.WriteString("# ")
+		contentBuilder.WriteString(filepath.Base(path))
+		contentBuilder.WriteString("\n\n")
+		contentBuilder.WriteString(content)
+		contentBuilder.WriteString("\n\n\n")
 	}
 	content := contentBuilder.String()
 
