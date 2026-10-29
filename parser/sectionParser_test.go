@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -38,23 +37,23 @@ func TestGetInternalClassAndCourseNum(t *testing.T) {
 		Name string
 		ClassSection string
 	}{
-		{Name: "empty_string01", ClassSection: "ENTP33S"},
-		{Name: "empty_string02", ClassSection: ""},
+		{Name: "missing_section_number", ClassSection: "ENTP33S"},
+		{Name: "empty_string", ClassSection: ""},
 		{Name: "garbage_in_garbage_out", ClassSection: "Garbage In, Garbage out"},
 	}
 
-	for i, fail := range fails {
-		name := fmt.Sprintf("case_%03d", i+len(testData))
+	for _, fail := range fails {
+		
 
-		t.Run(name, func(t *testing.T) {
+		t.Run(fail.Name, func(t *testing.T) {
 			t.Parallel()
 
 			defer func() {
 				if r := recover(); r == nil {
-					t.Errorf("expected panic for input %s but none occurred", fail)
+					t.Errorf("expected panic for input %q but none occurred", fail.ClassSection)
 				}
 			}()
-			getInternalClassAndCourseNum(fail)
+			getInternalClassAndCourseNum(map[string]string{"Class Section:": fail.ClassSection})
 
 		})
 	}
@@ -97,33 +96,28 @@ func TestGetSectionNumber(t *testing.T) {
 		})
 	}
 
-	fails := []map[string]string{
-		{
-			"Class Section:": "ENTP33S",
-		},
-		{
-			"Class Section:": "",
-		},
-		{
-			"Class Section:": "Garbage In, Garbage out",
-		},
+	// fails holds inputs that must cause a panic.
+	// Uses a slice (not a map) so test order is deterministic.
+	fails := []struct{
+		Name string
+		ClassSection string
+	}{
+		{Name: "missing_section_number", ClassSection: "ENTP33S"},
+		{Name: "empty_string", ClassSection: ""},
+		{Name: "garbage_in_garbage_out", ClassSection: "Garbage In, Garbage out"},
 	}
 
-	for i, fail := range fails {
-		name := fmt.Sprintf("case_%03d", i+len(testData))
-
-		t.Run(name, func(t *testing.T) {
+	for _, fail := range fails {
+		t.Run(fail.Name, func(t *testing.T) {
 			t.Parallel()
 
 			defer func() {
 				if r := recover(); r == nil {
-					t.Errorf("expected panic for input %s but none occurred", fail)
+					t.Errorf("expected panic for input %q but none occurred", fail.ClassSection)
 				}
 			}()
-			getSectionNumber(fail)
-
+			getSectionNumber(map[string]string{"Class Section:": fail.ClassSection})
 		})
-
 	}
 }
 
