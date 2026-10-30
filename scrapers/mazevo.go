@@ -21,12 +21,12 @@ import (
 )
 
 // ScrapeMazevo pulls Mazevo calendar events via the public API and stores the raw response.
-func ScrapeMazevo(outDir string) {
+func ScrapeMazevo(outDir string) error {
 	// Make output folder
 	outDir = filepath.Join(outDir, "Mazevo")
 	err := os.MkdirAll(outDir, 0777)
 	if err != nil {
-		log.Panic(err)
+		return fmt.Errorf("error creating output folder: %w", err)
 	}
 
 	ctx, cancel := utils.InitChromeDp()
@@ -38,6 +38,15 @@ func ScrapeMazevo(outDir string) {
 	isPending := false
 	receivedChan := make(chan struct{})
 
+	// Non-blocking error reporting
+	listenerErrors := make(chan error, 1)
+	reportListenerError := func(err error) {
+		select {
+		case listenerErrors <- err:
+		default:
+		}
+	}
+
 	chromedp.ListenTarget(ctx, func(ev any) {
 		switch ev := ev.(type) {
 		case *network.EventRequestWillBeSent:
@@ -46,21 +55,25 @@ func ScrapeMazevo(outDir string) {
 				rawPostData := ev.Request.PostDataEntries[0].Bytes
 				decodedPostData, err := base64.StdEncoding.DecodeString(rawPostData)
 				if err != nil {
-					log.Panic(err)
+					reportListenerError(fmt.Errorf("error decoding string: %w", err))
+					return
 				}
 				var data map[string]any
 
 				err = json.Unmarshal(decodedPostData, &data)
 				if err != nil {
-					log.Panic(err)
+					reportListenerError(fmt.Errorf("error unmarshalling decoded data: %w", err))
+					return
 				}
 				eventsStart, err = time.Parse(time.RFC3339, data["start"].(string))
 				if err != nil {
-					log.Panic(err)
+					reportListenerError(fmt.Errorf("error getting event start time: %w", err))
+					return
 				}
 				eventsEnd, err = time.Parse(time.RFC3339, data["end"].(string))
 				if err != nil {
-					log.Panic(err)
+					reportListenerError(fmt.Errorf("error getting event end time: %w", err))
+					return
 				}
 
 				// Check if end is 1 month after start
@@ -77,7 +90,10 @@ func ScrapeMazevo(outDir string) {
 			// Signal that response is finished loading
 			if isPending && ev.RequestID == reqID {
 				isPending = false
-				receivedChan <- struct{}{}
+				select {
+				case receivedChan <- struct{}{}:
+				case <-ctx.Done():
+				}
 			}
 		}
 
@@ -85,7 +101,13 @@ func ScrapeMazevo(outDir string) {
 
 	scrapeLoop := func(ctx context.Context) error {
 		// Wait until events have been received
-		<-receivedChan
+		select {
+		case <-receivedChan:
+		case err := <-listenerErrors:
+			return err
+		case <-ctx.Done():
+			return ctx.Err()
+		}
 
 		// Read Response (JSON)
 		bodyBytes, err := network.GetResponseBody(reqID).Do(ctx)
@@ -97,17 +119,18 @@ func ScrapeMazevo(outDir string) {
 		// Write event data to output file
 		fptr, err := os.Create(fmt.Sprintf("%s/%s.json", outDir, eventsStart.Format("2006-01")))
 		if err != nil {
-			log.Panic(err)
+			return fmt.Errorf("error creating output file: %w", err)
 		}
+		defer fptr.Close()
 		_, err = fptr.Write(bodyBytes)
 		if err != nil {
-			log.Panic(err)
+			return fmt.Errorf("error writing to output file: %w", err)
 		}
 
 		// Click next month
 		err = chromedp.Click("[aria-label=\"Move to Next Month\"]", chromedp.NodeVisible).Do(ctx)
 		if err != nil {
-			log.Panic(err)
+			return fmt.Errorf("error clicking next month button: %w", err)
 		}
 		return nil
 	}
@@ -127,7 +150,8 @@ func ScrapeMazevo(outDir string) {
 		}),
 	)
 	if err != nil {
-		log.Panic(err)
+		return fmt.Errorf("error scraping mazevo: %w", err)
 	}
 
+	return nil
 }
