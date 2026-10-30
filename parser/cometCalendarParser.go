@@ -36,12 +36,15 @@ func ParseCometCalendar(inDir string, outDir string) {
 
 	var allEvents []schema.Event
 
+	// Unmarshal decodes the scraped JSON data in calendarFile and passes it to
+	// a slice (list) called allEvents by address
 	err = json.Unmarshal(calendarFile, &allEvents)
 	if err != nil {
 		panic(err)
 	}
 
 	multiBuildingMap := make(map[string]map[string]map[string][]schema.Event)
+
 	// Some events have only the building name, not the abbreviation
 	buildingAbbreviations, validAbbreviations, err := getLocationAbbreviations(inDir)
 	if err != nil {
@@ -104,6 +107,7 @@ func ParseCometCalendar(inDir string, outDir string) {
 			room = "Other"
 		}
 
+		//
 		if _, exists := multiBuildingMap[date]; !exists {
 			multiBuildingMap[date] = make(map[string]map[string][]schema.Event)
 		}
@@ -115,8 +119,13 @@ func ParseCometCalendar(inDir string, outDir string) {
 		multiBuildingMap[date][building][room] = append(multiBuildingMap[date][building][room], event)
 	}
 
+	// Nested slices (date -> building -> room -> events) using schema.
 	var result []schema.MultiBuildingEvents[schema.Event]
 
+	// NOTE: In Go, any iterating through a map is done in a random order.
+	// This applies to the nested for loop below
+	// If you require any sorting of this data, put the keys in a slice, sort the slice
+	// and loop over that instead.
 	for date, buildings := range multiBuildingMap {
 		var singleBuildings []schema.SingleBuildingEvents[schema.Event]
 		for building, rooms := range buildings {
@@ -138,6 +147,33 @@ func ParseCometCalendar(inDir string, outDir string) {
 			Date:      date,
 			Buildings: singleBuildings,
 		})
+	}
+
+	// sort result (a nested array of slices) using slices.Sortfunc
+	slices.SortFunc(result, func(a, b schema.MultiBuildingEvents[schema.Event]) int {
+		// sorts by date, ascending
+		return strings.Compare(a.Date, b.Date)
+	})
+
+	for i := range result {
+		slices.SortFunc(result[i].Buildings, func(a, b schema.SingleBuildingEvents[schema.Event]) int {
+			// sorts alphabetically
+			return strings.Compare(a.Building, b.Building)
+		})
+
+		for j := range result[i].Buildings {
+			slices.SortFunc(result[i].Buildings[j].Rooms, func(c, d schema.RoomEvents[schema.Event]) int {
+				// sorts alphabetically
+				return strings.Compare(c.Room, d.Room)
+			})
+
+			for k := range result[i].Buildings[j].Rooms {
+				slices.SortFunc(result[i].Buildings[j].Rooms[k].Events, func(e, f schema.Event) int {
+					// sorts schema.Event.Id as a Hex rather than a String
+					return strings.Compare(e.Id.Hex(), f.Id.Hex())
+				})
+			}
+		}
 	}
 
 	log.Print("Parsed Comet Calendar!")
