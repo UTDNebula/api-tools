@@ -72,7 +72,7 @@ Run the tool by changing directory using `cd` to the `api-tools` directory and r
 | `./api-tools -scrape -map` | Scrapes UTD Map data. |
 | `./api-tools -scrape -mazevo` | Scrapes Mazevo data. |
 | `./api-tools -scrape -profiles` | Scrapes UTD professor profiles. |
-| `./api-tools -scrape -studyAbroad` | Scrapes study abroad program brochures and discovery records to `[outDir]/studyAbroad`.<br>• Set `PROGRAM_IDS` to a comma-separated list to scrape specific programs instead of all of them. |
+| `./api-tools -scrape -studyAbroad` | Scrapes study abroad program brochures and discovery records to `[outDir]/studyAbroad`.<br>• Add `-programIDs 1,2,3` to scrape specific programs to scrape specific programs instead of all of them. |
 | `./api-tools -scrape -headless` | Runs ChromeDP in headless mode. |
 | `./api-tools -o [directory]` | Sets output directory (default: `./data`). |
 

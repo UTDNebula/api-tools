@@ -69,6 +69,7 @@ func main() {
 	budgets := flag.Bool("budgets", false, "Alongside -scrape, -parse, or -upload, signifies that the budgets should be scraped/parsed/uploaded.")
 	// Flag for study abroad scraping
 	studyAbroad := flag.Bool("studyAbroad", false, "Alongside -scrape or -parse, signifies that study abroad programs should be scraped/parsed.")
+	programIDs := flag.String("programIDs", "", "Alongside -scrape -studyAbroad, a comma-separated list of program IDs to scrape instead of every active program.")
 
 	// Flags for parsing
 	parse := flag.Bool("parse", false, "Puts the tool into parsing mode.")
@@ -146,7 +147,7 @@ func main() {
 		case *budgets:
 			scrapers.ScrapeBudgets(*outDir)
 		case *studyAbroad:
-			scrapers.ScrapeStudyAbroad(*outDir)
+			scrapers.ScrapeStudyAbroad(*outDir, *programIDs)
 		default:
 			log.Panic("You must specify which type of scraping you would like to perform with one of the scraping flags!")
 		}

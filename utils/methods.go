@@ -9,7 +9,6 @@ import (
 	"io/fs"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"time"
@@ -34,51 +33,24 @@ func GetEnv(name string) (string, error) {
 	return value, nil
 }
 
-func InitChromeDp() (context.Context, context.CancelFunc) {
+// InitChromeDp configures and returns a chromedp context with optional headless settings.
+func InitChromeDp() (chromedpCtx context.Context, cancelFnc context.CancelFunc) {
 	log.Printf("Initializing chromedp...")
-
-	// Detect browser path
-	chromePath := os.Getenv("CHROME_PATH")
-
-	if chromePath == "" {
-		candidates := []string{
-			"google-chrome",
-			"chromium",
-			"chromium-browser",
-		}
-
-		for _, name := range candidates {
-			if p, err := exec.LookPath(name); err == nil {
-				chromePath = p
-				break
-			}
-		}
+	if Headless {
+		opts := append(chromedp.DefaultExecAllocatorOptions[:],
+			chromedp.Flag("headless", true),
+			chromedp.Flag("no-sandbox", true),
+			chromedp.Flag("disable-dev-shm-usage", true),
+			chromedp.Flag("disable-gpu", true),
+		)
+		allocCtx, _ := chromedp.NewExecAllocator(context.Background(), opts...)
+		chromedpCtx, cancelFnc = chromedp.NewContext(allocCtx)
+	} else {
+		allocCtx, _ := chromedp.NewExecAllocator(context.Background())
+		chromedpCtx, cancelFnc = chromedp.NewContext(allocCtx)
 	}
-
-	if chromePath == "" {
-		log.Fatal("No Chrome/Chromium found. Install one or set CHROME_PATH")
-	}
-
-	log.Printf("Using Chrome at: %s", chromePath)
-
-	opts := append(chromedp.DefaultExecAllocatorOptions[:],
-		chromedp.ExecPath(chromePath),
-		chromedp.Flag("headless", Headless),
-		chromedp.Flag("no-sandbox", true),
-		chromedp.Flag("disable-dev-shm-usage", true),
-		chromedp.Flag("disable-gpu", true),
-	)
-
-	allocCtx, cancelAlloc := chromedp.NewExecAllocator(context.Background(), opts...)
-	ctx, cancelCtx := chromedp.NewContext(allocCtx)
-
-	cancel := func() {
-		cancelCtx()
-		cancelAlloc()
-	}
-
 	log.Printf("Initialized chromedp!")
-	return ctx, cancel
+	return chromedpCtx, cancelFnc
 }
 
 // RefreshToken logs into CourseBook and returns headers containing a fresh session token.

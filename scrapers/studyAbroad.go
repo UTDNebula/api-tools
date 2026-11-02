@@ -69,9 +69,9 @@ type discoverySearchResponse struct {
 
 // ScrapeStudyAbroad saves every active study abroad program brochure, plus the discovery search
 // records that describe them, to {outDir}/studyAbroad for the parser to combine.
-// Set PROGRAM_IDS to a comma-separated list to scrape specific programs instead of discovering them all.
-func ScrapeStudyAbroad(outDir string) {
-	programIDs, err := programIDsFromEnv(os.Getenv("PROGRAM_IDS"))
+// Pass rawProgramIDs as a comma-separated list to scrape specific programs instead of discovering them all.
+func ScrapeStudyAbroad(outDir string, rawProgramIDs string) {
+	programIDs, err := parseProgramIDs(rawProgramIDs) // decides if a full scrape runs or not
 	if err != nil {
 		log.Panic(err)
 	}
@@ -79,9 +79,9 @@ func ScrapeStudyAbroad(outDir string) {
 	studyAbroadDir := filepath.Join(outDir, "studyAbroad")
 	brochureDir := filepath.Join(studyAbroadDir, "brochures")
 
-	if len(programIDs) == 0 {
+	if len(programIDs) == 0 { // no -programIDs, so do a full scrape
 		var records []json.RawMessage
-		programIDs, records, err = discoverPrograms()
+		programIDs, records, err = discoverPrograms() // fetch all active program IDs and their discovery records
 		if err != nil {
 			log.Panic(err)
 		}
@@ -97,7 +97,7 @@ func ScrapeStudyAbroad(outDir string) {
 			log.Panic(err)
 		}
 	} else {
-		log.Printf("Using PROGRAM_IDS=%v", programIDs)
+		log.Printf("Using -programIDs %v", programIDs)
 	}
 
 	if err := os.MkdirAll(brochureDir, 0777); err != nil {
@@ -271,7 +271,7 @@ func fetchDiscoveryPage(client *http.Client, authorization string, start int) (d
 	return page, nil
 }
 
-func programIDsFromEnv(raw string) ([]int, error) {
+func parseProgramIDs(raw string) ([]int, error) {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
 		return nil, nil
@@ -287,7 +287,7 @@ func programIDsFromEnv(raw string) ([]int, error) {
 
 		programID, err := strconv.Atoi(part)
 		if err != nil {
-			return nil, fmt.Errorf("parse PROGRAM_IDS value %q: %w", part, err)
+			return nil, fmt.Errorf("parse -programIDs value %q: %w", part, err)
 		}
 
 		ids = append(ids, programID)

@@ -91,7 +91,7 @@ func ParseStudyAbroad(inDir string, outDir string) {
 }
 
 // loadDiscoveryRecords reads the discovery search records keyed by program ID.
-// A missing file isn't an error, since scraping with PROGRAM_IDS skips discovery.
+// A missing file isn't an error, since scraping with -programIDs skips discovery.
 func loadDiscoveryRecords(path string) (map[int]discoveryRecord, error) {
 	records := make(map[int]discoveryRecord)
 
