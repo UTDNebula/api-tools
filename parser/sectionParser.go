@@ -33,6 +33,8 @@ var (
 
 	// meetingTimesRegexp matches a time in 12-hour AM/PM format (e.g., "5:00 pm", "11:30am")
 	meetingTimesRegexp = regexp.MustCompile(utils.R_TIME_AM_PM)
+
+	meetingLocationRegexp = regexp.MustCompile(`^([A-Z]{2,4})\s+([0-9]{1,2}\.[0-9]{3}[A-Z]?)$`)
 )
 
 // parseSection creates a schema.Section from rowInfo and ClassInfo,
@@ -187,8 +189,8 @@ func getInstructionMode(classInfo map[string]string) string {
 //   - If there are no matches an empty slice will be used
 //
 // Location
-//   - Skips locations that don't have a valid locator link
-//   - Skips locations whose text don't match format <any><space><any>
+//   - Parses building and room text when the locator link points to the map home page
+//   - For other accepted links, requires two space-separated parts in the location text
 func getMeetings(rowInfo map[string]*goquery.Selection) []schema.Meeting {
 	meetingItems := rowInfo["Schedule:"].Find("div.courseinfo__meeting-item--multiple")
 	var meetings = make([]schema.Meeting, 0, meetingItems.Length())
@@ -226,7 +228,12 @@ func getMeetings(rowInfo map[string]*goquery.Selection) []schema.Meeting {
 			mapUri := locationInfo.AttrOr("href", "")
 
 			//only add locations for meetings that have actual data, all meetings have a link some are not visible or empty
-			if mapUri != "" && mapUri != "https://locator.utdallas.edu/" && mapUri != "https://locator.utdallas.edu/ONLINE" {
+			if mapUri == "https://locator.utdallas.edu/" {
+				match := meetingLocationRegexp.FindStringSubmatch(utils.TrimWhitespace(locationInfo.Text()))
+				if len(match) == 3 {
+					meeting.Location = schema.Location{Building: match[1], Room: match[2]}
+				}
+			} else if mapUri != "" && mapUri != "https://locator.utdallas.edu/ONLINE" {
 				splitText := strings.Split(utils.TrimWhitespace(locationInfo.Text()), " ")
 
 				if len(splitText) == 2 {
