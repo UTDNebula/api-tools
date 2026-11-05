@@ -273,9 +273,7 @@ func ParseBudgets(inDir string, outDir string, budgetsDir string, useBackupBudge
 
 	// Start worker goroutines
 	for range numWorkers {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			for paths := range jobs {
 				year := filepath.Base(filepath.Dir(paths[0]))
 				log.Printf("Parsing %s...", year)
@@ -305,7 +303,7 @@ func ParseBudgets(inDir string, outDir string, budgetsDir string, useBackupBudge
 
 				log.Printf("Parsed %s!", year)
 			}
-		}()
+		})
 	}
 
 	yearsScraped := make(map[string]bool)
