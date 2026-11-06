@@ -11,7 +11,6 @@ require (
 	github.com/getsentry/sentry-go v0.48.0
 	github.com/google/go-cmp v0.7.0
 	github.com/joho/godotenv v1.5.1
-	github.com/valyala/fastjson v1.6.10
 	go.mongodb.org/mongo-driver/v2 v2.9.1
 	golang.org/x/net v0.58.0
 	golang.org/x/text v0.41.0
