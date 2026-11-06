@@ -30,6 +30,9 @@ jobs:
     - name: Check
       run: make check
 
+    - name: Fail if files changed
+      run: git diff --exit-code
+
     - name: Test
       env:
         LOGIN_NETID: ${{ secrets.LOGIN_NETID }}
