@@ -5,14 +5,16 @@
 package scrapers
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"net/http/cookiejar"
 	"os"
 	"time"
 
-	"github.com/UTDNebula/api-tools/utils"
 	"github.com/valyala/fastjson"
 )
 
@@ -21,9 +23,6 @@ var MAX_EVENTS_PER_DAY = 5000
 
 // ScrapeAstra iterates day-by-day through Astra events and persists the raw JSON output.
 func ScrapeAstra(outDir string) {
-	// Start chromedp
-	chromedpCtx, cancel := utils.InitChromeDp()
-
 	// Make output folder
 	err := os.MkdirAll(outDir, 0777)
 	if err != nil {
@@ -34,20 +33,17 @@ func ScrapeAstra(outDir string) {
 	firstLoop := true // To avoid adding a comma to the JSON on the first loop
 
 	// Init http client
+	jar, _ := cookiejar.New(nil)
 	tr := &http.Transport{
 		MaxIdleConns:       10,
 		IdleConnTimeout:    30 * time.Second,
 		DisableCompression: true,
 	}
-	cli := &http.Client{Transport: tr}
-
-	// Get cookies for auth
-	astraHeaders := utils.RefreshAstraToken(chromedpCtx)
-	time.Sleep(500 * time.Millisecond)
-	cancel() // Don't need chromedp anymore
+	cli := &http.Client{Transport: tr, Jar: jar}
 
 	date := time.Now()
 	endDate := date.Add(time.Hour * 24 * 365)
+
 	// Start on previous date to make sure we have today's data, regardless of what timezone the scraper is in
 	date = date.Add(time.Hour * -24)
 
@@ -62,14 +58,22 @@ func ScrapeAstra(outDir string) {
 		if err != nil {
 			panic(err)
 		}
-		req.Header = astraHeaders
+
+		// Set the necessary headers directly to bypass the old chromedp login
+		req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:159.0) Gecko/20100101 Firefox/159.0")
+		req.Header.Set("Accept", "application/json, text/javascript, */*; q=0.01")
+		req.Header.Set("X-Requested-With", "XMLHttpRequest")
+		req.Header.Set("Referer", "https://www.aaiscloud.com/UTXDallas/Default.aspx")
+
 		res, err := cli.Do(req)
 		if err != nil {
 			panic(err)
 		}
+
 		if res.StatusCode != 200 {
 			log.Panicf("ERROR: Status was: %s\nIf the status is 404, you've likely been IP ratelimited!", res.Status)
 		}
+
 		body, err := io.ReadAll(res.Body)
 		if err != nil {
 			panic(err)
@@ -94,15 +98,25 @@ func ScrapeAstra(outDir string) {
 
 	log.Printf("Scraped Astra up to %s!", date.Format("2006-01-02"))
 
-	// Write event data to output file
+	// Close the JSON object string
 	days = fmt.Sprintf("%s}", days)
+
+	// Format the raw JSON string with tabs for indentation
+	var prettyJSON bytes.Buffer
+	err = json.Indent(&prettyJSON, []byte(days), "", "\t")
+	if err != nil {
+		panic(err)
+	}
+
+	// Write formatted event data to output file
 	fptr, err := os.Create(fmt.Sprintf("%s/astraScraped.json", outDir))
 	if err != nil {
 		panic(err)
 	}
-	_, err = fptr.Write([]byte(days))
+	defer fptr.Close() // Best practice to use defer for file closing
+
+	_, err = fptr.Write(prettyJSON.Bytes())
 	if err != nil {
 		panic(err)
 	}
-	fptr.Close()
 }
