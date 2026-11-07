@@ -220,7 +220,9 @@ func getLocationAbbreviations(inDir string) (map[string]string, []string, error)
 	if err != nil {
 		if os.IsNotExist(err) {
 			// Force scrape the locations if it doesn't exist. Get the map file again
-			scrapers.ScrapeMapLocations(inDir)
+			if err := scrapers.ScrapeMapLocations(inDir); err != nil {
+				return nil, nil, err
+			}
 			ParseMapLocations(inDir, inDir)
 
 			// If it fails to get the locations again, it's not because location is unscraped
