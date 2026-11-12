@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/UTDNebula/nebula-api/api/schema"
+	"github.com/UTDNebula/nebula-api/rest/schema"
 )
 
 func loadProfiles(inDir string) {

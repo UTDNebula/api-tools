@@ -11,7 +11,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/UTDNebula/nebula-api/api/schema"
+	"github.com/UTDNebula/nebula-api/rest/schema"
 	"github.com/joho/godotenv"
 )
 
