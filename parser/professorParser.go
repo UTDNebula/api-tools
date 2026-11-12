@@ -6,14 +6,14 @@ import (
 	"github.com/PuerkitoBio/goquery"
 
 	"github.com/UTDNebula/api-tools/utils"
-	"github.com/UTDNebula/nebula-api/api/schema"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"github.com/UTDNebula/nebula-api/rest/schema"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
-func parseProfessors(sectionId primitive.ObjectID, rowInfo map[string]*goquery.Selection) []primitive.ObjectID {
+func parseProfessors(sectionId bson.ObjectID, rowInfo map[string]*goquery.Selection) []bson.ObjectID {
 	professorText := utils.TrimWhitespace(rowInfo["Instructor(s):"].Text())
 	professorMatches := personRegexp.FindAllStringSubmatch(professorText, -1)
-	var profRefs []primitive.ObjectID = make([]primitive.ObjectID, 0, len(professorMatches))
+	var profRefs []bson.ObjectID = make([]bson.ObjectID, 0, len(professorMatches))
 	for _, match := range professorMatches {
 
 		nameStr := utils.TrimWhitespace(match[1])
@@ -37,12 +37,12 @@ func parseProfessors(sectionId primitive.ObjectID, rowInfo map[string]*goquery.S
 		}
 
 		prof = &schema.Professor{}
-		prof.Id = primitive.NewObjectID()
+		prof.Id = bson.NewObjectID()
 		prof.First_name = firstName
 		prof.Last_name = lastName
 		prof.Titles = []string{utils.TrimWhitespace(match[2])}
 		prof.Email = utils.TrimWhitespace(match[3])
-		prof.Sections = []primitive.ObjectID{sectionId}
+		prof.Sections = []bson.ObjectID{sectionId}
 		profRefs = append(profRefs, prof.Id)
 		Professors[profKey] = prof
 		ProfessorIDMap[prof.Id] = profKey

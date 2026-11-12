@@ -11,7 +11,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/UTDNebula/nebula-api/api/schema"
+	"github.com/UTDNebula/nebula-api/rest/schema"
 )
 
 //  Note that this uploader assumes that the collection names match the names of these files, which they should.

@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/UTDNebula/nebula-api/api/schema"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
+	"github.com/UTDNebula/nebula-api/rest/schema"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
 func TestUploadDiscounts_MissingFile_DoesNotPanic(t *testing.T) {
@@ -42,7 +42,7 @@ func TestUploadDiscounts_WithFile_InvokesUploadPath(t *testing.T) {
 	// Create a minimal discounts.json so decoding succeeds
 	docs := []schema.DiscountProgram{
 		{
-			Id:       primitive.NewObjectID(),
+			Id:       bson.NewObjectID(),
 			Category: "Test",
 			Business: "Test Business",
 			Discount: "10% off",

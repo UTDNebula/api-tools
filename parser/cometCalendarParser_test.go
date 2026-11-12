@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/v2/bson"
 
-	"github.com/UTDNebula/nebula-api/api/schema"
+	"github.com/UTDNebula/nebula-api/rest/schema"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -54,7 +54,7 @@ func strPtr(s string) *string {
 // helper function to create valid schema.Event object for testing purposes
 func makeEvent(summary, location string, startTime time.Time) schema.Event {
 	return schema.Event{
-		Id:        primitive.NewObjectID(),
+		Id:        bson.NewObjectID(),
 		Summary:   summary,
 		Location:  location,
 		StartTime: startTime,
