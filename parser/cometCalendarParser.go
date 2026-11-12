@@ -107,7 +107,6 @@ func ParseCometCalendar(inDir string, outDir string) {
 			room = "Other"
 		}
 
-		//
 		if _, exists := multiBuildingMap[date]; !exists {
 			multiBuildingMap[date] = make(map[string]map[string][]schema.Event)
 		}
