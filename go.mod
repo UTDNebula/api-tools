@@ -15,7 +15,7 @@ require (
 	go.mongodb.org/mongo-driver/v2 v2.9.1
 	golang.org/x/net v0.58.0
 	golang.org/x/text v0.41.0
-	google.golang.org/genai v1.51.0
+	google.golang.org/genai v1.77.0
 )
 
 require (

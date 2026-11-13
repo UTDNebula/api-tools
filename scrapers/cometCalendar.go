@@ -74,9 +74,7 @@ func ScrapeCometCalendar(outDir string) {
 	if err != nil {
 		panic(err)
 	}
-	client := http.Client{
-		Timeout: 15 * time.Second,
-	}
+	client := http.Client{Timeout: 30 * time.Second}
 	var calendarData APICalendarResponse
 
 	// Get the total number of pages
@@ -101,7 +99,6 @@ func ScrapeCometCalendar(outDir string) {
 				panic(err)
 			}
 			if startTime.After(endTime) {
-				fmt.Printf("start: %s, end: %s\n", startTime, endTime)
 				continue
 			}
 
