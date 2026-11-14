@@ -28,6 +28,13 @@
 			}
 		],
 		"internal_class_number": "27706",
+		"latest_enrollment": {
+			"scraped_at": "2025-01-25T12:30:01.123Z",
+			"status": "OPEN",
+			"available_seats": 3,
+			"enrolled_total": 64,
+			"waitlist": 0
+		},
 		"instruction_mode": "Face-to-Face",
 		"meetings": [
 			{
@@ -100,6 +107,13 @@
 			}
 		],
 		"internal_class_number": "26595",
+		"latest_enrollment": {
+			"scraped_at": "2025-01-25T12:30:01.123Z",
+			"status": "OPEN",
+			"available_seats": 3,
+			"enrolled_total": 64,
+			"waitlist": 0
+		},
 		"instruction_mode": "Face-to-Face",
 		"meetings": [
 			{
@@ -165,6 +179,13 @@
 			}
 		],
 		"internal_class_number": "27195",
+		"latest_enrollment": {
+			"scraped_at": "2025-01-25T12:30:01.123Z",
+			"status": "CLOSED/FULL",
+			"available_seats": 0,
+			"enrolled_total": 56,
+			"waitlist": 0
+		},
 		"instruction_mode": "Face-to-Face",
 		"meetings": [
 			{
@@ -226,6 +247,13 @@
 		],
 		"teaching_assistants": [],
 		"internal_class_number": "29611",
+		"latest_enrollment": {
+			"scraped_at": "2025-01-25T12:30:01.123Z",
+			"status": "OPEN",
+			"available_seats": 9,
+			"enrolled_total": 1,
+			"waitlist": 0
+		},
 		"instruction_mode": "Face-to-Face",
 		"meetings": [
 			{
@@ -262,6 +290,13 @@
 		"professors": [],
 		"teaching_assistants": [],
 		"internal_class_number": "28551",
+		"latest_enrollment": {
+			"scraped_at": "2025-01-25T12:30:01.123Z",
+			"status": "OPEN",
+			"available_seats": 16,
+			"enrolled_total": 3,
+			"waitlist": 0
+		},
 		"instruction_mode": "Face-to-Face",
 		"meetings": [
 			{
@@ -298,6 +333,13 @@
 		"professors": [],
 		"teaching_assistants": [],
 		"internal_class_number": "27906",
+		"latest_enrollment": {
+			"scraped_at": "2025-01-25T12:30:01.123Z",
+			"status": "OPEN",
+			"available_seats": 17,
+			"enrolled_total": 2,
+			"waitlist": 0
+		},
 		"instruction_mode": "Face-to-Face",
 		"meetings": [
 			{
@@ -351,6 +393,13 @@
 		],
 		"teaching_assistants": [],
 		"internal_class_number": "24043",
+		"latest_enrollment": {
+			"scraped_at": "2025-01-25T12:30:01.123Z",
+			"status": "OPEN",
+			"available_seats": 15,
+			"enrolled_total": 33,
+			"waitlist": 0
+		},
 		"instruction_mode": "Face-to-Face",
 		"meetings": [
 			{

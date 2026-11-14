@@ -2,11 +2,61 @@ package parser
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/PuerkitoBio/goquery"
+	"github.com/UTDNebula/nebula-api/rest/schema"
 	"github.com/google/go-cmp/cmp"
 )
+
+func TestGetEnrollment(t *testing.T) {
+	fixtures, err := unmarshallFile[[]struct{ Name, HTML string }]("fixtures/enrollment.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	scrapedAt := time.Date(2026, 8, 24, 12, 34, 56, 0, time.UTC)
+	expected := map[string]*schema.Enrollment{
+		"closed":        {Scraped_at: &scrapedAt, Status: "CLOSED/FULL", Available_seats: new(0), Enrolled_total: new(68), Waitlist: new(0)},
+		"cross_listed":  {Scraped_at: &scrapedAt, Status: "OPEN", Available_seats: new(10), Enrolled_total: new(14), Waitlist: new(0)},
+		"over_enrolled": {Scraped_at: &scrapedAt, Status: "CLOSED/FULL", Available_seats: new(-15), Enrolled_total: new(57), Waitlist: new(0)},
+	}
+	for _, fixture := range fixtures {
+		t.Run(fixture.Name, func(t *testing.T) {
+			doc, err := goquery.NewDocumentFromReader(strings.NewReader(fixture.HTML))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if diff := cmp.Diff(expected[fixture.Name], getEnrollment(getRowInfo(doc), &scrapedAt)); diff != "" {
+				t.Errorf("(-want +got):\n%s", diff)
+			}
+		})
+	}
+	if got := getEnrollment(nil, &scrapedAt); got != nil {
+		t.Errorf("missing enrollment row = %v, want nil", got)
+	}
+}
+
+func TestGetScrapedAt(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "26f", "cp_cs", "section.html")
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		t.Fatal(err)
+	}
+	if got := getScrapedAt(path); got != nil {
+		t.Fatalf("missing timestamp file = %v, want nil", got)
+	}
+	if err := os.WriteFile(filepath.Join(root, "26f", "scraped_at.txt"), []byte("2026-08-24T12:34:56Z\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	want := time.Date(2026, 8, 24, 12, 34, 56, 0, time.UTC)
+	if got := getScrapedAt(path); got == nil || !got.Equal(want) || got.Location() != time.UTC {
+		t.Errorf("scraped_at = %v, want UTC %v", got, want)
+	}
+}
 
 // TestGetInternalClassAndCourseNum checks parsing of internal course identifiers.
 func TestGetInternalClassAndCourseNum(t *testing.T) {
