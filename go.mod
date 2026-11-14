@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/PuerkitoBio/goquery v1.12.0
-	github.com/UTDNebula/nebula-api v1.2.1-0.20261114001700-6f26423dffba
+	github.com/UTDNebula/nebula-api v1.2.1-0.20261114203121-26bbd574a0cf
 	github.com/chromedp/cdproto v0.0.0-20260321001828-e3e3800016bc
 	github.com/chromedp/chromedp v0.15.1
 	github.com/dongri/phonenumber v0.1.12

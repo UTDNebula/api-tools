@@ -19,10 +19,10 @@ func TestGetEnrollment(t *testing.T) {
 		t.Fatal(err)
 	}
 	scrapedAt := time.Date(2026, 8, 24, 12, 34, 56, 0, time.UTC)
-	expected := map[string]*schema.Enrollment{
-		"closed":        {Scraped_at: &scrapedAt, Status: "CLOSED/FULL", Available_seats: new(0), Enrolled_total: new(68), Waitlist: new(0)},
-		"cross_listed":  {Scraped_at: &scrapedAt, Status: "OPEN", Available_seats: new(10), Enrolled_total: new(14), Waitlist: new(0)},
-		"over_enrolled": {Scraped_at: &scrapedAt, Status: "CLOSED/FULL", Available_seats: new(-15), Enrolled_total: new(57), Waitlist: new(0)},
+	expected := map[string]*schema.SectionEnrollment{
+		"closed":        {Updated_at: &scrapedAt, Status: "CLOSED/FULL", Available_seats: new(0), Enrolled_total: new(68), Waitlist: new(0)},
+		"cross_listed":  {Updated_at: &scrapedAt, Status: "OPEN", Available_seats: new(10), Enrolled_total: new(14), Waitlist: new(0)},
+		"over_enrolled": {Updated_at: &scrapedAt, Status: "CLOSED/FULL", Available_seats: new(-15), Enrolled_total: new(57), Waitlist: new(0)},
 	}
 	for _, fixture := range fixtures {
 		t.Run(fixture.Name, func(t *testing.T) {

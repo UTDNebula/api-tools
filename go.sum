@@ -30,8 +30,8 @@ github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapp
 github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.60.0/go.mod h1:SRAbhyZ4R4FagHMM9VtRgSY/lheRoht2fKelZXQUenk=
 github.com/PuerkitoBio/goquery v1.12.0 h1:pAcL4g3WRXekcB9AU/y1mbKez2dbY2AajVhtkO8RIBo=
 github.com/PuerkitoBio/goquery v1.12.0/go.mod h1:802ej+gV2y7bbIhOIoPY5sT183ZW0YFofScC4q/hIpQ=
-github.com/UTDNebula/nebula-api v1.2.1-0.20261114001700-6f26423dffba h1:+PHtw9NHmgPUCbvWP0rv4aR7D+aPUcwR2lMZlwtizCw=
-github.com/UTDNebula/nebula-api v1.2.1-0.20261114001700-6f26423dffba/go.mod h1:ckjoQ1cy323RvxYfGpmLFUYwb3pXSOvT7V0sCzPnFp4=
+github.com/UTDNebula/nebula-api v1.2.1-0.20261114203121-26bbd574a0cf h1:q54Ub5hA4rU0ooWuVBOOFvWeiElJsnBFGELQT8UMh6E=
+github.com/UTDNebula/nebula-api v1.2.1-0.20261114203121-26bbd574a0cf/go.mod h1:ckjoQ1cy323RvxYfGpmLFUYwb3pXSOvT7V0sCzPnFp4=
 github.com/andybalholm/cascadia v1.3.3 h1:AG2YHrzJIm4BZ19iwJ/DAua6Btl3IwJX+VI4kktS1LM=
 github.com/andybalholm/cascadia v1.3.3/go.mod h1:xNd9bqTn98Ln4DwST8/nG+H0yuB8Hmgu1YHNnWw0GeA=
 github.com/cespare/xxhash/v2 v2.3.0 h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UFvs=

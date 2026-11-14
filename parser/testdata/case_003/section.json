@@ -36,7 +36,7 @@
 	"grade_distribution": [],
 	"attributes": null,
 	"latest_enrollment": {
-		"scraped_at": "2025-01-25T12:30:01.123Z",
+		"updated_at": "2025-01-25T12:30:01.123Z",
 		"status": "OPEN",
 		"available_seats": 9,
 		"enrolled_total": 1,

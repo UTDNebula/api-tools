@@ -173,7 +173,7 @@ func getInstructionMode(classInfo map[string]string) string {
 
 // getEnrollment reads the labeled values in CourseBook's Status row.
 // A missing row or count stays absent rather than becoming a reported zero.
-func getEnrollment(rowInfo map[string]*goquery.Selection, scrapedAt *time.Time) *schema.Enrollment {
+func getEnrollment(rowInfo map[string]*goquery.Selection, scrapedAt *time.Time) *schema.SectionEnrollment {
 	row, ok := rowInfo["Status:"]
 	if !ok {
 		return nil
@@ -201,8 +201,8 @@ func getEnrollment(rowInfo map[string]*goquery.Selection, scrapedAt *time.Time) 
 		return &count
 	}
 
-	enrollment := &schema.Enrollment{
-		Scraped_at:      scrapedAt,
+	enrollment := &schema.SectionEnrollment{
+		Updated_at:      scrapedAt,
 		Status:          strings.TrimSpace(values["Enrollment Status:"]),
 		Available_seats: parseCount("Available Seats:", true),
 		Waitlist:        parseCount("Waitlist:", false),
