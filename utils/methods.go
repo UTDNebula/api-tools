@@ -15,6 +15,8 @@ import (
 
 	"strings"
 
+	_ "time/tzdata"
+
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/cdproto/runtime"
@@ -31,6 +33,14 @@ func GetEnv(name string) (string, error) {
 		return "", errors.New(name + " is missing from .env!")
 	}
 	return value, nil
+}
+
+func GetUTDTimeZone() *time.Location {
+	loc, err := time.LoadLocation("America/Chicago")
+	if err != nil {
+		panic(fmt.Sprintf("Failed to load time zone (America/Chicago): %v", err))
+	}
+	return loc
 }
 
 // InitChromeDp configures and returns a chromedp context with optional headless settings.

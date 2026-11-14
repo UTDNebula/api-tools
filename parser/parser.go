@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"time"
 
 	"github.com/UTDNebula/api-tools/utils"
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -37,14 +36,8 @@ var (
 	GradeMap map[string]map[string][]int
 
 	// timeLocation captures the America/Chicago location for timestamp normalization.
-	timeLocation, timeError = time.LoadLocation("America/Chicago")
+	timeLocation = utils.GetUTDTimeZone()
 )
-
-func init() {
-	if timeError != nil {
-		log.Fatalf("Failed to initialize timeLocation: %v", timeError)
-	}
-}
 
 // Parse loads scraped course artifacts, applies parsing and validation, and persists structured results.
 func Parse(inDir string, outDir string, csvPath string, skipValidation bool) {

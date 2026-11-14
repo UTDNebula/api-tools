@@ -1,7 +1,3 @@
-/*
-	This file contains the code for the Astra scraper.
-*/
-
 package scrapers
 
 import (
@@ -20,18 +16,18 @@ import (
 )
 
 const (
-	maxEventsPerDay = 5000
-	baseURL         = "https://www.aaiscloud.com/UTXDallas/~api/calendar/CalendarWeekGrid"
-	fields          = "ActivityId,ActivityPk,ActivityName,ParentActivityId,ParentActivityName,MeetingType,Description,StartDate,EndDate,DayOfWeek,StartMinute,EndMinute,ActivityTypeCode,ResourceId,CampusName,BuildingCode,RoomNumber,RoomName,LocationName,InstitutionId,SectionId,SectionPk,IsExam,IsCrosslist,IsAllDay,IsPrivate,EventId,EventPk,CurrentState,NotAllowedUsageMask,UsageColor,UsageColorIsPrimary,EventTypeColor,MaxAttendance,ActualAttendance,Capacity"
-	astraMaxRetries = 3
+	astraMaxEventsPerDay = 5000
+	astraBaseURL         = "https://www.aaiscloud.com/UTXDallas/~api/calendar/CalendarWeekGrid"
+	astraFields          = "ActivityId,ActivityPk,ActivityName,ParentActivityId,ParentActivityName,MeetingType,Description,StartDate,EndDate,DayOfWeek,StartMinute,EndMinute,ActivityTypeCode,ResourceId,CampusName,BuildingCode,RoomNumber,RoomName,LocationName,InstitutionId,SectionId,SectionPk,IsExam,IsCrosslist,IsAllDay,IsPrivate,EventId,EventPk,CurrentState,NotAllowedUsageMask,UsageColor,UsageColorIsPrimary,EventTypeColor,MaxAttendance,ActualAttendance,Capacity"
+	astraDelay           = 300 * time.Millisecond
 )
 
 type calendarResponse struct {
-	Fields       string  `json:"fields"`
-	Pos          int     `json:"pos"`
-	Start        int     `json:"start"`
-	TotalRecords int     `json:"totalRecords"`
-	Data         [][]any `json:"data"`
+	Fields       string          `json:"fields"`
+	Pos          int             `json:"pos"`
+	Start        int             `json:"start"`
+	TotalRecords int             `json:"totalRecords"`
+	Data         json.RawMessage `json:"data"`
 }
 
 // ScrapeAstra iterates day-by-day through Astra events and persists the raw JSON output.
@@ -42,49 +38,37 @@ func ScrapeAstra(outDir string) error {
 	}
 
 	jar, _ := cookiejar.New(nil)
+
 	client := &http.Client{
-		Transport: &http.Transport{
-			MaxIdleConns:    10,
-			IdleConnTimeout: 30 * time.Second,
-		},
-		Timeout: 30 * time.Second,
-		Jar:     jar,
+		Transport: http.DefaultTransport.(*http.Transport).Clone(),
+		Timeout:   30 * time.Second,
+		Jar:       jar,
 	}
 
-	data := make(map[string]calendarResponse, 365)
+	data := make(map[string]*calendarResponse, 365)
 
-	timeLocation, _ := time.LoadLocation("America/Chicago")
-	now := time.Now()
+	timeLocation := utils.GetUTDTimeZone()
+	now := time.Now().In(timeLocation)
 	date := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, timeLocation)
+	endDate := date.AddDate(1, 0, 0)
 
-	for i := 0; i < 365; i++ {
-		date = date.AddDate(0, 0, 1)
+	for ; date.Before(endDate); date = date.AddDate(0, 0, 1) {
+		dateStr := date.Format("2006-01-02")
 
-		var responseBody []byte
-		err := utils.Retry(func() error {
-			var err error
-			responseBody, err = queryAstra(client, date)
-			return err
-		}, astraMaxRetries, astraRetryBackoff)
-
+		resp, err := queryAstra(client, dateStr)
 		if err != nil {
-			return fmt.Errorf("failed to query Astra: %w", err)
+			return fmt.Errorf("failed to query Astra for %s: %w", dateStr, err)
 		}
 
-		calResponse := calendarResponse{}
-		if err := json.Unmarshal(responseBody, &calResponse); err != nil {
-			return fmt.Errorf("failed to unmarshal Astra response: %w", err)
+		if resp.TotalRecords >= astraMaxEventsPerDay {
+			return fmt.Errorf("WARNING: Max events per day exceeded for %s", dateStr)
 		}
 
-		if calResponse.TotalRecords >= maxEventsPerDay {
-			return fmt.Errorf("ERROR: Max events per day exceeded")
-		}
-
-		data[date.Format("2006-01-02")] = calResponse
-		time.Sleep(300 * time.Millisecond)
+		data[dateStr] = resp
+		time.Sleep(astraDelay)
 	}
 
-	log.Printf("Scraped Astra up to %s!", date.Format("2006-01-02"))
+	log.Printf("Scraped Astra through %s!", endDate.AddDate(0, 0, -1).Format("2006-01-02"))
 
 	if err := utils.WriteJSON(filepath.Join(outDir, "astraScraped.json"), data); err != nil {
 		return fmt.Errorf("failed to write Astra scraped data to file : %w", err)
@@ -93,31 +77,23 @@ func ScrapeAstra(outDir string) error {
 	return nil
 }
 
-func astraRetryBackoff(retry int) {
-	delay := time.Duration(1<<(retry+1)) * time.Second
-	log.Printf("Astra request failed, retrying in %s", delay)
-	time.Sleep(delay)
-}
-
-// queryAstra makes a request to the Astra Calendar API and returns the raw JSON response.
-func queryAstra(client *http.Client, day time.Time) ([]byte, error) {
-	dateStr := day.Format("2006-01-02")
-
+// queryAstra makes a request to the Astra Calendar API
+func queryAstra(client *http.Client, dateStr string) (*calendarResponse, error) {
 	log.Printf("Scraping %s...", dateStr)
 
-	req, err := http.NewRequest("GET", baseURL, nil)
+	req, err := http.NewRequest("GET", astraBaseURL, nil)
 	if err != nil {
-		return []byte{}, fmt.Errorf("failed to create request: %w", err)
+		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
 	query := req.URL.Query()
 	query.Set("_dc", strconv.FormatInt(time.Now().UnixMilli(), 10))
 	query.Set("action", "GET")
 	query.Set("start", "0")
-	query.Set("limit", strconv.Itoa(maxEventsPerDay))
+	query.Set("limit", strconv.Itoa(astraMaxEventsPerDay))
 	query.Set("isForWeekView", "false")
-	query.Set("fields", fields)
-	query.Set("filter", fmt.Sprintf(`(StartDate<="%sT23:00:00")&&(EndDate>="%sT00:00:00")`, dateStr, dateStr))
+	query.Set("fields", astraFields)
+	query.Set("filter", fmt.Sprintf(`(StartDate<="%sT23:59:59")&&(EndDate>="%sT00:00:00")`, dateStr, dateStr))
 	query.Set("page", "1")
 	query.Set("sortOrder", "+StartDate,+StartMinute")
 	req.URL.RawQuery = query.Encode()
@@ -131,7 +107,11 @@ func queryAstra(client *http.Client, day time.Time) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to make request: %w", err)
 	}
-	defer res.Body.Close()
+	defer func() {
+		// draining the body so that the connection is released back to the pool
+		_, _ = io.Copy(io.Discard, res.Body)
+		_ = res.Body.Close()
+	}()
 
 	if res.StatusCode != http.StatusOK {
 		if res.StatusCode == http.StatusNotFound {
@@ -141,10 +121,9 @@ func queryAstra(client *http.Client, day time.Time) ([]byte, error) {
 		return nil, fmt.Errorf("astra query failed with status code %s", res.Status)
 	}
 
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
+	var calResponse calendarResponse
+	if err := json.NewDecoder(res.Body).Decode(&calResponse); err != nil {
+		return nil, fmt.Errorf("failed to decode Astra response: %w", err)
 	}
-
-	return body, nil
+	return &calResponse, nil
 }
