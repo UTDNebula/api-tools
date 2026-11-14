@@ -132,14 +132,15 @@ func updateTestData() error {
 	}
 	defer os.RemoveAll(tempDir)
 
-	// Keep the shared scrape timestamp when regenerating the fixture tree.
-	timestampPath := filepath.Join("testdata", "scraped_at.txt")
-	if data, err := os.ReadFile(timestampPath); err == nil {
-		if err := os.WriteFile(filepath.Join(tempDir, "scraped_at.txt"), data, 0644); err != nil {
+	// Keep shared input files when regenerating testdata.
+	for _, name := range []string{"scraped_at.txt", "enrollment.json"} {
+		if data, err := os.ReadFile(filepath.Join("testdata", name)); err == nil {
+			if err := os.WriteFile(filepath.Join(tempDir, name), data, 0644); err != nil {
+				return err
+			}
+		} else if !os.IsNotExist(err) {
 			return err
 		}
-	} else if !os.IsNotExist(err) {
-		return err
 	}
 
 	GradeMap, err = loadGrades("../static-data/grades")

@@ -14,7 +14,7 @@ import (
 )
 
 func TestGetEnrollment(t *testing.T) {
-	fixtures, err := unmarshallFile[[]struct{ Name, HTML string }]("fixtures/enrollment.json")
+	fixtures, err := unmarshallFile[[]struct{ Name, HTML string }]("testdata/enrollment.json")
 	if err != nil {
 		t.Fatal(err)
 	}
