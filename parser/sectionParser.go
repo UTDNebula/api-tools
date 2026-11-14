@@ -1,7 +1,9 @@
 package parser
 
 import (
+	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -33,12 +35,15 @@ var (
 
 	// meetingTimesRegexp matches a time in 12-hour AM/PM format (e.g., "5:00 pm", "11:30am")
 	meetingTimesRegexp = regexp.MustCompile(utils.R_TIME_AM_PM)
+
+	// enrollmentComponentRegexp matches enrollment total (may list counts for cross-listed sections (e.g. Enrolled Total: 14 (acn5312.002.26f) + 0 (hcs5312.002.26f))
+	enrollmentComponentRegexp = regexp.MustCompile(`^([0-9]+)(?:\s+\(([^()]+)\))?$`)
 )
 
 // parseSection creates a schema.Section from rowInfo and ClassInfo,
 // adds it to Sections, and updates the associated Course and Professors.
 // Internally calls parseCourse and parseProfessors, which modify global maps.
-func parseSection(rowInfo map[string]*goquery.Selection, classInfo map[string]string) {
+func parseSection(rowInfo map[string]*goquery.Selection, classInfo map[string]string, scrapedAt *time.Time) {
 	classNum, courseNum := getInternalClassAndCourseNum(classInfo)
 	session := getAcademicSession(rowInfo)
 	courseRef := parseCourse(courseNum, session, rowInfo, classInfo)
@@ -60,6 +65,7 @@ func parseSection(rowInfo map[string]*goquery.Selection, classInfo map[string]st
 		Core_flags:            getCoreFlags(rowInfo),
 		Syllabus_uri:          getSyllabusUri(rowInfo),
 		Grade_distribution:    getGradeDistribution(session, sectionNumber, courseRef),
+		Latest_enrollment:     getEnrollment(rowInfo, scrapedAt),
 	}
 
 	// Add new section to section map
@@ -163,6 +169,64 @@ func getInstructionMode(classInfo map[string]string) string {
 		return mode
 	}
 	return ""
+}
+
+// getEnrollment reads the labeled values in CourseBook's Status row.
+// A missing row or count stays absent rather than becoming a reported zero.
+func getEnrollment(rowInfo map[string]*goquery.Selection, scrapedAt *time.Time) *schema.Enrollment {
+	row, ok := rowInfo["Status:"]
+	if !ok {
+		return nil
+	}
+
+	values := make(map[string]string)
+	var label string
+	row.Contents().Each(func(_ int, s *goquery.Selection) {
+		if goquery.NodeName(s) == "b" {
+			label = strings.Join(strings.Fields(s.Text()), " ")
+		} else {
+			values[label] += s.Text()
+		}
+	})
+
+	parseCount := func(label string, allowNegative bool) *int {
+		value := strings.TrimSpace(values[label])
+		if value == "" {
+			return nil
+		}
+		count, err := strconv.Atoi(value)
+		if err != nil || (!allowNegative && count < 0) {
+			panic(fmt.Sprintf("invalid %s %q", label, value))
+		}
+		return &count
+	}
+
+	enrollment := &schema.Enrollment{
+		Scraped_at:      scrapedAt,
+		Status:          strings.TrimSpace(values["Enrollment Status:"]),
+		Available_seats: parseCount("Available Seats:", true),
+		Waitlist:        parseCount("Waitlist:", false),
+	}
+	if value := strings.TrimSpace(values["Enrolled Total:"]); value != "" {
+		total := 0
+		components := strings.Split(value, "+")
+		for _, component := range components {
+			match := enrollmentComponentRegexp.FindStringSubmatch(strings.TrimSpace(component))
+			if match == nil || (len(components) > 1 && match[2] == "") {
+				panic(fmt.Sprintf("invalid Enrolled Total: %q", value))
+			}
+			count, err := strconv.Atoi(match[1])
+			if err != nil {
+				panic(err)
+			}
+			total += count
+		}
+		enrollment.Enrolled_total = &total
+	}
+	if enrollment.Status == "" && enrollment.Available_seats == nil && enrollment.Enrolled_total == nil && enrollment.Waitlist == nil {
+		return nil
+	}
+	return enrollment
 }
 
 // getMeetings parses meeting schedule information from the row information map.
