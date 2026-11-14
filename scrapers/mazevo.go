@@ -23,7 +23,7 @@ import (
 // ScrapeMazevo pulls Mazevo calendar events via the public API and stores the raw response.
 func ScrapeMazevo(outDir string) {
 	// Make output folder
-	outDir = filepath.Join(outDir, "Mazevo")
+	outDir = filepath.Join(outDir, "mazevo")
 	err := os.MkdirAll(outDir, 0777)
 	if err != nil {
 		log.Panic(err)

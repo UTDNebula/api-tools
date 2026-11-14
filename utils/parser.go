@@ -16,7 +16,7 @@ import (
 
 	"strings"
 
-	"github.com/UTDNebula/nebula-api/api/schema"
+	"github.com/UTDNebula/nebula-api/rest/schema"
 	"google.golang.org/genai"
 )
 
@@ -122,7 +122,7 @@ func GetGeminiClient() *genai.Client {
 		geminiClient, err = genai.NewClient(context.Background(),
 			&genai.ClientConfig{
 				Project:  "api-tools-451421",
-				Location: "us-central1",
+				Location: "global",
 				Backend:  genai.BackendVertexAI,
 			})
 		if err != nil {
@@ -135,7 +135,7 @@ func GetGeminiClient() *genai.Client {
 func StructToSchema(t reflect.Type) *genai.Schema {
 	// Handle pointers
 	isNullable := false
-	if t.Kind() == reflect.Ptr {
+	if t.Kind() == reflect.Pointer {
 		isNullable = true
 		t = t.Elem()
 	}
@@ -147,8 +147,7 @@ func StructToSchema(t reflect.Type) *genai.Schema {
 		properties := make(map[string]*genai.Schema)
 		var required []string
 
-		for i := 0; i < t.NumField(); i++ {
-			field := t.Field(i)
+		for field := range t.Fields() {
 			// Use the JSON tag for the property name
 			jsonTag := field.Tag.Get("json")
 			if jsonTag == "" || jsonTag == "-" {
@@ -158,7 +157,7 @@ func StructToSchema(t reflect.Type) *genai.Schema {
 			name := strings.Split(jsonTag, ",")[0]
 
 			properties[name] = StructToSchema(field.Type)
-			if field.Type.Kind() != reflect.Ptr {
+			if field.Type.Kind() != reflect.Pointer {
 				required = append(required, name)
 			}
 		}
