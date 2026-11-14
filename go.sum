@@ -30,8 +30,8 @@ github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapp
 github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.60.0/go.mod h1:SRAbhyZ4R4FagHMM9VtRgSY/lheRoht2fKelZXQUenk=
 github.com/PuerkitoBio/goquery v1.12.0 h1:pAcL4g3WRXekcB9AU/y1mbKez2dbY2AajVhtkO8RIBo=
 github.com/PuerkitoBio/goquery v1.12.0/go.mod h1:802ej+gV2y7bbIhOIoPY5sT183ZW0YFofScC4q/hIpQ=
-github.com/UTDNebula/nebula-api v1.2.1-0.20261005155620-603b6b10f3ec h1:8tR4hi5XnNjmz4M6tWveIP0P4qiP8CxIRxyfFMdggAc=
-github.com/UTDNebula/nebula-api v1.2.1-0.20261005155620-603b6b10f3ec/go.mod h1:OoCuc8ktZCTZwO17bIz8bXwt06KIW8NYvzVvZ/8TbWc=
+github.com/UTDNebula/nebula-api v1.2.1-0.20261114001700-6f26423dffba h1:+PHtw9NHmgPUCbvWP0rv4aR7D+aPUcwR2lMZlwtizCw=
+github.com/UTDNebula/nebula-api v1.2.1-0.20261114001700-6f26423dffba/go.mod h1:ckjoQ1cy323RvxYfGpmLFUYwb3pXSOvT7V0sCzPnFp4=
 github.com/andybalholm/cascadia v1.3.3 h1:AG2YHrzJIm4BZ19iwJ/DAua6Btl3IwJX+VI4kktS1LM=
 github.com/andybalholm/cascadia v1.3.3/go.mod h1:xNd9bqTn98Ln4DwST8/nG+H0yuB8Hmgu1YHNnWw0GeA=
 github.com/cespare/xxhash/v2 v2.3.0 h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UFvs=
@@ -62,8 +62,8 @@ github.com/getsentry/sentry-go v0.48.0 h1:FRZNr7Uk1C86ev1bSJmYlUkL9oyivQA6YOcdYf
 github.com/getsentry/sentry-go v0.48.0/go.mod h1:E5UkA5wp1qR2+MDydNYlVeUiNN2xEdjYMidkgf0Qoss=
 github.com/go-errors/errors v1.4.2 h1:J6MZopCL4uSllY1OfXM374weqZFFItUbrImctkmUxIA=
 github.com/go-errors/errors v1.4.2/go.mod h1:sIVyrIiJhuEF+Pj9Ebtd6P/rEYROXFi3BopGUQ5a5Og=
-github.com/go-jose/go-jose/v4 v4.1.4 h1:moDMcTHmvE6Groj34emNPLs/qtYXRVcd6S7NHbHz3kA=
-github.com/go-jose/go-jose/v4 v4.1.4/go.mod h1:x4oUasVrzR7071A4TnHLGSPpNOm2a21K9Kf04k1rs08=
+github.com/go-jose/go-jose/v4 v4.1.6 h1:sNRkftxFJxwsILiQukqp5z83QBSmntVwmgRY7AqBDO4=
+github.com/go-jose/go-jose/v4 v4.1.6/go.mod h1:x4oUasVrzR7071A4TnHLGSPpNOm2a21K9Kf04k1rs08=
 github.com/go-json-experiment/json v0.0.0-20260214004413-d219187c3433 h1:vymEbVwYFP/L05h5TKQxvkXoKxNvTpjxYKdF1Nlwuao=
 github.com/go-json-experiment/json v0.0.0-20260214004413-d219187c3433/go.mod h1:tphK2c80bpPhMOI4v6bIc2xWywPfbqi1Z06+RcrMkDg=
 github.com/go-logr/logr v1.2.2/go.mod h1:jdQByPbusPIv2/zmleS9BjJVeZ6kBagPoEUsqbVz/1A=

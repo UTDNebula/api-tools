@@ -32,5 +32,12 @@
 	"core_flags": [],
 	"syllabus_uri": "",
 	"grade_distribution": [],
-	"attributes": null
+	"attributes": null,
+	"latest_enrollment": {
+		"scraped_at": "2025-01-25T12:30:01.123Z",
+		"status": "OPEN",
+		"available_seats": 16,
+		"enrolled_total": 3,
+		"waitlist": 0
+	}
 }

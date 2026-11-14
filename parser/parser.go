@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/UTDNebula/api-tools/utils"
@@ -128,9 +130,43 @@ func parse(path string) {
 		panic(err)
 	}
 
-	parseSection(getRowInfo(doc), getClassInfo(doc))
+	parseSection(getRowInfo(doc), getClassInfo(doc), getScrapedAt(path))
 
 	utils.VPrint("Parsed!")
+}
+
+// getScrapedAt finds the timestamp file in the HTML file's directory
+// or its parent directories.
+func getScrapedAt(path string) *time.Time {
+	dir, err := filepath.Abs(filepath.Dir(path))
+	if err != nil {
+		panic(err)
+	}
+
+	// Find scraped_at timestamp for this semester by searching parents
+	for {
+		timestampPath := filepath.Join(dir, "scraped_at.txt")
+		data, err := os.ReadFile(timestampPath)
+		if err == nil {
+			scrapedAt, err := time.Parse(time.RFC3339, strings.TrimSpace(string(data)))
+			if err != nil {
+				panic(fmt.Errorf("invalid scrape timestamp %s: %w", timestampPath, err))
+			}
+			scrapedAt = scrapedAt.UTC()
+			return &scrapedAt
+		}
+
+		if !os.IsNotExist(err) {
+			panic(err)
+		}
+
+
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return nil
+		}
+		dir = parent
+	}
 }
 
 func getRowInfo(doc *goquery.Document) map[string]*goquery.Selection {

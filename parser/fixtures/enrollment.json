@@ -1,0 +1,17 @@
+[
+  {
+    "name": "closed",
+    "source": "data/26f/cp_acct/acct2301.014.26f.html",
+    "html": "<table class=\"courseinfo__overviewtable\"><tbody><tr class=\"courseinfo__overviewtable__tr\">\n            <th class=\"courseinfo__overviewtable__th text-right\">\n              Status:\n            </th>\n            <td class=\"courseinfo__overviewtable__td\">\n              <b>Enrollment Status:</b> CLOSED/FULL &nbsp;&nbsp; <b>Available Seats:</b>  0 &nbsp;&nbsp; <b>Enrolled Total:</b> 68 &nbsp;&nbsp; <b>Waitlist:</b> 0\n\n            </td>\n          </tr></tbody></table>"
+  },
+  {
+    "name": "cross_listed",
+    "source": "data/26f/cp_bims/bims4v00.001.26f.html",
+    "html": "<table class=\"courseinfo__overviewtable\"><tbody><tr class=\"courseinfo__overviewtable__tr\">\n            <th class=\"courseinfo__overviewtable__th text-right\">\n              Status:\n            </th>\n            <td class=\"courseinfo__overviewtable__td\">\n              <b>Enrollment Status:</b> OPEN &nbsp;&nbsp; <b>Available Seats:</b> 10 &nbsp;&nbsp;  <b>Enrolled Total:</b> 1 (bims4v00.001.26f) + 8 (phys4v11.001.26f) + 5 (phys5v48.001.26f) &nbsp;&nbsp; <b>Waitlist:</b> 0\n\n            </td>\n          </tr></tbody></table>"
+  },
+  {
+    "name": "over_enrolled",
+    "source": "data/26f/cp_buan/buan4382.501.26f.html",
+    "html": "<table class=\"courseinfo__overviewtable\"><tbody><tr class=\"courseinfo__overviewtable__tr\">\n            <th class=\"courseinfo__overviewtable__th text-right\">\n              Status:\n            </th>\n            <td class=\"courseinfo__overviewtable__td\">\n              <b>Enrollment Status:</b> CLOSED/FULL &nbsp;&nbsp; <b>Available Seats:</b>  -15 &nbsp;&nbsp; <b>Enrolled Total:</b> 23 (buan4382.501.26f) + 34 (itss4382.501.26f) &nbsp;&nbsp; <b>Waitlist:</b> 0\n\n            </td>\n          </tr></tbody></table>"
+  }
+]

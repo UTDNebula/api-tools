@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/PuerkitoBio/goquery v1.12.0
-	github.com/UTDNebula/nebula-api v1.2.1-0.20261005155620-603b6b10f3ec
+	github.com/UTDNebula/nebula-api v1.2.1-0.20261114001700-6f26423dffba
 	github.com/chromedp/cdproto v0.0.0-20260321001828-e3e3800016bc
 	github.com/chromedp/chromedp v0.15.1
 	github.com/dongri/phonenumber v0.1.12
@@ -37,7 +37,7 @@ require (
 	github.com/envoyproxy/go-control-plane/envoy v1.39.0 // indirect
 	github.com/envoyproxy/protoc-gen-validate v1.3.3 // indirect
 	github.com/felixge/httpsnoop v1.1.0 // indirect
-	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
+	github.com/go-jose/go-jose/v4 v4.1.6 // indirect
 	github.com/go-json-experiment/json v0.0.0-20260214004413-d219187c3433 // indirect
 	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
