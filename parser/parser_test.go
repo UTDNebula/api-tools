@@ -132,6 +132,17 @@ func updateTestData() error {
 	}
 	defer os.RemoveAll(tempDir)
 
+	// Keep shared input files when regenerating testdata.
+	for _, name := range []string{"scraped_at.txt", "enrollment.json"} {
+		if data, err := os.ReadFile(filepath.Join("testdata", name)); err == nil {
+			if err := os.WriteFile(filepath.Join(tempDir, name), data, 0644); err != nil {
+				return err
+			}
+		} else if !os.IsNotExist(err) {
+			return err
+		}
+	}
+
 	GradeMap, err = loadGrades("../static-data/grades")
 	if err != nil {
 		return err

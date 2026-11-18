@@ -106,6 +106,9 @@ func ScrapeCoursebook(term string, startPrefix string, outDir string, resume boo
 	if err := scraper.validate(); err != nil {
 		log.Fatal("Validating failed: ", err)
 	}
+	if err := scraper.writeScrapedAt(); err != nil {
+		log.Fatal(err)
+	}
 }
 
 type coursebookScraper struct {
@@ -186,6 +189,15 @@ func (s *coursebookScraper) ensureOutputFolder() error {
 		return fmt.Errorf("failed to create term forlder: %w", err)
 	}
 	return nil
+}
+
+// writeScrapedAt records one UTC completion time for all sections in the term.
+func (s *coursebookScraper) writeScrapedAt() error {
+	if err := s.ensureOutputFolder(); err != nil {
+		return err
+	}
+	path := filepath.Join(s.outDir, s.term, "scraped_at.txt")
+	return os.WriteFile(path, []byte(time.Now().UTC().Format(time.RFC3339)+"\n"), 0644)
 }
 
 // ensurePrefixFolder creates {outDir}/term/prefix if it does not exist
