@@ -132,7 +132,9 @@ func main() {
 		case *cometCalendar:
 			scrapers.ScrapeCometCalendar(*outDir)
 		case *astra:
-			scrapers.ScrapeAstra(*outDir)
+			if err := scrapers.ScrapeAstra(*outDir); err != nil {
+				log.Fatal("Astra scraping failed: ", err)
+			}
 		case *mazevo:
 			scrapers.ScrapeMazevo(*outDir)
 		case *mapFlag:

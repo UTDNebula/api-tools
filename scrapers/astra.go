@@ -1,108 +1,129 @@
-/*
-	This file contains the code for the Astra scraper.
-*/
-
 package scrapers
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"net/http/cookiejar"
 	"os"
+	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/UTDNebula/api-tools/utils"
-	"github.com/valyala/fastjson"
 )
 
-// MAX_EVENTS_PER_DAY caps the Astra API results to guard against truncated responses.
-var MAX_EVENTS_PER_DAY = 5000
+const (
+	astraMaxEventsPerDay = 5000
+	astraBaseURL         = "https://www.aaiscloud.com/UTXDallas/~api/calendar/CalendarWeekGrid"
+	astraFields          = "ActivityId,ActivityPk,ActivityName,ParentActivityId,ParentActivityName,MeetingType,Description,StartDate,EndDate,DayOfWeek,StartMinute,EndMinute,ActivityTypeCode,ResourceId,CampusName,BuildingCode,RoomNumber,RoomName,LocationName,InstitutionId,SectionId,SectionPk,IsExam,IsCrosslist,IsAllDay,IsPrivate,EventId,EventPk,CurrentState,NotAllowedUsageMask,UsageColor,UsageColorIsPrimary,EventTypeColor,MaxAttendance,ActualAttendance,Capacity"
+	astraDelay           = 300 * time.Millisecond
+)
+
+type calendarResponse struct {
+	Fields       string          `json:"fields"`
+	Pos          int             `json:"pos"`
+	Start        int             `json:"start"`
+	TotalRecords int             `json:"totalRecords"`
+	Data         json.RawMessage `json:"data"`
+}
 
 // ScrapeAstra iterates day-by-day through Astra events and persists the raw JSON output.
-func ScrapeAstra(outDir string) {
-	// Start chromedp
-	chromedpCtx, cancel := utils.InitChromeDp()
-
-	// Make output folder
-	err := os.MkdirAll(outDir, 0777)
-	if err != nil {
-		panic(err)
+func ScrapeAstra(outDir string) error {
+	// Ensure output folder
+	if err := os.MkdirAll(outDir, 0755); err != nil {
+		return fmt.Errorf("failed to create output directory: %w", err)
 	}
 
-	days := "{"       // String JSON for storing results by day
-	firstLoop := true // To avoid adding a comma to the JSON on the first loop
+	jar, _ := cookiejar.New(nil)
 
-	// Init http client
-	tr := &http.Transport{
-		MaxIdleConns:       10,
-		IdleConnTimeout:    30 * time.Second,
-		DisableCompression: true,
+	client := &http.Client{
+		Transport: http.DefaultTransport.(*http.Transport).Clone(),
+		Timeout:   30 * time.Second,
+		Jar:       jar,
 	}
-	cli := &http.Client{Transport: tr}
 
-	// Get cookies for auth
-	astraHeaders := utils.RefreshAstraToken(chromedpCtx)
-	time.Sleep(500 * time.Millisecond)
-	cancel() // Don't need chromedp anymore
+	data := make(map[string]*calendarResponse, 365)
 
-	date := time.Now()
-	endDate := date.Add(time.Hour * 24 * 365)
-	// Start on previous date to make sure we have today's data, regardless of what timezone the scraper is in
-	date = date.Add(time.Hour * -24)
+	timeLocation := utils.GetUTDTimeZone()
+	now := time.Now().In(timeLocation)
+	date := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, timeLocation)
+	endDate := date.AddDate(1, 0, 0)
 
-	// Run for a year
-	for ; date.Before(endDate); date = date.Add(time.Hour * 24) {
-		formattedDate := date.Format("2006-01-02")
-		log.Printf("Scraping %s...", formattedDate)
+	for ; date.Before(endDate); date = date.AddDate(0, 0, 1) {
+		dateStr := date.Format("2006-01-02")
 
-		// Request daily events
-		url := fmt.Sprintf("https://www.aaiscloud.com/UTXDallas/~api/calendar/CalendarWeekGrid?_dc=%d&action=GET&start=0&limit=%d&isForWeekView=false&fields=ActivityId,ActivityPk,ActivityName,ParentActivityId,ParentActivityName,MeetingType,Description,StartDate,EndDate,DayOfWeek,StartMinute,EndMinute,ActivityTypeCode,ResourceId,CampusName,BuildingCode,RoomNumber,RoomName,LocationName,InstitutionId,SectionId,SectionPk,IsExam,IsCrosslist,IsAllDay,IsPrivate,EventId,EventPk,CurrentState,NotAllowedUsageMask,UsageColor,UsageColorIsPrimary,EventTypeColor,MaxAttendance,ActualAttendance,Capacity&filter=(StartDate%%3C%%3D%%22%sT23%%3A00%%3A00%%22)%%26%%26(EndDate%%3E%%3D%%22%sT00%%3A00%%3A00%%22)&page=1&sortOrder=%%2BStartDate,%%2BStartMinute", time.Now().UnixMilli(), MAX_EVENTS_PER_DAY, formattedDate, formattedDate)
-		req, err := http.NewRequest("GET", url, nil)
+		resp, err := queryAstra(client, dateStr)
 		if err != nil {
-			panic(err)
-		}
-		req.Header = astraHeaders
-		res, err := cli.Do(req)
-		if err != nil {
-			panic(err)
-		}
-		if res.StatusCode != 200 {
-			log.Panicf("ERROR: Status was: %s\nIf the status is 404, you've likely been IP ratelimited!", res.Status)
-		}
-		body, err := io.ReadAll(res.Body)
-		if err != nil {
-			panic(err)
-		}
-		res.Body.Close()
-		stringBody := string(body)
-
-		// Check for no events
-		numEvents := fastjson.GetInt(body, "totalRecords")
-		if numEvents >= MAX_EVENTS_PER_DAY {
-			log.Panic("ERROR: Max events per day exceeded!")
+			return fmt.Errorf("failed to query Astra for %s: %w", dateStr, err)
 		}
 
-		// Add to record
-		comma := ","
-		if firstLoop {
-			comma = ""
-			firstLoop = false
+		if resp.TotalRecords >= astraMaxEventsPerDay {
+			return fmt.Errorf("WARNING: Max events per day exceeded for %s", dateStr)
 		}
-		days = fmt.Sprintf("%s%s\"%s\":%s", days, comma, formattedDate, stringBody)
+
+		data[dateStr] = resp
+		time.Sleep(astraDelay)
 	}
 
-	log.Printf("Scraped Astra up to %s!", date.Format("2006-01-02"))
+	log.Printf("Scraped Astra through %s!", endDate.AddDate(0, 0, -1).Format("2006-01-02"))
 
-	// Write event data to output file
-	days = fmt.Sprintf("%s}", days)
-	fptr, err := os.Create(fmt.Sprintf("%s/astraScraped.json", outDir))
+	if err := utils.WriteJSON(filepath.Join(outDir, "astraScraped.json"), data); err != nil {
+		return fmt.Errorf("failed to write Astra scraped data to file : %w", err)
+	}
+
+	return nil
+}
+
+// queryAstra makes a request to the Astra Calendar API
+func queryAstra(client *http.Client, dateStr string) (*calendarResponse, error) {
+	log.Printf("Scraping %s...", dateStr)
+
+	req, err := http.NewRequest("GET", astraBaseURL, nil)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
-	_, err = fptr.Write([]byte(days))
+
+	query := req.URL.Query()
+	query.Set("_dc", strconv.FormatInt(time.Now().UnixMilli(), 10))
+	query.Set("action", "GET")
+	query.Set("start", "0")
+	query.Set("limit", strconv.Itoa(astraMaxEventsPerDay))
+	query.Set("isForWeekView", "false")
+	query.Set("fields", astraFields)
+	query.Set("filter", fmt.Sprintf(`(StartDate<="%sT23:59:59")&&(EndDate>="%sT00:00:00")`, dateStr, dateStr))
+	query.Set("page", "1")
+	query.Set("sortOrder", "+StartDate,+StartMinute")
+	req.URL.RawQuery = query.Encode()
+
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:159.0) Gecko/20100101 Firefox/159.0")
+	req.Header.Set("Accept", "application/json, text/javascript, */*; q=0.01")
+	req.Header.Set("X-Requested-With", "XMLHttpRequest")
+	req.Header.Set("Referer", "https://www.aaiscloud.com/UTXDallas/Default.aspx")
+
+	res, err := client.Do(req)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("failed to make request: %w", err)
 	}
-	fptr.Close()
+	defer func() {
+		// draining the body so that the connection is released back to the pool
+		_, _ = io.Copy(io.Discard, res.Body)
+		_ = res.Body.Close()
+	}()
+
+	if res.StatusCode != http.StatusOK {
+		if res.StatusCode == http.StatusNotFound {
+			return nil, fmt.Errorf("astra query failed with status code %s (Likely Rate Limited)", res.Status)
+		}
+
+		return nil, fmt.Errorf("astra query failed with status code %s", res.Status)
+	}
+
+	var calResponse calendarResponse
+	if err := json.NewDecoder(res.Body).Decode(&calResponse); err != nil {
+		return nil, fmt.Errorf("failed to decode Astra response: %w", err)
+	}
+	return &calResponse, nil
 }
