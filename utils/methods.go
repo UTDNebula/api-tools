@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/fs"
 	"log"
+	"math"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -19,6 +20,10 @@ import (
 	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
+)
+
+const (
+	coursebookMaxRetries = 8
 )
 
 // Headless toggles whether chromedp runs without a visible browser window.
@@ -54,53 +59,81 @@ func InitChromeDp() (chromedpCtx context.Context, cancelFnc context.CancelFunc) 
 }
 
 // RefreshToken logs into CourseBook and returns headers containing a fresh session token.
-func RefreshToken(chromedpCtx context.Context) map[string][]string {
+func RefreshToken(chromedpCtx context.Context) (map[string][]string, error) {
 	netID, err := GetEnv("LOGIN_NETID")
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	password, err := GetEnv("LOGIN_PASSWORD")
 	if err != nil {
-		panic(err)
-	}
-
-	delayedRetryCallback := func(numRetries int) {
-		time.Sleep(250 * time.Millisecond * time.Duration(numRetries))
+		return nil, err
 	}
 
 	VPrintf("Getting new token...")
-	err = Retry(func() error {
-		r, err := chromedp.RunResponse(chromedpCtx,
+
+	// Retry login loop with exponential backoff
+	for attempt := 0; attempt <= coursebookMaxRetries; attempt++ {
+		if attempt > 0 {
+			wait := time.Duration(math.Pow(2, float64(attempt))) * time.Second
+			VPrintf("Refresh token error: %v, backing off for %v", err, wait)
+			VPrintf("[Refresh Token Retry] Attempt %d of %d for Login", attempt, coursebookMaxRetries)
+			time.Sleep(wait)
+		}
+
+		start := time.Now()
+		r, loginErr := chromedp.RunResponse(chromedpCtx,
 			chromedp.ActionFunc(func(ctx context.Context) error {
-				err := network.ClearBrowserCookies().Do(ctx)
-				return err
+				return network.ClearBrowserCookies().Do(ctx)
 			}),
 			chromedp.Navigate(`https://wat.utdallas.edu/login`),
 			chromedp.SendKeys(`input#netid`, netID),
 			chromedp.SendKeys(`input#password`, password),
 			chromedp.Click(`button#login-button`),
 		)
-		if r != nil && r.Status != 200 {
-			return errors.New("Non-200 response status code")
+		dur := time.Since(start)
+
+		if r != nil {
+			if r.Status != 200 {
+				err = fmt.Errorf("non-200 response status code: got code %d", r.Status)
+			} else {
+				VPrintf("[Refresh Token Success] Refresh token login took %v", dur)
+				err = nil
+			}
+		} else if loginErr != nil {
+			err = loginErr
+			VPrintf("[Refresh Token Error] Refresh token login failed: %v", err)
 		}
-		return err
-	}, 3, delayedRetryCallback)
+
+		// Success, break
+		if err == nil {
+			break
+		}
+	}
 
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("refresh token login failed after %d attempts: %w", coursebookMaxRetries+1, err)
 	}
 
 	time.Sleep(250 * time.Millisecond)
 
 	var cookieStrs []string
 
-	err = Retry(func() error {
-		r, err := chromedp.RunResponse(chromedpCtx,
+	// Get cookie loop with exponential backoff
+	for attempt := 0; attempt <= coursebookMaxRetries; attempt++ {
+		if attempt > 0 {
+			wait := time.Duration(math.Pow(2, float64(attempt))) * time.Second
+			VPrintf("Refresh token error: %v, backing off for %v", err, wait)
+			VPrintf("[Refresh Token Retry] Attempt %d of %d for Cookie Retrieval", attempt, coursebookMaxRetries)
+			time.Sleep(wait)
+		}
+
+		start := time.Now()
+		r, cookieErr := chromedp.RunResponse(chromedpCtx,
 			chromedp.Navigate(`https://coursebook.utdallas.edu/`),
 			chromedp.ActionFunc(func(ctx context.Context) error {
-				cookies, err := network.GetCookies().Do(ctx)
-				if err != nil {
-					return err
+				cookies, actionErr := network.GetCookies().Do(ctx)
+				if actionErr != nil {
+					return actionErr
 				}
 				cookieStrs = make([]string, len(cookies))
 				gotToken := false
@@ -117,14 +150,27 @@ func RefreshToken(chromedpCtx context.Context) map[string][]string {
 				return nil
 			}),
 		)
-		if r != nil && r.Status != 200 {
-			return errors.New("Non-200 response status code")
+		dur := time.Since(start)
+
+		if r != nil {
+			if r.Status != 200 {
+				err = fmt.Errorf("non-200 response status code: got code %d", r.Status)
+			} else {
+				VPrintf("[Refresh Token Success] Refresh token cookie retrieval took %v", dur)
+				err = nil
+			}
+		} else if cookieErr != nil {
+			err = cookieErr
+			VPrintf("[Refresh Token Error] Refresh token cookie retrieval failed: %v", err)
 		}
-		return err
-	}, 3, delayedRetryCallback)
+
+		if err == nil {
+			break
+		}
+	}
 
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("refresh token cookie retrieval failed after %d attempts: %w", coursebookMaxRetries+1, err)
 	}
 
 	return map[string][]string{
@@ -135,7 +181,7 @@ func RefreshToken(chromedpCtx context.Context) map[string][]string {
 		"Content-Type":    {"application/x-www-form-urlencoded"},
 		"Cookie":          cookieStrs,
 		"Connection":      {"keep-alive"},
-	}
+	}, nil
 }
 
 // RefreshAstraToken signs into Astra and returns headers containing authentication cookies.
@@ -275,43 +321,50 @@ func Regexpf(format string, vars ...interface{}) *regexp.Regexp {
 	return regexp.MustCompile(fmt.Sprintf(format, vars...))
 }
 
-// Retry calls action until it succeeds or exceeds maxRetries, invoking retryCallback between attempts.
-func Retry(action func() error, maxRetries int, retryCallback func(numRetries int)) error {
-	for retries := 1; ; retries++ {
-		// Perform the action
-		err := action()
-		if err == nil || retries > maxRetries {
-			return err
-		}
-		retryCallback(retries)
-	}
-}
-
 // GetCoursePrefixes retrieves all course prefix values from CourseBook.
-func GetCoursePrefixes(chromedpCtx context.Context) []string {
+func GetCoursePrefixes(chromedpCtx context.Context) ([]string, error) {
 	// Might need to refresh the token every time we get new course prefixes in the future
 	// refreshToken(chromedpCtx)
 
 	var coursePrefixes []string
 	log.Println("Finding course prefixes...")
 
-	// Get option elements for course prefix dropdown
-	_, err := chromedp.RunResponse(chromedpCtx,
-		chromedp.Navigate("https://coursebook.utdallas.edu"),
-		chromedp.QueryAfter("select#combobox_cp option",
-			func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
-				for _, node := range nodes[1:] {
-					coursePrefixes = append(coursePrefixes, node.AttributeValue("value"))
-				}
-				return nil
-			},
-		),
-	)
+	var err error
+	maxRetries := 8
+
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		coursePrefixes = nil // Reset course prefixes for each attempt
+
+		// Get option elements for course prefix dropdown
+		_, err = chromedp.RunResponse(chromedpCtx,
+			chromedp.Navigate("https://coursebook.utdallas.edu"),
+			chromedp.QueryAfter("select#combobox_cp option",
+				func(ctx context.Context, _ runtime.ExecutionContextID, nodes ...*cdp.Node) error {
+					for _, node := range nodes[1:] {
+						coursePrefixes = append(coursePrefixes, node.AttributeValue("value"))
+					}
+					return nil
+				},
+			),
+		)
+
+		if err == nil {
+			break // Success, exit retry loop
+		}
+
+		VPrintf("[Get Course Prefixes Failed] %v", err)
+
+		// Exponential backoff
+		wait := time.Duration(math.Pow(2, float64(attempt))) * time.Second
+		VPrintf("Coursebook load error, waiting %v (attempt %d of %d)", wait, attempt, maxRetries)
+		time.Sleep(wait)
+	}
+
 	if err != nil {
-		log.Panic(err)
+		return nil, fmt.Errorf("failed to fetch course prefixes after %d attempts: %w", maxRetries, err)
 	}
 	log.Printf("Found the %d course prefixes!", len(coursePrefixes))
-	return coursePrefixes
+	return coursePrefixes, nil
 }
 
 // ConvertFromInterface attempts to convert a value into the requested type and returns a pointer when successful.
