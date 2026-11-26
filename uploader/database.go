@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/UTDNebula/api-tools/utils"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 // TODO: Replace instances and check
@@ -30,7 +30,7 @@ func connectDB() *mongo.Client {
 
 		opts := options.Client().ApplyURI(getEnvMongoURI())
 
-		client, err := mongo.Connect(ctx, opts)
+		client, err := mongo.Connect(opts)
 		if err != nil {
 			log.Panic("Unable to create MongoDB client and connect to database")
 			os.Exit(1)

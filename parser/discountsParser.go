@@ -11,9 +11,9 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/UTDNebula/api-tools/utils"
-	"github.com/UTDNebula/nebula-api/api/schema"
+	"github.com/UTDNebula/nebula-api/rest/schema"
 	"github.com/dongri/phonenumber"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 // ParseDiscounts reads the scraped discount HTML and produces structured discount JSON.
@@ -67,7 +67,7 @@ func ParseDiscounts(inDir string, outDir string) {
 // parseDiscountItem extracts discount information from a cditem div
 func parseDiscountItem(s *goquery.Selection, category string) *schema.DiscountProgram {
 	discount := &schema.DiscountProgram{
-		Id:       primitive.NewObjectID(),
+		Id:       bson.NewObjectID(),
 		Category: category,
 	}
 
