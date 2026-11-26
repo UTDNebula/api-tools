@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/UTDNebula/api-tools/utils"
-	"github.com/UTDNebula/nebula-api/api/schema"
+	"github.com/UTDNebula/nebula-api/rest/schema"
 	"google.golang.org/genai"
 )
 
@@ -86,9 +86,7 @@ func ParseAcademicCalendars(inDir string, outDir string) {
 
 	// Start worker goroutines
 	for range numWorkers {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			for path := range jobs {
 				log.Printf("Parsing %s...", filepath.Base(path))
 
@@ -117,7 +115,7 @@ func ParseAcademicCalendars(inDir string, outDir string) {
 
 				log.Printf("Parsed %s!", filepath.Base(path))
 			}
-		}()
+		})
 	}
 
 	err := filepath.WalkDir(inSubDir, func(path string, d fs.DirEntry, err error) error {

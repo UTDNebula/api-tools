@@ -8,8 +8,8 @@ import (
 	"github.com/PuerkitoBio/goquery"
 
 	"github.com/UTDNebula/api-tools/utils"
-	"github.com/UTDNebula/nebula-api/api/schema"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"github.com/UTDNebula/nebula-api/rest/schema"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 var (
@@ -59,7 +59,7 @@ func getCourse(internalCourseNumber string, session schema.AcademicSession, rowI
 	school := descriptionWhitespaceRegexp.ReplaceAllString(rowInfo["College:"].Text(), " ")
 
 	course := schema.Course{
-		Id:                     primitive.NewObjectID(),
+		Id:                     bson.NewObjectID(),
 		Course_number:          courseNumber,
 		Subject_prefix:         coursePrefix,
 		Title:                  utils.TrimWhitespace(rowInfo["Course Title:"].Text()),

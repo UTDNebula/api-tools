@@ -16,11 +16,11 @@ import (
 	"strings"
 
 	"github.com/UTDNebula/api-tools/utils"
-	"github.com/UTDNebula/nebula-api/api/schema"
+	"github.com/UTDNebula/nebula-api/rest/schema"
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 // BASE_URL is the root listing endpoint for UTD professor profiles.
@@ -280,7 +280,7 @@ func ScrapeProfiles(outDir string) error {
 		utils.VPrintf("Parsed list! #: %s, Office: %v", phoneNumber, office)
 
 		professors = append(professors, schema.Professor{
-			Id:           primitive.NewObjectID(),
+			Id:           bson.NewObjectID(),
 			First_name:   firstName,
 			Last_name:    lastName,
 			Titles:       titles,
@@ -290,7 +290,7 @@ func ScrapeProfiles(outDir string) error {
 			Profile_uri:  link,
 			Image_uri:    imageUri,
 			Office_hours: []schema.Meeting{},
-			Sections:     []primitive.ObjectID{},
+			Sections:     []bson.ObjectID{},
 		})
 
 		utils.VPrintf("Scraped profile for %s %s!", firstName, lastName)
