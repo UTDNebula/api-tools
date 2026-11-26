@@ -28,11 +28,11 @@ const START_URL string = "https://api.concept3d.com"
 const END_URL string = "/?map=" + UTD_MAP_ID + "&key=" + API_KEY
 
 // ScrapeMapLocations downloads Concept3D responses and writes raw map data to disk.
-func ScrapeMapLocations(outDir string) {
+func ScrapeMapLocations(outDir string) error {
 	// Make output folder
 	err := os.MkdirAll(outDir, 0777)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("error creating output folder: %w", err)
 	}
 
 	// Init http client
@@ -47,7 +47,7 @@ func ScrapeMapLocations(outDir string) {
 	url := START_URL + "/locations" + END_URL
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("error creating http request: %w", err)
 	}
 	req.Header = http.Header{
 		"Content-type": {"application/json"},
@@ -55,16 +55,17 @@ func ScrapeMapLocations(outDir string) {
 	}
 	res, err := cli.Do(req)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("error sending request: %w", err)
 	}
 	if res.StatusCode != 200 {
-		log.Panicf("ERROR: Status was: %s", res.Status)
+		res.Body.Close()
+		return fmt.Errorf("error: Status was: %s", res.Status)
 	}
 	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		panic(err)
-	}
 	res.Body.Close()
+	if err != nil {
+		return fmt.Errorf("error reading response body: %w", err)
+	}
 	stringBody := string(body)
 
 	log.Print("Scraped Map Locations!")
@@ -72,11 +73,12 @@ func ScrapeMapLocations(outDir string) {
 	// Write data to output file
 	fptr, err := os.Create(fmt.Sprintf("%s/mapLocationsScraped.json", outDir))
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("error creating output file: %w", err)
 	}
+	defer fptr.Close()
 	_, err = fptr.Write([]byte(stringBody))
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("error writing map data to json file: %w", err)
 	}
-	fptr.Close()
+	return nil
 }
